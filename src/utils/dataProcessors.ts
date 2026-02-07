@@ -6,7 +6,7 @@ export function processPlayerMatchHistory(
     currentSeasonId: string,
     previousSeasonId: string,
     teamNameForContext: string
-): Omit<PlayerStats, 'name' | 'shirtNumber' | 'birthYear' | 'teamIdInMatch'> {
+): Omit<PlayerStats, 'name' | 'shirtNumber' | 'birthYear' | 'teamIdInMatch' | 'img_url' | 'clubCrest' | 'isCaptainInMatch' | 'position_fi' | 'height' | 'weight' | 'finland_raised'> {
     const stats = {
         gamesPlayedThisYear: 0,
         goalsThisYear: 0,
@@ -20,7 +20,7 @@ export function processPlayerMatchHistory(
         goalsScoredLastSeason: 0,
     };
 
-    if (!matches) return stats;
+    if (!matches) return { ...stats, teamsThisYear: "" };
 
     matches.forEach((match) => {
         const goals = parseInt(match.player_goals) || 0;
@@ -92,5 +92,7 @@ export function processPlayerMatchHistory(
         }
     });
 
-    return stats;
+    const teamsThisYear = Object.keys(stats.gamesByTeamThisYear).join(", ");
+
+    return { ...stats, teamsThisYear };
 }
