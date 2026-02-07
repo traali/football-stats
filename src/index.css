@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+@theme {
+    --color-brand-black: #000000;
+    --color-brand-dark: #0a0a0a;
+    --color-brand-primary: #3b82f6;
+    --color-brand-secondary: #60a5fa;
+    --color-brand-accent: #2563eb;
+
+    --font-inter: "Inter", system-ui, sans-serif;
+}
+
+:root {
+    font-family: var(--font-inter);
+    color-scheme: dark;
+    background-color: var(--color-brand-black);
+    color: white;
+}
+
+body {
+    margin: 0;
+    min-width: 320px;
+    min-height: 100vh;
+    background-color: var(--color-brand-black);
+    background-image: radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 0% 100%, rgba(37, 99, 235, 0.05) 0%, transparent 40%);
+    background-attachment: fixed;
+}
