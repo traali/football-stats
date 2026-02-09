@@ -3,8 +3,8 @@
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![React](https://img.shields.io/badge/react-19.0.0-61DAFB.svg?style=flat&logo=react)
 ![Tailwind CSS](https://img.shields.io/badge/tailwindcss-4.0.0-38B2AC.svg?style=flat&logo=tailwind-css)
-![Vite](https://img.shields.io/badge/vite-6.1.0-646CFF.svg?style=flat&logo=vite)
-![TypeScript](https://img.shields.io/badge/typescript-5.6.3-3178C6.svg?style=flat&logo=typescript)
+![Vite](https://img.shields.io/badge/vite-7.3.1-646CFF.svg?style=flat&logo=vite)
+![Framer Motion](https://img.shields.io/badge/framer--motion-12.33.0-0055FF.svg?style=flat&logo=framer)
 
 ## Problem
 Old football statistics viewers were often built on legacy, plain JavaScript stacks that resulted in slow performance, difficult maintenance, and dated user interfaces. Users struggled with non-responsive designs and clunky interactions when trying to find simple match data.
