@@ -1,0 +1,26 @@
+# Football Stats Modernization Project
+
+## Project Summary
+This repository contains a modern React 19 application for viewing Finnish football statistics. It replaces a legacy vanilla JavaScript application. The primary goal is to provide a premium, high-performance user interface using the "Night Captain" design system (OLED-optimized dark mode) while maintaining strict type safety and code modularity. Target audience includes developers looking for modern React/Vite examples and football enthusiasts wanting a better UX for stats.
+
+## Architectural Decisions
+- **React 19 & Vite**: Chosen for performance, developer experience, and experimental support for new React features.
+- **Tailwind CSS 4**: Utilized for its new engine, zero-runtime overhead, and simplified configuration (CSS-first configuration).
+- **TypeScript**: Enforced strict typing to prevent runtime errors common in data-heavy applications.
+- **Framer Motion**: Selected for complex layout animations (like list reordering and modal transitions) that are difficult to implement with pure CSS.
+- **Custom Hooks over State Libraries**: Simple state management (creating `useMatchData`) was preferred over Redux/Zustand due to the application's focused scope (fetching and viewing single match contexts).
+- **Rate Limiting**: Implemented client-side token bucket rate limiting in `api.ts` to respect the backend service's constraints.
+
+## Directory Structure
+- `src/`: Source code
+  - `components/`: Reusable UI components (MatchHeader, PlayerCard, etc.)
+  - `hooks/`: Custom React hooks (logic encapsulation)
+  - `services/`: API interaction layer
+  - `types/`: TypeScript definitions for API responses and internal models
+  - `utils/`: Helper functions (data transformation, formatting)
+- `.github/workflows/`: CI/CD configurations for GitHub Pages
+
+## Extension and Contribution
+- **Adding Features**: Create new components in `src/components` and export them.
+- **API Updates**: Update types in `src/types/api.ts` first, then adjust `src/utils/dataProcessors.ts`.
+- **Theming**: Modify CSS variables in `src/index.css` to adjust the "Night Captain" theme tokens.
