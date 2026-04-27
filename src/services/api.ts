@@ -1,4 +1,5 @@
 import { APP_CONFIG } from '../types/config';
+import { Category, Competition, DiscoveryMatch, GetMatchesParams, ScoreEntry, Season } from '../types/api';
 
 // Simple rate limiter implementation
 const lastCallTimes: number[] = [];
@@ -89,4 +90,33 @@ export async function getTeamData(teamId: string) {
 export async function getPlayerData(playerId: string) {
     const data = await fetchAPIData<{ player: any }>("getPlayer", { player_id: playerId });
     return data.player;
+}
+
+export async function getCompetitions(): Promise<Competition[]> {
+    const data = await fetchAPIData<{ competitions?: Competition[] }>("getCompetitions", {});
+    return data.competitions || [];
+}
+
+export async function getCategories(competitionId: string): Promise<Category[]> {
+    const data = await fetchAPIData<{ categories?: Category[] }>("getCategories", {
+        competition_id: competitionId,
+    });
+    return data.categories || [];
+}
+
+export async function getMatches(params: GetMatchesParams = {}): Promise<DiscoveryMatch[]> {
+    const data = await fetchAPIData<{ matches?: DiscoveryMatch[] }>("getMatches", params);
+    return data.matches || [];
+}
+
+export async function getScore(params: Pick<GetMatchesParams, 'competition_id' | 'category_id'> = {}): Promise<ScoreEntry[]> {
+    const data = await fetchAPIData<{ score?: ScoreEntry[] }>("getScore", params);
+    return data.score || [];
+}
+
+export async function getSeasons(competitionId: string): Promise<Season[]> {
+    const data = await fetchAPIData<{ seasons?: Season[] }>("getSeasons", {
+        competition_id: competitionId,
+    });
+    return data.seasons || [];
 }

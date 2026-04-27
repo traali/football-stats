@@ -18,6 +18,28 @@ export interface MatchDetails {
     lineups: PlayerLineupInfo[];
 }
 
+export interface Competition {
+    competition_id: string;
+    competition_name: string;
+    season_id?: string;
+    season_name?: string;
+    [key: string]: unknown;
+}
+
+export interface Category {
+    category_id: string;
+    category_name: string;
+    competition_id?: string;
+    [key: string]: unknown;
+}
+
+export interface Season {
+    season_id: string;
+    season_name: string;
+    competition_id?: string;
+    [key: string]: unknown;
+}
+
 export interface PlayerLineupInfo {
     player_id: string;
     player_name: string;
@@ -63,6 +85,47 @@ export interface MatchSummary {
     winner_id: string;
     status: string;
     referee_1_id?: string;
+}
+
+export interface DiscoveryMatch {
+    match_id: string;
+    competition_id?: string;
+    category_id?: string;
+    group_id?: string;
+    date: string;
+    time?: string;
+    team_A_id: string;
+    team_B_id: string;
+    team_A_name: string;
+    team_B_name: string;
+    fs_A?: string;
+    fs_B?: string;
+    status?: string;
+    winner_id?: string;
+    [key: string]: unknown;
+}
+
+export interface ScoreEntry {
+    match_id?: string;
+    competition_id?: string;
+    category_id?: string;
+    team_A_name?: string;
+    team_B_name?: string;
+    fs_A?: string;
+    fs_B?: string;
+    status?: string;
+    [key: string]: unknown;
+}
+
+export interface GetMatchesParams {
+    competition_id?: string;
+    category_id?: string;
+    group_id?: string;
+    team_id?: string;
+    date_from?: string;
+    date_to?: string;
+    limit?: number;
+    offset?: number;
 }
 
 export interface PlayerStats {
