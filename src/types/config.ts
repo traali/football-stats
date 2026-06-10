@@ -15,10 +15,11 @@ export interface APIConfig {
 
 export const APP_CONFIG: APIConfig = {
     API_BASE_URL: "https://spl.torneopal.net/taso/rest/",
-    CURRENT_YEAR: "2025",
-    PREVIOUS_YEAR: "2024",
+    CURRENT_YEAR: "2026",
+    PREVIOUS_YEAR: "2025",
     API_HEADERS: {
-        Accept: "json/df8e84j9xtdz269euy3h",
+        Accept: "json/4h7dznqdxwtp3hsfdyf5r793uahfxy7x",
+        Referer: "https://tulospalvelu.palloliitto.fi/",
     },
     NO_PLAYER_IMAGE_URL: "https://www.palloliitto.fi/sites/all/themes/palloliitto/images/no-player-image.png",
     DEFAULT_CREST_URL: "https://cdn.torneopal.net/logo/palloliitto/x.png",
@@ -31,6 +32,6 @@ export const APP_CONFIG: APIConfig = {
             getTeam: 5,
             getPlayer: 50,
         },
-        THROTTLE_DELAY: 1000,
+        THROTTLE_DELAY: 100,
     },
 };

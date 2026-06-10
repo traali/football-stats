@@ -23,23 +23,22 @@ export function Home() {
                         animate={{ opacity: 1, y: 0 }}
                         className="flex items-center justify-center space-x-3"
                     >
-                        <div className="p-3 bg-blue-600/20 rounded-2xl border border-blue-500/30">
-                            <Trophy className="w-8 h-8 text-blue-400" />
+                        <div className="p-3 bg-accent/10 rounded-lg border border-accent/20">
+                            <Trophy className="w-8 h-8 text-accent" />
                         </div>
-                        <h1 className="text-4xl md:text-6xl font-bold tracking-tight bg-gradient-to-r from-white via-blue-100 to-blue-400 bg-clip-text text-transparent">
+                        <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-text-primary">
                             Football Stats
                         </h1>
                     </motion.div>
-                    <p className="text-gray-400 max-w-2xl mx-auto">
+                    <p className="text-text-secondary max-w-2xl mx-auto">
                         Phase 1 keeps the current match lookup intact and prepares the app for broader competition discovery.
                     </p>
                 </header>
 
                 <section className="max-w-xl mx-auto">
                     <form onSubmit={handleSubmit} className="relative group">
-                        <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl blur opacity-25 group-focus-within:opacity-50 transition duration-1000"></div>
-                        <div className="relative flex items-center bg-brand-dark/80 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden p-2">
-                            <div className="pl-4 text-gray-500">
+                        <div className="relative flex items-center bg-surface-2 border border-border-hairline rounded-lg overflow-hidden focus-within:border-accent transition-colors duration-200">
+                            <div className="pl-4 text-text-muted">
                                 <Search className="w-5 h-5" />
                             </div>
                             <input
@@ -47,11 +46,11 @@ export function Home() {
                                 value={matchId}
                                 onChange={(e) => setMatchId(e.target.value)}
                                 placeholder="Match ID (esim. 3760372)"
-                                className="flex-grow bg-transparent border-none focus:ring-0 text-white px-4 py-3 placeholder:text-gray-600 text-lg"
+                                className="flex-grow bg-transparent border-none focus:ring-0 text-text-primary px-4 py-3 placeholder:text-text-muted text-lg"
                             />
                             <button
                                 type="submit"
-                                className="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-8 py-3 rounded-xl transition-all duration-200 flex items-center justify-center min-w-[100px]"
+                                className="bg-accent hover:bg-accent/90 text-text-inverse font-semibold px-8 py-3 rounded-md transition-all duration-200 flex items-center justify-center min-w-[100px] active:scale-[0.97]"
                             >
                                 Hae
                             </button>
@@ -65,17 +64,17 @@ export function Home() {
                         { icon: Activity, title: 'Pelaaja-analyysi', desc: 'Yksityiskohtaiset suoritukset, kortit ja maalit.' },
                         { icon: Trophy, title: 'Sarjataulukot', desc: 'Nykyinen ottelunäkymä on siirretty omalle reitilleen.' },
                     ].map((feature, i) => (
-                        <div key={i} className="glass-card p-8 flex flex-col items-center text-center space-y-4">
-                            <div className="p-4 bg-white/5 rounded-2xl border border-white/10">
-                                <feature.icon className="w-8 h-8 text-blue-400" />
+                        <div key={i} className="bg-surface-1 border border-border-hairline rounded-lg p-8 flex flex-col items-center text-center space-y-4">
+                            <div className="p-4 bg-surface-2 rounded-lg border border-border-hairline">
+                                <feature.icon className="w-8 h-8 text-accent" />
                             </div>
-                            <h2 className="text-xl font-bold text-white">{feature.title}</h2>
-                            <p className="text-gray-400">{feature.desc}</p>
+                            <h2 className="text-xl font-bold text-text-primary">{feature.title}</h2>
+                            <p className="text-text-secondary">{feature.desc}</p>
                         </div>
                     ))}
                 </main>
 
-                <footer className="pt-8 border-t border-white/5 text-center text-gray-600 text-sm">
+                <footer className="pt-8 border-t border-border-hairline text-center text-text-muted text-sm">
                     <p>&copy; 2026 Pelaajatilastot. Data provided by Suomen Palloliitto.</p>
                 </footer>
             </div>

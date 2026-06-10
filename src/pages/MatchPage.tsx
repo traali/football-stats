@@ -34,15 +34,14 @@ export function MatchPage() {
         <div className="min-h-screen px-4 py-8 md:py-16">
             <div className="max-w-6xl mx-auto space-y-12">
                 <header className="text-center space-y-4">
-                    <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-white">Match View</h1>
-                    <p className="text-gray-400">Current single-match experience, now on its own route.</p>
+                    <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-text-primary">Match View</h1>
+                    <p className="text-text-secondary">Current single-match experience, now on its own route.</p>
                 </header>
 
                 <section className="max-w-xl mx-auto">
                     <form onSubmit={handleSearch} className="relative group">
-                        <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl blur opacity-25 group-focus-within:opacity-50 transition duration-1000"></div>
-                        <div className="relative flex items-center bg-brand-dark/80 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden p-2">
-                            <div className="pl-4 text-gray-500">
+                        <div className="relative flex items-center bg-surface-2 border border-border-hairline rounded-lg overflow-hidden focus-within:border-accent transition-colors duration-200">
+                            <div className="pl-4 text-text-muted">
                                 <Search className="w-5 h-5" />
                             </div>
                             <input
@@ -50,12 +49,12 @@ export function MatchPage() {
                                 value={searchValue}
                                 onChange={(e) => setSearchValue(e.target.value)}
                                 placeholder="Match ID (esim. 3760372)"
-                                className="flex-grow bg-transparent border-none focus:ring-0 text-white px-4 py-3 placeholder:text-gray-600 text-lg"
+                                className="flex-grow bg-transparent border-none focus:ring-0 text-text-primary px-4 py-3 placeholder:text-text-muted text-lg"
                             />
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-8 py-3 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[100px]"
+                                className="bg-accent hover:bg-accent/90 text-text-inverse font-semibold px-8 py-3 rounded-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[100px] active:scale-[0.97]"
                             >
                                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Hae'}
                             </button>
@@ -70,7 +69,7 @@ export function MatchPage() {
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -10 }}
-                                className="p-6 bg-red-900/10 border border-red-500/20 rounded-3xl text-red-400 text-center glass"
+                                className="p-6 bg-semantic-red/10 border border-semantic-red/20 rounded-lg text-semantic-red text-center"
                             >
                                 {error}
                             </motion.div>
@@ -89,7 +88,10 @@ export function MatchPage() {
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
                                     <div className="lg:col-span-2 space-y-12">
                                         <div className="space-y-6">
-                                            <h2 className="text-3xl font-black text-white border-l-4 border-blue-500 pl-4">{data.match.team_A_name}</h2>
+                                            <div className="flex items-center">
+                                                <div className="w-1 h-8 mr-4 rounded-full bg-gradient-to-b from-bmw-cyan via-bmw-magenta to-bmw-amber shrink-0" />
+                                                <h2 className="text-3xl font-black text-text-primary">{data.match.team_A_name}</h2>
+                                            </div>
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                 {teamAPlayers.map(player => (
                                                     <PlayerCard key={player.name + player.shirtNumber} stats={player} />
@@ -98,7 +100,10 @@ export function MatchPage() {
                                         </div>
 
                                         <div className="space-y-6">
-                                            <h2 className="text-3xl font-black text-white border-l-4 border-blue-500 pl-4">{data.match.team_B_name}</h2>
+                                            <div className="flex items-center">
+                                                <div className="w-1 h-8 mr-4 rounded-full bg-gradient-to-b from-bmw-cyan via-bmw-magenta to-bmw-amber shrink-0" />
+                                                <h2 className="text-3xl font-black text-text-primary">{data.match.team_B_name}</h2>
+                                            </div>
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                 {teamBPlayers.map(player => (
                                                     <PlayerCard key={player.name + player.shirtNumber} stats={player} />
@@ -123,7 +128,7 @@ export function MatchPage() {
                                 key="empty"
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
-                                className="glass-card p-8 text-center text-gray-400"
+                                className="bg-surface-1 border border-border-hairline rounded-lg p-8 text-center text-text-secondary"
                             >
                                 Syötä ottelun ID avataksesi ottelusivun.
                             </motion.div>

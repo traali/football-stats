@@ -18,18 +18,19 @@ function checkRateLimit(endpoint?: string): boolean {
     }
 
     // Endpoint limit
-    if (endpoint && APP_CONFIG.RATE_LIMIT.MAX_CALLS_PER_ENDPOINT[endpoint]) {
+    if (endpoint) {
         if (!endpointLastCalls[endpoint]) endpointLastCalls[endpoint] = [];
         while (endpointLastCalls[endpoint].length > 0 && endpointLastCalls[endpoint][0] < oneMinuteAgo) {
             endpointLastCalls[endpoint].shift();
         }
-        if (endpointLastCalls[endpoint].length >= APP_CONFIG.RATE_LIMIT.MAX_CALLS_PER_ENDPOINT[endpoint]) {
+        if (APP_CONFIG.RATE_LIMIT.MAX_CALLS_PER_ENDPOINT[endpoint] &&
+            endpointLastCalls[endpoint].length >= APP_CONFIG.RATE_LIMIT.MAX_CALLS_PER_ENDPOINT[endpoint]) {
             return false;
         }
+        endpointLastCalls[endpoint].push(now);
     }
 
     lastCallTimes.push(now);
-    if (endpoint) endpointLastCalls[endpoint].push(now);
     return true;
 }
 
@@ -59,8 +60,8 @@ export async function fetchAPIData<T>(endpoint: string, params: Record<string, a
     }
 
     const data = await response.json();
-    if (data.call && data.call.status.toLowerCase() !== "ok") {
-        throw new Error(`API error for ${endpoint}: ${data.call.status}`);
+    if (data?.call?.status?.toLowerCase() !== "ok") {
+        throw new Error(`API error for ${endpoint}: ${data?.call?.status || 'unknown'}`);
     }
     return data;
 }
@@ -84,7 +85,7 @@ export async function getGroupDetails(competitionId: string, categoryId: string,
 export async function getTeamData(teamId: string) {
     if (!teamId) return null;
     const data = await fetchAPIData<{ team: any }>("getTeam", { team_id: teamId });
-    return data;
+    return data.team;
 }
 
 export async function getPlayerData(playerId: string) {

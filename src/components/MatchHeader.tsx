@@ -7,12 +7,12 @@ export function MatchHeader({ match, group }: { match: MatchDetails; group: Grou
         <motion.div
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="glass-dark rounded-3xl overflow-hidden border border-white/10"
+            className="bg-surface-1 rounded-lg overflow-hidden border border-border-hairline"
         >
             <div className="p-8 md:p-12 flex flex-col items-center text-center space-y-8">
                 {/* League Info */}
                 <div className="flex flex-col items-center space-y-2">
-                    <div className="px-4 py-1.5 bg-blue-600/10 border border-blue-500/20 rounded-full text-blue-400 text-xs font-bold uppercase tracking-widest">
+                    <div className="px-4 py-1.5 bg-accent/10 border border-accent/20 rounded-md text-accent text-xs font-bold uppercase tracking-widest">
                         {match.competition_name}
                     </div>
                     <h2 className="text-gray-400 text-sm font-medium">{match.category_name} {group?.group_name && `• ${group.group_name}`}</h2>
@@ -25,8 +25,8 @@ export function MatchHeader({ match, group }: { match: MatchDetails; group: Grou
                     </div>
 
                     <div className="flex flex-col items-center">
-                        <div className="text-5xl md:text-7xl font-black tabular-nums tracking-tighter text-white">
-                            {match.fs_A ?? '-'} <span className="text-blue-500 opacity-50">:</span> {match.fs_B ?? '-'}
+                        <div className="text-5xl md:text-7xl font-black tabular-nums tracking-tighter text-white font-mono">
+                            {match.fs_A ?? '-'} <span className="text-accent opacity-80">:</span> {match.fs_B ?? '-'}
                         </div>
                     </div>
 
@@ -38,12 +38,12 @@ export function MatchHeader({ match, group }: { match: MatchDetails; group: Grou
                 {/* Match Meta */}
                 <div className="flex flex-wrap items-center justify-center gap-6 text-gray-400 text-sm">
                     <div className="flex items-center">
-                        <Calendar className="w-4 h-4 mr-2 text-blue-500" />
+                        <Calendar className="w-4 h-4 mr-2 text-accent" />
                         {match.date} {match.time && `• ${match.time}`}
                     </div>
                     {match.referee_1_name && (
                         <div className="flex items-center">
-                            <Users className="w-4 h-4 mr-2 text-blue-500" />
+                            <Users className="w-4 h-4 mr-2 text-accent" />
                             Tuomari: {match.referee_1_name}
                         </div>
                     )}
