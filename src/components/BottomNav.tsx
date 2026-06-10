@@ -16,7 +16,7 @@ const navItems = [
 
 export function BottomNav() {
     return (
-        <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around bg-surface-1/80 backdrop-blur-xl border-t border-border-hairline safe-area-padding-bottom">
+        <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around bg-surface-1/80 backdrop-blur-xl border-t border-border-hairline pb-[env(safe-area-inset-bottom,0px)]">
             {navItems.map((item) => (
                 <NavLink
                     key={item.label}
@@ -30,7 +30,7 @@ export function BottomNav() {
                 >
                     {({ isActive }) => (
                         <>
-                            <item.icon className={cn('w-5 h-5', isActive && 'drop-shadow-[0_0_6px_rgba(250,255,105,0.3)]')} />
+                            <item.icon className={cn('w-5 h-5', isActive && 'drop-shadow-[0_0_6px_var(--color-accent-glow)]')} />
                             <span className="text-[10px] font-medium uppercase tracking-wider">{item.label}</span>
                         </>
                     )}

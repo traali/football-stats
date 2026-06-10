@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Search, Trophy, Calendar, Activity } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { Button } from '../components/Button'
 
 export function Home() {
     const [matchId, setMatchId] = useState('')
@@ -48,12 +49,9 @@ export function Home() {
                                 placeholder="Match ID (esim. 3760372)"
                                 className="flex-grow bg-transparent border-none focus:ring-0 text-text-primary px-4 py-3 placeholder:text-text-muted text-lg"
                             />
-                            <button
-                                type="submit"
-                                className="bg-accent hover:bg-accent/90 text-text-inverse font-semibold px-8 py-3 rounded-md transition-all duration-200 flex items-center justify-center min-w-[100px] active:scale-[0.97]"
-                            >
+                            <Button type="submit" className="min-w-[100px]">
                                 Hae
-                            </button>
+                            </Button>
                         </div>
                     </form>
                 </section>
