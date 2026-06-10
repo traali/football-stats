@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { getMatchDetails, getGroupDetails, getTeamData, getPlayerData } from '../services/api';
+import { getMatchDetails, getGroupDetails, getPlayerData } from '../services/api';
 import { processPlayerMatchHistory } from '../utils/dataProcessors';
 import { APP_CONFIG } from '../types/config';
 import { MatchDetails, GroupDetails, PlayerStats } from '../types/api';
@@ -19,11 +19,7 @@ export function useMatchData() {
         try {
             const match = await getMatchDetails(matchId);
 
-            const [group, teamA, teamB] = await Promise.all([
-                getGroupDetails(match.competition_id, match.category_id, match.group_id),
-                getTeamData(match.team_A_id),
-                getTeamData(match.team_B_id)
-            ]);
+            const group = await getGroupDetails(match.competition_id, match.category_id, match.group_id);
 
             const playersInMatch = match.lineups || [];
             const playerPromises = playersInMatch.map(async (lineupInfo: any) => {

@@ -5,7 +5,7 @@ export function StandingsTable({ group, teamAId, teamBId }: { group: GroupDetail
     const sortedTeams = [...group.teams].sort((a, b) => (parseInt(a.current_standing) || 999) - (parseInt(b.current_standing) || 999))
 
     return (
-        <div className="bg-surface-1 border border-border-hairline rounded-lg overflow-hidden">
+        <div className="bg-surface-1 border border-border-hairline rounded-xl overflow-hidden">
             <div className="p-5 border-b border-border-hairline bg-surface-2">
                 <h3 className="text-lg font-bold text-text-primary">Sarjataulukko</h3>
             </div>

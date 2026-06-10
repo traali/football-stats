@@ -1,0 +1,41 @@
+import { NavLink } from 'react-router-dom'
+import { Home, Search, BarChart3, MoreHorizontal } from 'lucide-react'
+import { twMerge } from 'tailwind-merge'
+import { clsx, type ClassValue } from 'clsx'
+
+function cn(...inputs: ClassValue[]) {
+    return twMerge(clsx(inputs))
+}
+
+const navItems = [
+    { to: '/', label: 'Etusivu', icon: Home },
+    { to: '/match/3760372', label: 'Ottelu', icon: Search },
+    { to: '#', label: 'Sarjat', icon: BarChart3 },
+    { to: '#', label: 'Lisää', icon: MoreHorizontal },
+]
+
+export function BottomNav() {
+    return (
+        <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around bg-surface-1/80 backdrop-blur-xl border-t border-border-hairline safe-area-padding-bottom">
+            {navItems.map((item) => (
+                <NavLink
+                    key={item.label}
+                    to={item.to}
+                    className={({ isActive }) =>
+                        cn(
+                            'flex flex-col items-center justify-center gap-0.5 py-2 px-4 min-w-[64px] min-h-[48px] transition-colors duration-200',
+                            isActive ? 'text-accent' : 'text-text-muted hover:text-text-secondary',
+                        )
+                    }
+                >
+                    {({ isActive }) => (
+                        <>
+                            <item.icon className={cn('w-5 h-5', isActive && 'drop-shadow-[0_0_6px_rgba(250,255,105,0.3)]')} />
+                            <span className="text-[10px] font-medium uppercase tracking-wider">{item.label}</span>
+                        </>
+                    )}
+                </NavLink>
+            ))}
+        </nav>
+    )
+}

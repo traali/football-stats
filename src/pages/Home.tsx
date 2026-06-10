@@ -37,7 +37,7 @@ export function Home() {
 
                 <section className="max-w-xl mx-auto">
                     <form onSubmit={handleSubmit} className="relative group">
-                        <div className="relative flex items-center bg-surface-2 border border-border-hairline rounded-lg overflow-hidden focus-within:border-accent transition-colors duration-200">
+                        <div className="relative flex items-center bg-surface-2 border border-border-hairline rounded-lg overflow-hidden focus-within:border-accent focus-within:ring-1 focus-within:ring-accent transition-all duration-200">
                             <div className="pl-4 text-text-muted">
                                 <Search className="w-5 h-5" />
                             </div>

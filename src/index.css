@@ -55,6 +55,7 @@
     --radius-lg: 12px;
     --radius-xl: 16px;
     --radius-2xl: 20px;
+    --radius-full: 9999px;
 }
 
 :root {
@@ -76,6 +77,17 @@ body {
 ::selection {
     background-color: var(--color-accent);
     color: var(--color-text-inverse);
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+.animate-shimmer {
+    animation: shimmer 1.5s ease-in-out infinite;
+    background: linear-gradient(90deg, var(--color-surface-2) 25%, var(--color-surface-3) 50%, var(--color-surface-2) 75%);
+    background-size: 200% 100%;
 }
 
 @media (prefers-reduced-motion: reduce) {
