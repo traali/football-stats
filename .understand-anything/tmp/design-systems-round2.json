@@ -1,0 +1,288 @@
+{
+  "meta": {
+    "source": "awesome-design-md",
+    "analyzed": "2026-06-10",
+    "count": 10
+  },
+  "systems": {
+    "apple": {
+      "name": "Apple",
+      "canvas_polarity": "light-dominant with alternating dark tiles",
+      "colors": {
+        "background": "#ffffff (#f5f5f7 parchment variant)",
+        "surface": "#ffffff / #f5f5f7 / #272729 (tile-1) / #2a2a2c (tile-2) / #252527 (tile-3)",
+        "accent": "#0066cc (Action Blue)",
+        "accent_secondary": "#0071e3 (focus) / #2997ff (on-dark links)",
+        "text_primary": "#1d1d1f",
+        "text_on_dark": "#ffffff",
+        "text_muted": "#7a7a7a",
+        "key_hexes": ["#0066cc", "#1d1d1f", "#f5f5f7", "#272729", "#2997ff"]
+      },
+      "typography": {
+        "family": "SF Pro Display (display) / SF Pro Text (body)",
+        "sizes": "56px hero → 17px body → 10px micro-legal",
+        "weights": "300 / 400 / 600 / 700 (500 deliberately absent)",
+        "signature": "Negative letter-spacing on display sizes (-0.28 to -0.374px); body at 17px not 16px; weight 600 for headlines"
+      },
+      "principles": "Photography-first museum gallery. UI chrome recedes so the product speaks. Alternating full-bleed light/dark tiles as the structural rhythm. Single blue accent for all interaction.",
+      "cards": "Product tiles are edge-to-edge full-bleed (no rounding). Store utility cards at rounded.lg (18px) with hairline border. Configurator chips at rounded.pill. No shadows on chrome — only on product renders.",
+      "buttons": "Pill-shaped (rounded.pill = 9999px). Primary: blue (#0066cc) bg, white text. Secondary: clear with blue border. Dark utility: ink bg (#1d1d1f). Active state: transform: scale(0.95) site-wide.",
+      "inputs": "Search input at rounded.pill, height 44px, 12px/20px padding, 1px rgba(0,0,0,0.08) border.",
+      "animation": "No documented animation philosophy beyond the scale(0.95) press micro-interaction. Backdrop-filter blur on sticky bars for depth.",
+      "uniqueness": "Exactly one drop-shadow in the entire system (on product renders). Edge-to-edge alternating tiles as section dividers (no borders). SF Pro proprietary negative tracking. 17px body as brand pace."
+    },
+    "raycast": {
+      "name": "Raycast",
+      "canvas_polarity": "dark-only (no light variant)",
+      "colors": {
+        "background": "#07080a (canvas)",
+        "surface": "#0d0d0d (surface) / #101111 (elevated) / #121212 (card)",
+        "accent": "#ffffff (white pill — the only primary CTA color)",
+        "accent_secondary": "#57c1ff (blue) / #ff6161 (red) / #59d499 (green) / #ffc533 (yellow) — category illustration accents only",
+        "text_primary": "#f4f4f6 (ink) / #cdcdcd (body)",
+        "text_on_dark": "#ffffff",
+        "text_muted": "#9c9c9d / #6a6b6c / #434345",
+        "key_hexes": ["#07080a", "#0d0d0d", "#ffffff", "#242728", "#ff5757", "#a1131a"]
+      },
+      "typography": {
+        "family": "Inter (with ss03 stylistic set enabled site-wide)",
+        "sizes": "64px hero → 16px body → 12px caption",
+        "weights": "400 / 500 / 600",
+        "signature": "ss03 alternate 'g' glyph is the brand's typographic identity. Positive letter-spacing (0.1-0.4px) for airy feel. 1.6 line-height for body."
+      },
+      "principles": "The marketing page IS the product. Chrome = command-palette UI at marketing scale. Continuous dark mode. Elevation from surface ladder, not shadows.",
+      "cards": "Hairline-bordered (1px #242728) cards on dark surfaces. Radius 6-10px for feature cards, 16px for hero mockups. No drop shadows anywhere.",
+      "buttons": "Rounded.md (8px). Primary: white (#ffffff) bg, black text. Secondary: transparent, white text. Tertiary: surface-elevated (#101111) bg, white text. Install button: transparent with hairline-strong border.",
+      "inputs": "Text input bg #101111, 1px #242728 border, height 36px, rounded 8px. Focus = border brightens to hairline-strong. Store search: 44px height.",
+      "animation": "No drop shadows. Red diagonal-stripe gradient band (hero-stripe-start → hero-stripe-end) as the only decorative animation-like moment. One-band-per-page maximum.",
+      "uniqueness": "Entirely dark mode. White pill as the only primary CTA. ss03 Inter glyph as brand signature. Command-palette mockups as the hero element. No drop shadows — surface-color ladder creates elevation. Red gradient hero band used once per page."
+    },
+    "ferrari": {
+      "name": "Ferrari",
+      "canvas_polarity": "dark-dominant (near-black #181818) with light editorial bands",
+      "colors": {
+        "background": "#181818 (canvas — never pure black)",
+        "surface": "#303030 (elevated) / #ffffff (light bands)",
+        "accent": "#da291c (Rosso Corsa — Ferrari racing red)",
+        "accent_secondary": "#fff200 / #f6e500 (Hypersail yellow — sub-brand only)",
+        "text_primary": "#ffffff (ink on dark) / #181818 (on light)",
+        "text_body": "#969696",
+        "text_muted": "#666666 / #8f8f8f",
+        "key_hexes": ["#da291c", "#181818", "#303030", "#ffffff", "#969696"]
+      },
+      "typography": {
+        "family": "FerrariSans (single sans across all roles)",
+        "sizes": "80px mega → 14px body → 11px uppercase caption",
+        "weights": "500 (display) / 400 (body) / 700 (CTA labels, number display)",
+        "signature": "Display weight never exceeds 500. CTA labels uppercase with 1.4px tracking. Nav links uppercase with 0.65px tracking. Negative letter-spacing on display only."
+      },
+      "principles": "Cinematic editorial — luxury magazine, not car OEM. Full-bleed photographic heroes. Single red accent used scarcely. Sharp corners = precision.",
+      "cards": "Sharp 0px corners on every card and CTA. Feature cards photo-led, edge-to-edge imagery. Driver cards at #303030 with 0px radius. Preowned listing cards white at #ffffff 0px radius with 24px padding.",
+      "buttons": "Sharp 0px (rounded.none) corners — NEVER pills. Primary: Rosso Corsa bg, white text, 14px/700 uppercase. Outline: transparent with 1px white border. Height 48px, padding 14px/32px.",
+      "inputs": "Text input on dark: bg #181818, 1px #303030 border, rounded 4px, height 48px, 14px/16px padding.",
+      "animation": "Photographic depth + brightness-step elevation. No drop shadow tiers. Hero parallax implied (not documented). Brand red gradient used in accent bands.",
+      "uniqueness": "Rosso Corsa as the single brand voltage. Sharp 0px CTAs (anti-pill). FerrariSans never bold at display size. 8px spacing ladder up to 128px 'super'. Hypersail yellow is sub-brand scoped. Full-bleed cinematic photography as primary depth device."
+    },
+    "figma": {
+      "name": "Figma",
+      "canvas_polarity": "monochrome (white/black) with oversized pastel color blocks",
+      "colors": {
+        "background": "#ffffff (canvas)",
+        "surface": "#f7f7f5 (surface-soft) / #000000 (inverse-canvas)",
+        "accent": "#000000 (primary — black is the brand accent)",
+        "accent_secondary": "#ff3d8b (magenta promo — single-shot only)",
+        "block_colors": "#dceeb1 (lime) / #c5b0f4 (lilac) / #f4ecd6 (cream) / #efd4d4 (pink) / #c8e6cd (mint) / #f3c9b6 (coral) / #1f1d3d (navy)",
+        "text_primary": "#000000 (ink)",
+        "text_on_dark": "#ffffff (inverse-ink)",
+        "key_hexes": ["#000000", "#ffffff", "#dceeb1", "#c5b0f4", "#ff3d8b"]
+      },
+      "typography": {
+        "family": "figmaSans (variable) / figmaMono (eyebrows & captions only)",
+        "sizes": "86px hero → 18px body → 12px caption",
+        "weights": "320 / 330 / 340 / 480 / 540 / 700 (unusually fine-grained variable axis)",
+        "signature": "Aggressive negative tracking (-1.72px at 86px). Mono uppercase for taxonomy. Weight carries hierarchy, not size. Tight line-heights on display (1.0-1.1), generous on body (1.4-1.45)."
+      },
+      "principles": "Monochrome chrome makes the pastel color blocks feel intentional. Contrast-driven: editorial black-and-white frame interrupted by saturated pastel panels. Pill is the only button shape.",
+      "cards": "Pricing cards at rounded.lg (24px) with hairline border. Color-block sections at rounded.lg (24px) spanning full content width. Template cards at rounded.md (8px) on surface-soft. Feature illustration tiles at rounded.md.",
+      "buttons": "Pill (rounded.pill = 50px) is the ONLY button shape — no square buttons. Primary: black bg, white text. Secondary: white bg, black text. Magenta promo: #ff3d8b for rare promotional CTAs. Icon buttons: circular (rounded.full) 40px.",
+      "inputs": "Text input at rounded.md (8px), 12px/14px padding, hairline border. Focus via ring, not fill change.",
+      "animation": "No gradients or shadows — color blocks do the depth work. Marquee strip (customer logos) scrolls. Color-block reveal animations present but not formally documented.",
+      "uniqueness": "Pastel color-block sections as the narrative device — lime, lilac, cream, mint, pink, coral, navy. Black is the primary brand color (not blue/red). figmaSans at ultra-fine variable weights (320-340). Mono uppercase for taxonomy only. Pill-only button vocabulary. Single-shot magenta promo accent."
+    },
+    "intercom": {
+      "name": "Intercom",
+      "canvas_polarity": "warm cream (#f5f1ec) — never pure white",
+      "colors": {
+        "background": "#f5f1ec (cream canvas — defining brand surface)",
+        "surface": "#ffffff (surface-1 floating cards) / #ebe7e1 (surface-2) / #000000 (inverse-canvas)",
+        "accent": "#111111 (charcoal — system primary, not a color)",
+        "accent_secondary": "#ff5600 (Fin Orange — AI product color, not generic primary)",
+        "text_primary": "#111111 (ink)",
+        "text_muted": "#626260 / #7b7b78 / #9c9fa5",
+        "key_hexes": ["#f5f1ec", "#111111", "#ffffff", "#ff5600", "#d3cec6"]
+      },
+      "typography": {
+        "family": "Saans (proprietary geometric sans) / SaansMono (code only)",
+        "sizes": "72px hero → 16px body → 12px caption",
+        "weights": "400 / 500 (display at 500, never 700)",
+        "signature": "Negative tracking proportional to size (-2px at 72px down to 0 on body). Tight display leading (1.05), generous body leading (1.5). Sentence-case eyebrows (no all-caps)."
+      },
+      "principles": "Editorial, calm, product-focused. Cream canvas warmth as brand signal. Product screenshots as protagonists. Saans at weight 500 for confident-but-quiet display.",
+      "cards": "Floating white (surface-1) cards on cream canvas. 12px (lg) radius for pricing/feature cards, 16px (xl) for product mockups. No drop shadows — white-on-cream surface change IS the depth.",
+      "buttons": "Rounded.md (8px) — NOT pills. Primary: charcoal (#111111) bg, white text. Secondary: white bg, charcoal text. Fin Orange (#ff5600) reserved for Fin AI CTAs only. Height ~40px, padding 10px/18px.",
+      "inputs": "Text input bg #ffffff, 1px #d3cec6 border, rounded 8px, 10px/14px padding, height ~44px.",
+      "animation": "Resists drop shadows. Cream + white surface change supplies depth. Product UI mockups are the decoration.",
+      "uniqueness": "Cream canvas (#f5f1ec) as the anchor surface — never white. Charcoal (#111111) as system primary (not a color). Fin Orange scoped to AI product only. Saans proprietary geometric sans. Report palette exists only inside product mockups. No pill CTAs."
+    },
+    "notion": {
+      "name": "Notion",
+      "canvas_polarity": "white with deep navy hero and pastel tinted feature sections",
+      "colors": {
+        "background": "#ffffff (canvas)",
+        "surface": "#f6f5f4 (surface) / #fafaf9 (surface-soft)",
+        "accent": "#5645d4 (Notion Purple — primary CTA)",
+        "accent_secondary": "#0075de (link blue — inline links only)",
+        "brand_spectrum": "#dd5b00 (orange) / #ff64c8 (pink) / #7b3ff2 (purple) / #2a9d99 (teal) / #1aae39 (green) / #f5d75e (yellow)",
+        "tint_palette": "#ffe8d4 (peach) / #fde0ec (rose) / #d9f3e1 (mint) / #e6e0f5 (lavender) / #dcecfa (sky) / #fef7d6 (yellow) / #f9e79f (yellow-bold)",
+        "brand_navy": "#0a1530 (hero band)",
+        "text_primary": "#1a1a1a (ink) / #37352f (charcoal)",
+        "key_hexes": ["#5645d4", "#0a1530", "#f9e79f", "#dceeb1", "#0075de"]
+      },
+      "typography": {
+        "family": "Notion Sans (Inter-based variable)",
+        "sizes": "80px hero → 16px body → 12px micro",
+        "weights": "400 / 500 / 600",
+        "signature": "Tight hero leading (1.05) on 80px display. Negative letter-spacing on display (-2px to -0.5px). Generous body leading (1.55). 600 for headlines, 500 for buttons."
+      },
+      "principles": "All-in-one workspace voice. Illustration-rich with sticky-note dots and mesh wire decorations. Centered hero layout (unusual for B2B SaaS). Pastel feature cards echo product database properties.",
+      "cards": "Rounded.lg (12px) for all cards with 1px hairline border. Pastel-tinted feature cards (peach, rose, mint, lavender, sky, yellow, yellow-bold). Deep drop shadow on hero workspace mockup (level 3: rgba(15,15,15,0.2) 0px 24px 48px -8px).",
+      "buttons": "Rounded.md (8px) rectangles — NOT pills. Primary: purple (#5645d4). Secondary: transparent with hairline-strong border. Dark variant: black bg. On-dark: white bg. 10px/18px padding, ~40px height.",
+      "inputs": "Text input bg #ffffff, 1px #c8c4be border, rounded 8px, 12px/16px padding, height 44px. Focus: 2px solid #5645d4 (purple ring).",
+      "animation": "150-200ms ease recommended for transitions. Pastel cards carry visual weight via tint. Workspace mockup has deep diffuse shadow against navy band.",
+      "uniqueness": "Notion Purple (#5645d4) as signature CTA color. 8px rectangular buttons (anti-pill). Pastel tint palette echoing in-product DB properties. Deep navy hero with decorative sticky-note dots. Yellow-bold (#f9e79f) for high-emphasis banners. Centered hero layout. 4-tier pricing with purple-bordered featured tier."
+    },
+    "uber": {
+      "name": "Uber",
+      "canvas_polarity": "black-and-white duet (no third color)",
+      "colors": {
+        "background": "#ffffff (canvas)",
+        "surface": "#efefef (canvas-soft) / #f3f3f3 (canvas-softer)",
+        "accent": "#000000 (ink black — the ONLY accent/conversion color)",
+        "accent_secondary": "NONE — deliberately absent",
+        "text_primary": "#000000 (ink)",
+        "text_body": "#5e5e5e",
+        "text_muted": "#4b4b4b / #afafaf",
+        "key_hexes": ["#000000", "#ffffff", "#efefef", "#5e5e5e", "#e2e2e2"]
+      },
+      "typography": {
+        "family": "UberMove (display, 700 only) / UberMoveText (body, 400/500)",
+        "sizes": "52px hero → 16px body → 12px caption",
+        "weights": "700 (display) / 400 + 500 (body)",
+        "signature": "Two faces, two roles — never crossed. Sentence-case headlines (no all-caps). No tracking variation (neither positive nor negative). 700 for headlines, 500 for buttons."
+      },
+      "principles": "Transportation super-app signaled through restraint. Black-and-white duet with no third color. Pill is the single signature shape. Editorial 4:3 illustrations are the only decoration.",
+      "cards": "Rounded.xl (16px) for all cards — promo cards, content cards, ride-request form. Polarized black/white bands: light card → black promo → light card → black footer. 24px padding standard.",
+      "buttons": "Pill (rounded.pill = 999px) on EVERY interactive element. Primary: black (#000000) bg, white text. Secondary: white bg, black text. Subtle: gray (#efefef) bg. Floating: white with subtle shadow. Only exception: button-large-rounded at rounded.xl (16px) inside ride-request form.",
+      "inputs": "Text input bg #efefef (canvas-soft), rounded 8px, 16px padding. Nested variant at #f3f3f3 (canvas-softer). Ride-request form: stacked inputs inside shadowed card.",
+      "animation": "Black bands as polarity-flip depth (no CSS shadows needed). Editorial illustrations provide visual weight. No decorative animations documented.",
+      "uniqueness": "Genuinely two-color system (black + white). Pill on every interactive element. Zero secondary accent colors. Two face families with strict role separation. Sentence-case always. Ride-request form card on hero is signature component. Polarity-flipped black bands mid-page."
+    },
+    "nvidia": {
+      "name": "NVIDIA",
+      "canvas_polarity": "dark hero/footer chapters alternating with white body canvas",
+      "colors": {
+        "background": "#ffffff (canvas body) / #000000 (surface-dark hero/footer)",
+        "surface": "#f7f7f7 (surface-soft) / #1a1a1a (surface-elevated)",
+        "accent": "#76b900 (NVIDIA Green — single accent)",
+        "accent_secondary": "#0046a4 (link blue — inline prose links only)",
+        "text_primary": "#000000 (ink) / #1a1a1a (body)",
+        "text_on_dark": "#ffffff / rgba(255,255,255,0.7)",
+        "text_muted": "#757575 / #898989 / #a7a7a7",
+        "key_hexes": ["#76b900", "#000000", "#ffffff", "#f7f7f7", "#5c8d00"]
+      },
+      "typography": {
+        "family": "NVIDIA-EMEA (proprietary, weights 400 + 700 only)",
+        "sizes": "48px hero → 16px body → 10px utility",
+        "weights": "400 + 700 (no 500, no 600)",
+        "signature": "Extreme typographic restraint — no italic, no display variant, no monospace. Hierarchy from weight (400 vs 700) and size, never color. 2px radius on everything."
+      },
+      "principles": "Engineering documentation that learned graphic design. Aggressively angular (2px max radius). Single green accent on everything interactive. Two-mode surface architecture (dark chapters, white body).",
+      "cards": "2px radius (rounded.sm) on ALL cards and interactive elements. 1px #cccccc hairline border, NO shadows. 24-32px padding. Corner-square (12px solid green) as brand ornament.",
+      "buttons": "2px radius (rounded.sm) — NO pills. Primary: green (#76b900) bg, black text. Outline: transparent with green border. Ghost: inline green text link. All at weight 700, 44px height.",
+      "inputs": "Text input bg #ffffff, 1px #cccccc border, rounded 2px, height 44px, 12px/16px padding. Focus: 2px green (#76b900) border.",
+      "animation": "No drop shadows except 5px ambient on sticky chrome bars. Photography + 3D renders supply depth. Corner-square is the only ornamental device.",
+      "uniqueness": "NVIDIA Green (#76b900) on everything interactive. 2px radius is the max (near-angular). Single decorative element: 12px green corner square on cards. Two-mode surface (dark frame, white body). 12-tier type hierarchy with only 400 + 700 weights. No pill buttons. Hairline borders replace shadows entirely."
+    },
+    "shopify": {
+      "name": "Shopify",
+      "canvas_polarity": "two parallel tracks: cinematic black (#000000) + light cream (#fbfbf5)",
+      "colors": {
+        "cinematic_background": "#000000 (canvas-night) / #0a0a0a (elevated)",
+        "light_background": "#ffffff (canvas-light) / #fbfbf5 (canvas-cream)",
+        "accent": "#000000 (primary — black as brand color)",
+        "accent_green": "#c1fbd4 (aloe-10) / #d4f9e0 (pistachio-10) — light track only",
+        "shade_ladder": "#d4d4d8 / #a1a1aa / #71717a / #52525b / #3f3f46",
+        "text_primary": "#000000 (ink)",
+        "text_on_dark": "#ffffff",
+        "key_hexes": ["#000000", "#ffffff", "#fbfbf5", "#c1fbd4", "#d4f9e0", "#a1a1aa"]
+      },
+      "typography": {
+        "family": "Neue Haas Grotesk Display (display, thin 330) / Inter Variable (body, 420-550)",
+        "sizes": "96px hero → 16px body → 12px eyebrow",
+        "weights": "330 (display — extremely thin) / 420 / 500 / 550 (UI)",
+        "signature": "Thin-weight (330) display typography at 96px is the brand's loudest visual. Positive tracking on 96px (2.4px). ss03 stylistic set enabled globally. Display in NHGD, body in Inter."
+      },
+      "principles": "Two parallel design tracks (cinematic + transactional) sharing typographic DNA and pill button vocabulary but diverging in canvas polarity. Photography as editorial spread.",
+      "cards": "Cinematic track: dark cards (#0a0a0a) with subtle inset top-highlight. Light track: white cards with 4 stacked tiny drop shadows (Level 3 — soft paper halo). Pricing cards at rounded.lg (12px). Photo frames at rounded.xl (20px). 32px padding.",
+      "buttons": "Pill (rounded.pill = 9999px) is the ONLY button shape. Primary: black bg, white text. Outline-on-dark: transparent with 2px white border. Aloe pill: #c1fbd4 bg, black text (featured pricing). All at 12px/24px padding.",
+      "inputs": "Text input bg #ffffff, 1px #e4e4e7 border, rounded 8px, 10px/12px padding.",
+      "animation": "Stacked tiny shadows (Level 3) on light-track cards produce soft paper halo. Cinematic track: flat blackness with inset top-edge sheen. Photography as depth.",
+      "uniqueness": "Two completely separate canvas tracks (black cinematic + cream transactional) that never blend. 96px display at weight 330 (extremely thin). Aloe/pistachio greens reserved for light track only. ss03 stylistic set global. Three type families (NHGD + Inter + mono). Stacked tiny-shadow card elevation. Pill-only button vocabulary across both tracks."
+    },
+    "coinbase": {
+      "name": "Coinbase",
+      "canvas_polarity": "white with soft gray elevation bands and dark editorial heroes",
+      "colors": {
+        "background": "#ffffff (canvas)",
+        "surface": "#f7f7f7 (surface-soft) / #eef0f3 (surface-strong) / #0a0b0d (surface-dark)",
+        "accent": "#0052ff (Coinbase Blue — single brand voltage)",
+        "accent_secondary": "#f4b000 (accent yellow — illustrative only, not action)",
+        "trading_semantics": "#05b169 (up/green) / #cf202f (down/red) — text color only",
+        "text_primary": "#0a0b0d (ink)",
+        "text_body": "#5b616e (slightly cool gray)",
+        "text_muted": "#7c828a / #a8acb3",
+        "key_hexes": ["#0052ff", "#0a0b0d", "#ffffff", "#5b616e", "#05b169", "#cf202f"]
+      },
+      "typography": {
+        "family": "CoinbaseDisplay (display, 400 only) / CoinbaseSans (body) / CoinbaseMono (all numbers)",
+        "sizes": "80px hero → 16px body → 12px caption-strong",
+        "weights": "400 (display — NOT 700) / 400 + 500 + 600 (sans) / 500 (mono)",
+        "signature": "Display at weight 400 signals 'calm institutional brand' not 'trading urgency'. Negative letter-spacing on display only (-1 to -2px). CoinbaseMono on every numerical value."
+      },
+      "principles": "Institutional-grade crypto exchange presented as quiet financial brand. Single blue accent. Editorial pill geometry. Full-bleed dark heroes with layered product-UI mockups as signature component.",
+      "cards": "Rounded.xl (24px) for feature cards, product-UI mockups, pricing tiers. Dark hero contains layered product-ui-card-dark (#16181c) cards at slight rotation. Hairline-bordered white cards on light surfaces.",
+      "buttons": "Pill (rounded.pill = 100px) on every CTA. Primary: Coinbase Blue (#0052ff) bg, white text. Secondary-light: #eef0f3 bg, ink text. Secondary-dark: #16181c bg, white text. Outline-on-dark: transparent with white border. Pill-cta: 56px height for hero ('Get started'). All 16px/600 weight.",
+      "inputs": "Text input bg #ffffff, 1px #dee1e6 border, rounded 12px, height 48px, 14px/16px padding. Search pill: #eef0f3 bg, rounded.pill, 44px height.",
+      "animation": "Layered product-UI cards inside dark heroes at subtle rotation. No decorative drop shadows. Card-on-card layering supplies depth. One shadow tier only (0 4px 12px rgba(0,0,0,0.04)).",
+      "uniqueness": "Coinbase Blue (#0052ff) as single brand voltage. Display weight 400 (not 700 — deliberately calm). CoinbaseMono on every number. Full-bleed dark heroes with layered product-UI mockup cards. Pill geometry on everything interactive (100px). Trading green/red semantic colors text-only (never backgrounds). Dark hero surface equals ink color (#0a0b0d)."
+    }
+  },
+  "cross_cutting_patterns": {
+    "pill_dominant_systems": ["apple", "figma", "uber", "shopify", "coinbase"],
+    "square_rect_button_systems": ["ferrari", "intercom", "notion", "nvidia"],
+    "mixed_radius_systems": ["raycast"],
+    "dark_canvas_systems": ["raycast", "ferrari", "nvidia", "shopify (cinematic track)"],
+    "warm_canvas_systems": ["intercom (cream)", "shopify (cream transactional)"],
+    "monochrome_systems": ["uber", "nvidia", "coinbase (near-monochrome)"],
+    "pastel_block_systems": ["figma", "notion"],
+    "single_accent_color": ["apple (#0066cc)", "nvidia (#76b900)", "coinbase (#0052ff)", "ferrari (#da291c)", "uber (#000000)"],
+    "white_primary_cta": ["raycast (#ffffff)"],
+    "saas_standard_body_size_16px": ["raycast", "intercom", "notion", "nvidia", "coinbase", "uber"],
+    "apple_standard_body_17px": ["apple"],
+    "display_weight_400_calm": ["coinbase", "intercom"],
+    "display_weight_600_700_bold": ["apple", "raycast", "notion", "nvidia", "uber"],
+    "display_weight_330_thin": ["shopify"],
+    "display_weight_500_moderate": ["ferrari"],
+    "variable_font_ultra_fine": ["figma (320-700 axis)"]
+  }
+}

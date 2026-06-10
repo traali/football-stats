@@ -1,4 +1,4 @@
-import { MatchDetails, GroupDetails } from '../types/api'
+import { MatchDetails, GroupDetails, TeamBasic } from '../types/api'
 import { motion } from 'framer-motion'
 import { Calendar, Users } from 'lucide-react'
 
@@ -19,8 +19,10 @@ function LiveBadge() {
     )
 }
 
-export function MatchHeader({ match, group }: { match: MatchDetails; group: GroupDetails | null }) {
+export function MatchHeader({ match, group, teamA, teamB }: { match: MatchDetails; group: GroupDetails | null; teamA?: TeamBasic | null; teamB?: TeamBasic | null }) {
     const isLive = !!(match.time && match.time.includes("'"))
+    const crestA = teamA?.img_url || teamA?.club_crest
+    const crestB = teamB?.img_url || teamB?.club_crest
 
     return (
         <motion.div
@@ -43,6 +45,7 @@ export function MatchHeader({ match, group }: { match: MatchDetails; group: Grou
                 {/* Scoreline */}
                 <div className="flex items-center justify-center space-x-4 md:space-x-8 w-full">
                     <div className="flex-1 flex flex-col items-end space-y-2">
+                        {crestA && <img src={crestA} alt={match.team_A_name} className="w-8 h-8 object-contain mb-1" />}
                         <h3 className="text-xl md:text-3xl font-black text-text-primary text-right leading-tight">{match.team_A_name}</h3>
                     </div>
 
@@ -53,6 +56,7 @@ export function MatchHeader({ match, group }: { match: MatchDetails; group: Grou
                     </div>
 
                     <div className="flex-1 flex flex-col items-start space-y-2">
+                        {crestB && <img src={crestB} alt={match.team_B_name} className="w-8 h-8 object-contain mb-1" />}
                         <h3 className="text-xl md:text-3xl font-black text-text-primary text-left leading-tight">{match.team_B_name}</h3>
                     </div>
                 </div>

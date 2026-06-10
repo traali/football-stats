@@ -1,0 +1,670 @@
+{
+  "version": "1.0.0",
+  "project": {
+    "name": "Football Stats Modern",
+    "languages": ["TypeScript", "CSS", "HTML", "Markdown"],
+    "frameworks": ["React", "Vite", "Tailwind CSS", "Framer Motion"],
+    "description": "Modern football statistics viewer for Finnish football data",
+    "analyzedAt": "2026-06-10T12:00:00.000Z",
+    "gitCommitHash": "0fc2329ba3627f76dae127d6636c380f1d310af5"
+  },
+  "layers": [
+    { "id": "entry-routing", "name": "Entry & Routing", "color": "#3B82F6" },
+    { "id": "pages", "name": "Pages", "color": "#10B981" },
+    { "id": "components", "name": "Components", "color": "#F59E0B" },
+    { "id": "data-services", "name": "Data & Services", "color": "#8B5CF6" },
+    { "id": "types-config", "name": "Types & Config", "color": "#EC4899" },
+    { "id": "infrastructure", "name": "Infrastructure", "color": "#6B7280" },
+    { "id": "documentation", "name": "Documentation", "color": "#14B8A6" }
+  ],
+  "nodes": [
+    {
+      "id": "file:src/main.tsx",
+      "label": "src/main.tsx",
+      "type": "file",
+      "layer": "entry-routing",
+      "description": "Application entry point — renders React root into DOM"
+    },
+    {
+      "id": "file:src/App.tsx",
+      "label": "src/App.tsx",
+      "type": "file",
+      "layer": "entry-routing",
+      "description": "Root React component providing RouterProvider"
+    },
+    {
+      "id": "file:src/routes.tsx",
+      "label": "src/routes.tsx",
+      "type": "file",
+      "layer": "entry-routing",
+      "description": "React Router configuration with Home, MatchPage, and NotFound routes"
+    },
+    {
+      "id": "file:index.html",
+      "label": "index.html",
+      "type": "file",
+      "layer": "entry-routing",
+      "description": "HTML template with root div and script entry"
+    },
+    {
+      "id": "file:src/vite-env.d.ts",
+      "label": "src/vite-env.d.ts",
+      "type": "file",
+      "layer": "entry-routing",
+      "description": "Vite client type declarations reference"
+    },
+    {
+      "id": "file:src/pages/Home.tsx",
+      "label": "src/pages/Home.tsx",
+      "type": "file",
+      "layer": "pages",
+      "description": "Home page with match ID search and feature highlights"
+    },
+    {
+      "id": "file:src/pages/MatchPage.tsx",
+      "label": "src/pages/MatchPage.tsx",
+      "type": "file",
+      "layer": "pages",
+      "description": "Match detail page displaying match info, player cards, and standings"
+    },
+    {
+      "id": "file:src/pages/NotFound.tsx",
+      "label": "src/pages/NotFound.tsx",
+      "type": "file",
+      "layer": "pages",
+      "description": "404 error page with link back to home"
+    },
+    {
+      "id": "file:src/components/MatchHeader.tsx",
+      "label": "src/components/MatchHeader.tsx",
+      "type": "file",
+      "layer": "components",
+      "description": "Match header display with scoreline, league info, and match metadata"
+    },
+    {
+      "id": "file:src/components/PlayerCard.tsx",
+      "label": "src/components/PlayerCard.tsx",
+      "type": "file",
+      "layer": "components",
+      "description": "Player statistics card with stats grid and recent match history"
+    },
+    {
+      "id": "file:src/components/StandingsTable.tsx",
+      "label": "src/components/StandingsTable.tsx",
+      "type": "file",
+      "layer": "components",
+      "description": "Standings table component with sorted team rankings"
+    },
+    {
+      "id": "file:src/hooks/useMatchData.ts",
+      "label": "src/hooks/useMatchData.ts",
+      "type": "file",
+      "layer": "data-services",
+      "description": "Custom hook orchestrating match data fetching, processing, and state management"
+    },
+    {
+      "id": "file:src/services/api.ts",
+      "label": "src/services/api.ts",
+      "type": "file",
+      "layer": "data-services",
+      "description": "API service layer with rate limiting, typed data fetching, and SPL API wrappers"
+    },
+    {
+      "id": "file:src/utils/dataProcessors.ts",
+      "label": "src/utils/dataProcessors.ts",
+      "type": "file",
+      "layer": "data-services",
+      "description": "Data transformation utilities for processing raw API responses into UI-ready stats"
+    },
+    {
+      "id": "file:src/types/api.ts",
+      "label": "src/types/api.ts",
+      "type": "file",
+      "layer": "types-config",
+      "description": "TypeScript interfaces for API responses: match, player, competition, and standing types"
+    },
+    {
+      "id": "file:src/types/config.ts",
+      "label": "src/types/config.ts",
+      "type": "file",
+      "layer": "types-config",
+      "description": "Application configuration constants and APIConfig interface"
+    },
+    {
+      "id": "file:src/index.css",
+      "label": "src/index.css",
+      "type": "file",
+      "layer": "infrastructure",
+      "description": "Global styles with Tailwind CSS v4 theme and dark mode defaults"
+    },
+    {
+      "id": "config:package.json",
+      "label": "package.json",
+      "type": "config",
+      "layer": "infrastructure",
+      "description": "NPM project manifest with dependencies, scripts, and project metadata"
+    },
+    {
+      "id": "config:tsconfig.json",
+      "label": "tsconfig.json",
+      "type": "config",
+      "layer": "infrastructure",
+      "description": "TypeScript configuration with strict mode, ESNext target, and Bundler module resolution"
+    },
+    {
+      "id": "config:tsconfig.node.json",
+      "label": "tsconfig.node.json",
+      "type": "config",
+      "layer": "infrastructure",
+      "description": "TypeScript configuration for Node-side files (vite.config.ts)"
+    },
+    {
+      "id": "config:vite.config.ts",
+      "label": "vite.config.ts",
+      "type": "config",
+      "layer": "infrastructure",
+      "description": "Vite build configuration with React and Tailwind CSS v4 plugins"
+    },
+    {
+      "id": "config:.gitignore",
+      "label": ".gitignore",
+      "type": "config",
+      "layer": "infrastructure",
+      "description": "Git ignore rules for logs, node_modules, dist, and editor files"
+    },
+    {
+      "id": "pipeline:.github/workflows/deploy.yml",
+      "label": "deploy.yml",
+      "type": "pipeline",
+      "layer": "infrastructure",
+      "description": "GitHub Actions workflow for building and deploying to GitHub Pages"
+    },
+    {
+      "id": "document:README.md",
+      "label": "README.md",
+      "type": "document",
+      "layer": "documentation",
+      "description": "Project readme with architecture overview, quick start, and attribution"
+    },
+    {
+      "id": "document:llms.txt",
+      "label": "llms.txt",
+      "type": "document",
+      "layer": "documentation",
+      "description": "LLM context document with architectural decisions and contribution guidelines"
+    },
+    {
+      "id": "module:src",
+      "label": "src/",
+      "type": "module",
+      "layer": "infrastructure",
+      "description": "Root source code module containing all application code"
+    },
+    {
+      "id": "module:src/pages",
+      "label": "src/pages/",
+      "type": "module",
+      "layer": "pages",
+      "description": "Page-level components module"
+    },
+    {
+      "id": "module:src/components",
+      "label": "src/components/",
+      "type": "module",
+      "layer": "components",
+      "description": "Reusable UI components module"
+    },
+    {
+      "id": "module:src/hooks",
+      "label": "src/hooks/",
+      "type": "module",
+      "layer": "data-services",
+      "description": "Custom React hooks module"
+    },
+    {
+      "id": "module:src/services",
+      "label": "src/services/",
+      "type": "module",
+      "layer": "data-services",
+      "description": "API and external service integration module"
+    },
+    {
+      "id": "module:src/types",
+      "label": "src/types/",
+      "type": "module",
+      "layer": "types-config",
+      "description": "TypeScript type definitions module"
+    },
+    {
+      "id": "module:src/utils",
+      "label": "src/utils/",
+      "type": "module",
+      "layer": "data-services",
+      "description": "Utility functions and data processors module"
+    },
+    {
+      "id": "function:src/App.tsx:App",
+      "label": "App",
+      "type": "function",
+      "layer": "entry-routing",
+      "description": "Root React component that renders RouterProvider with configured routes"
+    },
+    {
+      "id": "function:src/pages/Home.tsx:Home",
+      "label": "Home",
+      "type": "function",
+      "layer": "pages",
+      "description": "Home page component with match ID search input and feature cards"
+    },
+    {
+      "id": "function:src/pages/Home.tsx:handleSubmit",
+      "label": "handleSubmit",
+      "type": "function",
+      "layer": "pages",
+      "description": "Form submit handler that navigates to /match/:matchId"
+    },
+    {
+      "id": "function:src/pages/MatchPage.tsx:MatchPage",
+      "label": "MatchPage",
+      "type": "function",
+      "layer": "pages",
+      "description": "Match detail page component that fetches data and renders match view"
+    },
+    {
+      "id": "function:src/pages/MatchPage.tsx:handleSearch",
+      "label": "handleSearch",
+      "type": "function",
+      "layer": "pages",
+      "description": "Search form handler that navigates to new match ID route"
+    },
+    {
+      "id": "function:src/pages/NotFound.tsx:NotFound",
+      "label": "NotFound",
+      "type": "function",
+      "layer": "pages",
+      "description": "404 error page component with link returning to home"
+    },
+    {
+      "id": "function:src/components/MatchHeader.tsx:MatchHeader",
+      "label": "MatchHeader",
+      "type": "function",
+      "layer": "components",
+      "description": "Displays match scoreline, competition name, date, time, and referee"
+    },
+    {
+      "id": "function:src/components/PlayerCard.tsx:cn",
+      "label": "cn",
+      "type": "function",
+      "layer": "components",
+      "description": "Utility combining clsx and tailwind-merge for conditional class names"
+    },
+    {
+      "id": "function:src/components/PlayerCard.tsx:PlayerCard",
+      "label": "PlayerCard",
+      "type": "function",
+      "layer": "components",
+      "description": "Player statistics card with stats grid, captain badge, and form indicator"
+    },
+    {
+      "id": "function:src/components/PlayerCard.tsx:StatItem",
+      "label": "StatItem",
+      "type": "function",
+      "layer": "components",
+      "description": "Individual stat display item with icon, value, label, and color variants"
+    },
+    {
+      "id": "function:src/components/StandingsTable.tsx:StandingsTable",
+      "label": "StandingsTable",
+      "type": "function",
+      "layer": "components",
+      "description": "Renders sorted standings table with team positions and match highlights"
+    },
+    {
+      "id": "function:src/hooks/useMatchData.ts:useMatchData",
+      "label": "useMatchData",
+      "type": "function",
+      "layer": "data-services",
+      "description": "Custom hook returning loading, error, data state and fetchData callback"
+    },
+    {
+      "id": "function:src/hooks/useMatchData.ts:fetchData",
+      "label": "fetchData",
+      "type": "function",
+      "layer": "data-services",
+      "description": "Async function orchestrating API calls and data processing for a match"
+    },
+    {
+      "id": "function:src/services/api.ts:checkRateLimit",
+      "label": "checkRateLimit",
+      "type": "function",
+      "layer": "data-services",
+      "description": "Token-bucket rate limiter enforcing global and per-endpoint call limits"
+    },
+    {
+      "id": "function:src/services/api.ts:fetchAPIData",
+      "label": "fetchAPIData",
+      "type": "function",
+      "layer": "data-services",
+      "description": "Generic typed API fetcher with rate limiting, error handling, and response validation"
+    },
+    {
+      "id": "function:src/services/api.ts:getMatchDetails",
+      "label": "getMatchDetails",
+      "type": "function",
+      "layer": "data-services",
+      "description": "Fetches match details by match ID from the SPL API"
+    },
+    {
+      "id": "function:src/services/api.ts:getGroupDetails",
+      "label": "getGroupDetails",
+      "type": "function",
+      "layer": "data-services",
+      "description": "Fetches group/standings details for a competition category group"
+    },
+    {
+      "id": "function:src/services/api.ts:getTeamData",
+      "label": "getTeamData",
+      "type": "function",
+      "layer": "data-services",
+      "description": "Fetches team data by team ID"
+    },
+    {
+      "id": "function:src/services/api.ts:getPlayerData",
+      "label": "getPlayerData",
+      "type": "function",
+      "layer": "data-services",
+      "description": "Fetches player data including match history by player ID"
+    },
+    {
+      "id": "function:src/services/api.ts:getCompetitions",
+      "label": "getCompetitions",
+      "type": "function",
+      "layer": "data-services",
+      "description": "Fetches list of available competitions"
+    },
+    {
+      "id": "function:src/services/api.ts:getCategories",
+      "label": "getCategories",
+      "type": "function",
+      "layer": "data-services",
+      "description": "Fetches categories for a given competition"
+    },
+    {
+      "id": "function:src/services/api.ts:getMatches",
+      "label": "getMatches",
+      "type": "function",
+      "layer": "data-services",
+      "description": "Fetches match list with optional filter parameters"
+    },
+    {
+      "id": "function:src/services/api.ts:getScore",
+      "label": "getScore",
+      "type": "function",
+      "layer": "data-services",
+      "description": "Fetches score data for competitions and categories"
+    },
+    {
+      "id": "function:src/services/api.ts:getSeasons",
+      "label": "getSeasons",
+      "type": "function",
+      "layer": "data-services",
+      "description": "Fetches seasons for a given competition"
+    },
+    {
+      "id": "function:src/utils/dataProcessors.ts:processPlayerMatchHistory",
+      "label": "processPlayerMatchHistory",
+      "type": "function",
+      "layer": "data-services",
+      "description": "Processes raw player match history into aggregated season stats and past match details"
+    },
+    {
+      "id": "class:src/types/api.ts:MatchDetails",
+      "label": "MatchDetails",
+      "type": "class",
+      "layer": "types-config",
+      "description": "Interface for complete match data including teams, scores, categories, and lineups"
+    },
+    {
+      "id": "class:src/types/api.ts:Competition",
+      "label": "Competition",
+      "type": "class",
+      "layer": "types-config",
+      "description": "Interface for competition data with ID, name, and season info"
+    },
+    {
+      "id": "class:src/types/api.ts:Category",
+      "label": "Category",
+      "type": "class",
+      "layer": "types-config",
+      "description": "Interface for category data within a competition"
+    },
+    {
+      "id": "class:src/types/api.ts:Season",
+      "label": "Season",
+      "type": "class",
+      "layer": "types-config",
+      "description": "Interface for season data with ID and name"
+    },
+    {
+      "id": "class:src/types/api.ts:PlayerLineupInfo",
+      "label": "PlayerLineupInfo",
+      "type": "class",
+      "layer": "types-config",
+      "description": "Interface for lineup entry with player ID, name, shirt number, and team"
+    },
+    {
+      "id": "class:src/types/api.ts:GroupDetails",
+      "label": "GroupDetails",
+      "type": "class",
+      "layer": "types-config",
+      "description": "Interface for group/standings data with teams array and match list"
+    },
+    {
+      "id": "class:src/types/api.ts:StandingTeam",
+      "label": "StandingTeam",
+      "type": "class",
+      "layer": "types-config",
+      "description": "Interface for team standing entry with record, goals, and points"
+    },
+    {
+      "id": "class:src/types/api.ts:MatchSummary",
+      "label": "MatchSummary",
+      "type": "class",
+      "layer": "types-config",
+      "description": "Interface for summary match data in group context"
+    },
+    {
+      "id": "class:src/types/api.ts:DiscoveryMatch",
+      "label": "DiscoveryMatch",
+      "type": "class",
+      "layer": "types-config",
+      "description": "Interface for match discovery/search results"
+    },
+    {
+      "id": "class:src/types/api.ts:ScoreEntry",
+      "label": "ScoreEntry",
+      "type": "class",
+      "layer": "types-config",
+      "description": "Interface for score entry data"
+    },
+    {
+      "id": "class:src/types/api.ts:GetMatchesParams",
+      "label": "GetMatchesParams",
+      "type": "class",
+      "layer": "types-config",
+      "description": "Interface for match filtering parameters"
+    },
+    {
+      "id": "class:src/types/api.ts:PlayerStats",
+      "label": "PlayerStats",
+      "type": "class",
+      "layer": "types-config",
+      "description": "Interface for processed player statistics displayed in UI"
+    },
+    {
+      "id": "class:src/types/config.ts:APIConfig",
+      "label": "APIConfig",
+      "type": "class",
+      "layer": "types-config",
+      "description": "Interface defining the shape of API configuration constants"
+    },
+    {
+      "id": "class:src/types/config.ts:APP_CONFIG",
+      "label": "APP_CONFIG",
+      "type": "class",
+      "layer": "types-config",
+      "description": "Runtime configuration object with API URL, rate limits, and year settings"
+    }
+  ],
+  "edges": [
+    { "source": "file:src/main.tsx", "target": "file:src/App.tsx", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/main.tsx", "target": "file:src/index.css", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/App.tsx", "target": "file:src/routes.tsx", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/routes.tsx", "target": "file:src/pages/Home.tsx", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/routes.tsx", "target": "file:src/pages/MatchPage.tsx", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/routes.tsx", "target": "file:src/pages/NotFound.tsx", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/pages/MatchPage.tsx", "target": "file:src/hooks/useMatchData.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/pages/MatchPage.tsx", "target": "file:src/components/MatchHeader.tsx", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/pages/MatchPage.tsx", "target": "file:src/components/PlayerCard.tsx", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/pages/MatchPage.tsx", "target": "file:src/components/StandingsTable.tsx", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/components/MatchHeader.tsx", "target": "file:src/types/api.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/components/PlayerCard.tsx", "target": "file:src/types/api.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/components/StandingsTable.tsx", "target": "file:src/types/api.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/hooks/useMatchData.ts", "target": "file:src/services/api.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/hooks/useMatchData.ts", "target": "file:src/utils/dataProcessors.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/hooks/useMatchData.ts", "target": "file:src/types/config.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/hooks/useMatchData.ts", "target": "file:src/types/api.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/services/api.ts", "target": "file:src/types/config.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/services/api.ts", "target": "file:src/types/api.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/utils/dataProcessors.ts", "target": "file:src/types/config.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/utils/dataProcessors.ts", "target": "file:src/types/api.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/App.tsx", "target": "function:src/App.tsx:App", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/pages/Home.tsx", "target": "function:src/pages/Home.tsx:Home", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/pages/Home.tsx", "target": "function:src/pages/Home.tsx:handleSubmit", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/pages/MatchPage.tsx", "target": "function:src/pages/MatchPage.tsx:MatchPage", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/pages/MatchPage.tsx", "target": "function:src/pages/MatchPage.tsx:handleSearch", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/pages/NotFound.tsx", "target": "function:src/pages/NotFound.tsx:NotFound", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/components/MatchHeader.tsx", "target": "function:src/components/MatchHeader.tsx:MatchHeader", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/components/PlayerCard.tsx", "target": "function:src/components/PlayerCard.tsx:cn", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/components/PlayerCard.tsx", "target": "function:src/components/PlayerCard.tsx:PlayerCard", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/components/PlayerCard.tsx", "target": "function:src/components/PlayerCard.tsx:StatItem", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/components/StandingsTable.tsx", "target": "function:src/components/StandingsTable.tsx:StandingsTable", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/hooks/useMatchData.ts", "target": "function:src/hooks/useMatchData.ts:useMatchData", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/hooks/useMatchData.ts", "target": "function:src/hooks/useMatchData.ts:fetchData", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/services/api.ts", "target": "function:src/services/api.ts:checkRateLimit", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/services/api.ts", "target": "function:src/services/api.ts:fetchAPIData", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/services/api.ts", "target": "function:src/services/api.ts:getMatchDetails", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/services/api.ts", "target": "function:src/services/api.ts:getGroupDetails", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/services/api.ts", "target": "function:src/services/api.ts:getTeamData", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/services/api.ts", "target": "function:src/services/api.ts:getPlayerData", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/services/api.ts", "target": "function:src/services/api.ts:getCompetitions", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/services/api.ts", "target": "function:src/services/api.ts:getCategories", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/services/api.ts", "target": "function:src/services/api.ts:getMatches", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/services/api.ts", "target": "function:src/services/api.ts:getScore", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/services/api.ts", "target": "function:src/services/api.ts:getSeasons", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/utils/dataProcessors.ts", "target": "function:src/utils/dataProcessors.ts:processPlayerMatchHistory", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/types/api.ts", "target": "class:src/types/api.ts:MatchDetails", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/types/api.ts", "target": "class:src/types/api.ts:Competition", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/types/api.ts", "target": "class:src/types/api.ts:Category", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/types/api.ts", "target": "class:src/types/api.ts:Season", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/types/api.ts", "target": "class:src/types/api.ts:PlayerLineupInfo", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/types/api.ts", "target": "class:src/types/api.ts:GroupDetails", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/types/api.ts", "target": "class:src/types/api.ts:StandingTeam", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/types/api.ts", "target": "class:src/types/api.ts:MatchSummary", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/types/api.ts", "target": "class:src/types/api.ts:DiscoveryMatch", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/types/api.ts", "target": "class:src/types/api.ts:ScoreEntry", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/types/api.ts", "target": "class:src/types/api.ts:GetMatchesParams", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/types/api.ts", "target": "class:src/types/api.ts:PlayerStats", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/types/config.ts", "target": "class:src/types/config.ts:APIConfig", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/types/config.ts", "target": "class:src/types/config.ts:APP_CONFIG", "type": "contains", "weight": 1.0 },
+    { "source": "module:src", "target": "file:src/main.tsx", "type": "contains", "weight": 1.0 },
+    { "source": "module:src", "target": "file:src/App.tsx", "type": "contains", "weight": 1.0 },
+    { "source": "module:src", "target": "file:src/routes.tsx", "type": "contains", "weight": 1.0 },
+    { "source": "module:src", "target": "file:src/index.css", "type": "contains", "weight": 1.0 },
+    { "source": "module:src", "target": "file:src/vite-env.d.ts", "type": "contains", "weight": 1.0 },
+    { "source": "module:src/pages", "target": "file:src/pages/Home.tsx", "type": "contains", "weight": 1.0 },
+    { "source": "module:src/pages", "target": "file:src/pages/MatchPage.tsx", "type": "contains", "weight": 1.0 },
+    { "source": "module:src/pages", "target": "file:src/pages/NotFound.tsx", "type": "contains", "weight": 1.0 },
+    { "source": "module:src/components", "target": "file:src/components/MatchHeader.tsx", "type": "contains", "weight": 1.0 },
+    { "source": "module:src/components", "target": "file:src/components/PlayerCard.tsx", "type": "contains", "weight": 1.0 },
+    { "source": "module:src/components", "target": "file:src/components/StandingsTable.tsx", "type": "contains", "weight": 1.0 },
+    { "source": "module:src/hooks", "target": "file:src/hooks/useMatchData.ts", "type": "contains", "weight": 1.0 },
+    { "source": "module:src/services", "target": "file:src/services/api.ts", "type": "contains", "weight": 1.0 },
+    { "source": "module:src/types", "target": "file:src/types/api.ts", "type": "contains", "weight": 1.0 },
+    { "source": "module:src/types", "target": "file:src/types/config.ts", "type": "contains", "weight": 1.0 },
+    { "source": "module:src/utils", "target": "file:src/utils/dataProcessors.ts", "type": "contains", "weight": 1.0 },
+    { "source": "function:src/hooks/useMatchData.ts:fetchData", "target": "function:src/services/api.ts:getMatchDetails", "type": "calls", "weight": 0.8 },
+    { "source": "function:src/hooks/useMatchData.ts:fetchData", "target": "function:src/services/api.ts:getGroupDetails", "type": "calls", "weight": 0.8 },
+    { "source": "function:src/hooks/useMatchData.ts:fetchData", "target": "function:src/services/api.ts:getTeamData", "type": "calls", "weight": 0.8 },
+    { "source": "function:src/hooks/useMatchData.ts:fetchData", "target": "function:src/services/api.ts:getPlayerData", "type": "calls", "weight": 0.8 },
+    { "source": "function:src/hooks/useMatchData.ts:fetchData", "target": "function:src/utils/dataProcessors.ts:processPlayerMatchHistory", "type": "calls", "weight": 0.8 },
+    { "source": "function:src/services/api.ts:fetchAPIData", "target": "function:src/services/api.ts:checkRateLimit", "type": "calls", "weight": 0.8 },
+    { "source": "function:src/services/api.ts:getMatchDetails", "target": "function:src/services/api.ts:fetchAPIData", "type": "calls", "weight": 0.8 },
+    { "source": "function:src/services/api.ts:getGroupDetails", "target": "function:src/services/api.ts:fetchAPIData", "type": "calls", "weight": 0.8 },
+    { "source": "function:src/services/api.ts:getTeamData", "target": "function:src/services/api.ts:fetchAPIData", "type": "calls", "weight": 0.8 },
+    { "source": "function:src/services/api.ts:getPlayerData", "target": "function:src/services/api.ts:fetchAPIData", "type": "calls", "weight": 0.8 },
+    { "source": "function:src/services/api.ts:getCompetitions", "target": "function:src/services/api.ts:fetchAPIData", "type": "calls", "weight": 0.8 },
+    { "source": "function:src/services/api.ts:getCategories", "target": "function:src/services/api.ts:fetchAPIData", "type": "calls", "weight": 0.8 },
+    { "source": "function:src/services/api.ts:getMatches", "target": "function:src/services/api.ts:fetchAPIData", "type": "calls", "weight": 0.8 },
+    { "source": "function:src/services/api.ts:getScore", "target": "function:src/services/api.ts:fetchAPIData", "type": "calls", "weight": 0.8 },
+    { "source": "function:src/services/api.ts:getSeasons", "target": "function:src/services/api.ts:fetchAPIData", "type": "calls", "weight": 0.8 },
+    { "source": "file:src/routes.tsx", "target": "file:src/pages/Home.tsx", "type": "routes", "weight": 0.5 },
+    { "source": "file:src/routes.tsx", "target": "file:src/pages/MatchPage.tsx", "type": "routes", "weight": 0.5 },
+    { "source": "file:src/routes.tsx", "target": "file:src/pages/NotFound.tsx", "type": "routes", "weight": 0.5 },
+    { "source": "config:vite.config.ts", "target": "file:src/main.tsx", "type": "configures", "weight": 0.6 },
+    { "source": "config:vite.config.ts", "target": "file:index.html", "type": "configures", "weight": 0.6 },
+    { "source": "config:tsconfig.json", "target": "module:src", "type": "configures", "weight": 0.6 },
+    { "source": "config:tsconfig.node.json", "target": "config:vite.config.ts", "type": "configures", "weight": 0.6 },
+    { "source": "pipeline:.github/workflows/deploy.yml", "target": "config:package.json", "type": "configures", "weight": 0.6 },
+    { "source": "pipeline:.github/workflows/deploy.yml", "target": "file:index.html", "type": "configures", "weight": 0.6 }
+  ],
+  "tour": [
+    {
+      "title": "Application Entry & Routing",
+      "nodes": [
+        "file:src/main.tsx",
+        "file:src/App.tsx",
+        "file:src/routes.tsx"
+      ]
+    },
+    {
+      "title": "Page Components",
+      "nodes": [
+        "file:src/pages/Home.tsx",
+        "file:src/pages/MatchPage.tsx",
+        "file:src/pages/NotFound.tsx"
+      ]
+    },
+    {
+      "title": "Reusable UI Components",
+      "nodes": [
+        "file:src/components/MatchHeader.tsx",
+        "file:src/components/PlayerCard.tsx",
+        "file:src/components/StandingsTable.tsx"
+      ]
+    },
+    {
+      "title": "Data Layer",
+      "nodes": [
+        "file:src/types/api.ts",
+        "file:src/services/api.ts",
+        "file:src/hooks/useMatchData.ts",
+        "file:src/utils/dataProcessors.ts"
+      ]
+    },
+    {
+      "title": "Configuration & Infrastructure",
+      "nodes": [
+        "config:package.json",
+        "config:tsconfig.json",
+        "config:tsconfig.node.json",
+        "config:vite.config.ts",
+        "config:.gitignore",
+        "pipeline:.github/workflows/deploy.yml",
+        "file:src/index.css",
+        "document:README.md",
+        "document:llms.txt"
+      ]
+    }
+  ]
+}

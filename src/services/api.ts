@@ -1,5 +1,5 @@
 import { APP_CONFIG } from '../types/config';
-import { Category, Competition, DiscoveryMatch, GetMatchesParams, ScoreEntry, Season } from '../types/api';
+import type { Category, Competition, DiscoveryMatch, GetMatchesParams, GroupDetails, MatchDetails, PlayerAPIResponse, ScoreEntry, Season, TeamBasic } from '../types/api';
 
 // Simple rate limiter implementation
 const lastCallTimes: number[] = [];
@@ -34,7 +34,9 @@ function checkRateLimit(endpoint?: string): boolean {
     return true;
 }
 
-export async function fetchAPIData<T>(endpoint: string, params: Record<string, any> = {}): Promise<T> {
+const FETCH_TIMEOUT = 10000
+
+export async function fetchAPIData<T>(endpoint: string, params: Record<string, string | number | boolean | undefined> = {}): Promise<T> {
     if (!checkRateLimit(endpoint)) {
         throw new Error(`Rate limit exceeded for ${endpoint}. Please try again in a moment.`);
     }
@@ -43,10 +45,18 @@ export async function fetchAPIData<T>(endpoint: string, params: Record<string, a
         await new Promise(resolve => setTimeout(resolve, APP_CONFIG.RATE_LIMIT.THROTTLE_DELAY));
     }
 
-    const queryParams = new URLSearchParams(params).toString();
+    const cleanParams: Record<string, string> = {}
+    for (const [k, v] of Object.entries(params)) {
+        if (v !== undefined && v !== '') cleanParams[k] = String(v)
+    }
+    const queryParams = new URLSearchParams(cleanParams).toString();
     const url = `${APP_CONFIG.API_BASE_URL}${endpoint}?${queryParams}`;
 
-    const response = await fetch(url, { headers: APP_CONFIG.API_HEADERS });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
+
+    const response = await fetch(url, { headers: APP_CONFIG.API_HEADERS, signal: controller.signal });
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
         let errorText = `API call to ${endpoint} failed. Status: ${response.status}`;
@@ -66,14 +76,30 @@ export async function fetchAPIData<T>(endpoint: string, params: Record<string, a
     return data;
 }
 
-export async function getMatchDetails(matchId: string) {
-    const data = await fetchAPIData<{ match: any }>("getMatch", { match_id: matchId });
+export async function batchFetch<T>(
+    items: string[],
+    fetchFn: (id: string) => Promise<T>,
+    concurrency = 5,
+): Promise<(T | undefined)[]> {
+    const results: (T | undefined)[] = []
+    for (let i = 0; i < items.length; i += concurrency) {
+        const batch = items.slice(i, i + concurrency)
+        const settled = await Promise.allSettled(batch.map(id => fetchFn(id)))
+        for (const r of settled) {
+            results.push(r.status === 'fulfilled' ? r.value : undefined)
+        }
+    }
+    return results
+}
+
+export async function getMatchDetails(matchId: string): Promise<MatchDetails> {
+    const data = await fetchAPIData<{ match: MatchDetails }>("getMatch", { match_id: matchId });
     if (!data.match) throw new Error(`Match data is invalid for match ID ${matchId}.`);
     return data.match;
 }
 
-export async function getGroupDetails(competitionId: string, categoryId: string, groupId: string) {
-    const data = await fetchAPIData<{ group: any }>("getGroup", {
+export async function getGroupDetails(competitionId: string, categoryId: string, groupId: string): Promise<GroupDetails | null> {
+    const data = await fetchAPIData<{ group: GroupDetails }>("getGroup", {
         competition_id: competitionId,
         category_id: categoryId,
         group_id: groupId,
@@ -82,14 +108,14 @@ export async function getGroupDetails(competitionId: string, categoryId: string,
     return data.group || null;
 }
 
-export async function getTeamData(teamId: string) {
+export async function getTeamData(teamId: string): Promise<TeamBasic | null> {
     if (!teamId) return null;
-    const data = await fetchAPIData<{ team: any }>("getTeam", { team_id: teamId });
+    const data = await fetchAPIData<{ team: TeamBasic }>("getTeam", { team_id: teamId });
     return data.team;
 }
 
-export async function getPlayerData(playerId: string) {
-    const data = await fetchAPIData<{ player: any }>("getPlayer", { player_id: playerId });
+export async function getPlayerData(playerId: string): Promise<PlayerAPIResponse> {
+    const data = await fetchAPIData<{ player: PlayerAPIResponse }>("getPlayer", { player_id: playerId });
     return data.player;
 }
 
@@ -106,12 +132,12 @@ export async function getCategories(competitionId: string): Promise<Category[]> 
 }
 
 export async function getMatches(params: GetMatchesParams = {}): Promise<DiscoveryMatch[]> {
-    const data = await fetchAPIData<{ matches?: DiscoveryMatch[] }>("getMatches", params);
+    const data = await fetchAPIData<{ matches?: DiscoveryMatch[] }>("getMatches", params as Record<string, string | number | boolean | undefined>);
     return data.matches || [];
 }
 
 export async function getScore(params: Pick<GetMatchesParams, 'competition_id' | 'category_id'> = {}): Promise<ScoreEntry[]> {
-    const data = await fetchAPIData<{ score?: ScoreEntry[] }>("getScore", params);
+    const data = await fetchAPIData<{ score?: ScoreEntry[] }>("getScore", params as Record<string, string | number | boolean | undefined>);
     return data.score || [];
 }
 

@@ -26,7 +26,7 @@ const variantStyles: Record<BadgeVariant, string> = {
 export function StatBadge({ label, value, icon, variant = 'default' }: StatBadgeProps) {
     return (
         <div className={cn(
-            'p-3 rounded-lg border flex flex-col items-center justify-center text-center',
+            'p-3 rounded-md border flex flex-col items-center justify-center text-center',
             variantStyles[variant],
         )}>
             {icon && <div className="mb-1 opacity-60 [&>svg]:w-4 [&>svg]:h-4">{icon}</div>}

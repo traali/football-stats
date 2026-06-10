@@ -1,12 +1,26 @@
 import { APP_CONFIG } from '../types/config';
-import { PlayerStats } from '../types/api';
+import type { PastMatchDetail, PlayerMatchEntry } from '../types/api';
+
+interface ProcessedStats {
+    gamesPlayedThisYear: number;
+    goalsThisYear: number;
+    warningsThisYear: number;
+    suspensionsThisYear: number;
+    goalsByTeamThisYear: Record<string, number>;
+    gamesByTeamThisYear: Record<string, number>;
+    goalsForThisSpecificTeamInSeason: number;
+    pastMatchesDetails: PastMatchDetail[];
+    gamesPlayedLastSeason: number;
+    goalsScoredLastSeason: number;
+    teamsThisYear: string;
+}
 
 export function processPlayerMatchHistory(
-    matches: any[],
+    matches: PlayerMatchEntry[],
     currentSeasonId: string,
     previousSeasonId: string,
     teamNameForContext: string
-): Omit<PlayerStats, 'name' | 'shirtNumber' | 'birthYear' | 'teamIdInMatch' | 'img_url' | 'clubCrest' | 'isCaptainInMatch' | 'position_fi' | 'height' | 'weight' | 'finland_raised'> {
+): ProcessedStats {
     const stats = {
         gamesPlayedThisYear: 0,
         goalsThisYear: 0,
@@ -15,7 +29,7 @@ export function processPlayerMatchHistory(
         goalsByTeamThisYear: {} as Record<string, number>,
         gamesByTeamThisYear: {} as Record<string, number>,
         goalsForThisSpecificTeamInSeason: 0,
-        pastMatchesDetails: [] as any[],
+        pastMatchesDetails: [] as PastMatchDetail[],
         gamesPlayedLastSeason: 0,
         goalsScoredLastSeason: 0,
     };
@@ -23,9 +37,9 @@ export function processPlayerMatchHistory(
     if (!matches) return { ...stats, teamsThisYear: "" };
 
     matches.forEach((match) => {
-        const goals = parseInt(match.player_goals) || 0;
-        const warnings = parseInt(match.player_warnings) || 0;
-        const suspensions = parseInt(match.player_suspensions) || 0;
+        const goals = parseInt(match.player_goals ?? "") || 0;
+        const warnings = parseInt(match.player_warnings ?? "") || 0;
+        const suspensions = parseInt(match.player_suspensions ?? "") || 0;
         const teamName = match.team_name || "Tuntematon joukkue";
 
         if (match.season_id === currentSeasonId) {
@@ -48,12 +62,12 @@ export function processPlayerMatchHistory(
 
                     if (match.team_A_name === teamNameForContext || match.team_A_id === match.team_id) {
                         opponentName = match.team_B_name || "Tuntematon";
-                        playerTeamScore = match.fs_A;
-                        opponentScore = match.fs_B;
+                        playerTeamScore = match.fs_A ?? "";
+                        opponentScore = match.fs_B ?? "";
                     } else {
                         opponentName = match.team_A_name || "Tuntematon";
-                        playerTeamScore = match.fs_B;
-                        opponentScore = match.fs_A;
+                        playerTeamScore = match.fs_B ?? "";
+                        opponentScore = match.fs_A ?? "";
                     }
 
                     if (match.winner_id === match.team_id) {
@@ -63,23 +77,24 @@ export function processPlayerMatchHistory(
                     }
 
                     stats.pastMatchesDetails.push({
-                        date: match.date,
+                        date: match.date ?? "",
                         opponentName,
                         playerTeamScore,
                         opponentScore,
                         resultIndicator,
-                        status: match.status,
+                        status: match.status ?? "",
                         playerTeamNameInPastMatch: teamName
                     });
                 }
             } else if (match.status === "Fixture") {
                 if (teamName === teamNameForContext) {
-                    let opponentName = (match.team_A_name === teamNameForContext) ? match.team_B_name : match.team_A_name;
+                    const isTeamA = match.team_A_name === teamNameForContext || match.team_A_id === match.team_id;
+                    let opponentName = isTeamA ? match.team_B_name : match.team_A_name;
                     stats.pastMatchesDetails.push({
-                        date: match.date,
+                        date: match.date ?? "",
                         opponentName: opponentName || "Tuntematon",
                         resultIndicator: 'fixture',
-                        status: match.status,
+                        status: match.status ?? "",
                         playerTeamNameInPastMatch: teamName
                     });
                 }
@@ -96,3 +111,5 @@ export function processPlayerMatchHistory(
 
     return { ...stats, teamsThisYear };
 }
+
+export type { ProcessedStats };

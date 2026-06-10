@@ -7,6 +7,7 @@ import { MatchHeader } from '../components/MatchHeader'
 import { PlayerCard } from '../components/PlayerCard'
 import { StandingsTable } from '../components/StandingsTable'
 import { Button } from '../components/Button'
+import { DualStatBar } from '../components/DualStatBar'
 import { MatchHeaderSkeleton, PlayerCardSkeleton, StandingsTableSkeleton } from '../components/Skeleton'
 
 export function MatchPage() {
@@ -29,8 +30,8 @@ export function MatchPage() {
         navigate(`/match/${trimmedMatchId}`)
     }
 
-    const teamAPlayers = data?.players.filter(p => p.teamIdInMatch === data.match.team_A_id) || []
-    const teamBPlayers = data?.players.filter(p => p.teamIdInMatch === data.match.team_B_id) || []
+    const teamAPlayers = data?.players?.filter(p => p.teamIdInMatch === data.match.team_A_id) ?? []
+    const teamBPlayers = data?.players?.filter(p => p.teamIdInMatch === data.match.team_B_id) ?? []
 
     const staggerContainer: Variants = {
         hidden: {},
@@ -107,7 +108,13 @@ export function MatchPage() {
                                 exit={{ opacity: 0 }}
                                 className="space-y-12"
                             >
-                                <MatchHeader match={data.match} group={data.group} />
+                                <MatchHeader match={data.match} group={data.group} teamA={data.teamA} teamB={data.teamB} />
+
+                                <div className="bg-surface-1 border border-border-hairline rounded-xl p-5 space-y-4">
+                                    <h4 className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Joukkuevertailu</h4>
+                                    <DualStatBar label="Maalit" valueA={Number(data.match.fs_A || 0)} valueB={Number(data.match.fs_B || 0)} />
+                                    <DualStatBar label="Pelaajat" valueA={teamAPlayers.length} valueB={teamBPlayers.length} />
+                                </div>
 
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
                                     <div className="lg:col-span-2 space-y-12">
@@ -162,7 +169,7 @@ export function MatchPage() {
                                 key="empty"
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
-                                className="bg-surface-1 border border-border-hairline rounded-lg p-8 text-center text-text-secondary"
+                                className="bg-surface-1 border border-border-hairline rounded-xl p-8 text-center text-text-secondary"
                             >
                                 Syötä ottelun ID avataksesi ottelusivun.
                             </motion.div>

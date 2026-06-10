@@ -1,3 +1,29 @@
+export interface PlayerMatchEntry {
+    player_goals?: string;
+    player_warnings?: string;
+    player_suspensions?: string;
+    team_name?: string;
+    team_id?: string;
+    team_A_name?: string;
+    team_A_id?: string;
+    team_B_name?: string;
+    fs_A?: string;
+    fs_B?: string;
+    winner_id?: string;
+    season_id?: string;
+    status?: string;
+    date?: string;
+}
+
+export interface PlayerAPIResponse {
+    birthyear: string;
+    firstname: string;
+    lastname: string;
+    img_url?: string;
+    matches: PlayerMatchEntry[];
+    [key: string]: unknown;
+}
+
 export interface MatchDetails {
     match_id: string;
     competition_id: string;
@@ -47,6 +73,9 @@ export interface PlayerLineupInfo {
     team_id: string;
     captain?: string;
     team_name?: string;
+    position_fi?: string;
+    height?: string;
+    weight?: string;
 }
 
 export interface GroupDetails {
@@ -117,6 +146,13 @@ export interface ScoreEntry {
     [key: string]: unknown;
 }
 
+export interface TeamBasic {
+    team_id: string;
+    team_name: string;
+    img_url?: string;
+    club_crest?: string;
+}
+
 export interface GetMatchesParams {
     competition_id?: string;
     category_id?: string;
@@ -128,12 +164,21 @@ export interface GetMatchesParams {
     offset?: number;
 }
 
+export interface PastMatchDetail {
+    date: string;
+    opponentName: string;
+    playerTeamScore?: string;
+    opponentScore?: string;
+    resultIndicator: 'win' | 'loss' | 'draw' | 'fixture';
+    status: string;
+    playerTeamNameInPastMatch: string;
+}
+
 export interface PlayerStats {
     name: string;
     shirtNumber: string;
     birthYear: string;
     img_url?: string;
-    clubCrest?: string;
     teamIdInMatch: string;
     teamsThisYear: string;
     gamesPlayedThisYear: number;
@@ -145,10 +190,9 @@ export interface PlayerStats {
     goalsByTeamThisYear: Record<string, number>;
     gamesByTeamThisYear: Record<string, number>;
     goalsForThisSpecificTeamInSeason: number;
-    pastMatchesDetails: any[];
+    pastMatchesDetails: PastMatchDetail[];
     isCaptainInMatch?: boolean;
     position_fi?: string;
     height?: string;
     weight?: string;
-    finland_raised?: boolean | string;
 }

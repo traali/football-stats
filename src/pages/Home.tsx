@@ -62,7 +62,7 @@ export function Home() {
                         { icon: Activity, title: 'Pelaaja-analyysi', desc: 'Yksityiskohtaiset suoritukset, kortit ja maalit.' },
                         { icon: Trophy, title: 'Sarjataulukot', desc: 'Nykyinen ottelunäkymä on siirretty omalle reitilleen.' },
                     ].map((feature, i) => (
-                        <div key={i} className="bg-surface-1 border border-border-hairline rounded-lg p-8 flex flex-col items-center text-center space-y-4">
+                        <div key={i} className="bg-surface-1 border border-border-hairline rounded-xl p-8 flex flex-col items-center text-center space-y-4">
                             <div className="p-4 bg-surface-2 rounded-lg border border-border-hairline">
                                 <feature.icon className="w-8 h-8 text-accent" />
                             </div>

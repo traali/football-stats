@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { Home, Search, BarChart3, MoreHorizontal } from 'lucide-react'
+import { Home, Search } from 'lucide-react'
 import { twMerge } from 'tailwind-merge'
 import { clsx, type ClassValue } from 'clsx'
 
@@ -10,8 +10,6 @@ function cn(...inputs: ClassValue[]) {
 const navItems = [
     { to: '/', label: 'Etusivu', icon: Home },
     { to: '/match/3760372', label: 'Ottelu', icon: Search },
-    { to: '#', label: 'Sarjat', icon: BarChart3 },
-    { to: '#', label: 'Lisää', icon: MoreHorizontal },
 ]
 
 export function BottomNav() {

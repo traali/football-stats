@@ -1,8 +1,9 @@
-import { useState, useCallback } from 'react';
-import { getMatchDetails, getGroupDetails, getPlayerData } from '../services/api';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { getMatchDetails, getGroupDetails, getPlayerData, getTeamData, batchFetch } from '../services/api';
 import { processPlayerMatchHistory } from '../utils/dataProcessors';
 import { APP_CONFIG } from '../types/config';
-import { MatchDetails, GroupDetails, PlayerStats } from '../types/api';
+import { PlayerLineupInfo } from '../types/api';
+import type { MatchDetails, GroupDetails, PlayerStats, TeamBasic } from '../types/api';
 
 export function useMatchData() {
     const [loading, setLoading] = useState(false);
@@ -11,27 +12,52 @@ export function useMatchData() {
         match: MatchDetails;
         group: GroupDetails | null;
         players: PlayerStats[];
+        teamA?: TeamBasic | null;
+        teamB?: TeamBasic | null;
     } | null>(null);
+    const abortRef = useRef<AbortController | null>(null);
+    const mountedRef = useRef(true);
+
+    useEffect(() => {
+        return () => { mountedRef.current = false; };
+    }, []);
 
     const fetchData = useCallback(async (matchId: string) => {
+        abortRef.current?.abort();
+        const controller = new AbortController();
+        abortRef.current = controller;
+
+        setData(null);
         setLoading(true);
         setError(null);
         try {
             const match = await getMatchDetails(matchId);
+            if (controller.signal.aborted || !mountedRef.current) return;
 
-            const group = await getGroupDetails(match.competition_id, match.category_id, match.group_id);
+            const [group, teamA, teamB] = await Promise.all([
+                getGroupDetails(match.competition_id, match.category_id, match.group_id),
+                getTeamData(match.team_A_id),
+                getTeamData(match.team_B_id),
+            ]);
+            if (controller.signal.aborted || !mountedRef.current) return;
 
-            const playersInMatch = match.lineups || [];
-            const playerPromises = playersInMatch.map(async (lineupInfo: any) => {
-                const playerData = await getPlayerData(lineupInfo.player_id);
+            const playersInMatch: PlayerLineupInfo[] = match.lineups || [];
+            const playerIds = playersInMatch.map(p => p.player_id);
+            const playerDataList = await batchFetch(playerIds, getPlayerData, 5);
+            if (controller.signal.aborted || !mountedRef.current) return;
+
+            const processedPlayers: PlayerStats[] = []
+            for (let idx = 0; idx < playersInMatch.length; idx++) {
+                const lineupInfo = playersInMatch[idx];
+                const playerData = playerDataList[idx];
+                if (!playerData) continue;
                 const processedHistory = processPlayerMatchHistory(
                     playerData.matches,
                     APP_CONFIG.CURRENT_YEAR,
                     APP_CONFIG.PREVIOUS_YEAR,
                     lineupInfo.team_name || (lineupInfo.team_id === match.team_A_id ? match.team_A_name : match.team_B_name)
                 );
-
-                return {
+                processedPlayers.push({
                     name: lineupInfo.player_name,
                     shirtNumber: lineupInfo.shirt_number,
                     birthYear: playerData.birthyear,
@@ -42,18 +68,12 @@ export function useMatchData() {
                     position_fi: lineupInfo.position_fi,
                     height: lineupInfo.height,
                     weight: lineupInfo.weight,
-                } as PlayerStats;
-            });
+                });
+            }
 
-            const processedPlayers = await Promise.all(playerPromises);
-
-            setData({
-                match,
-                group,
-                players: processedPlayers
-            });
-        } catch (err: any) {
-            setError(err.message || 'Virhe ladattaessa tietoja');
+            setData({ match, group, players: processedPlayers, teamA, teamB });
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'Virhe ladattaessa tietoja');
             setData(null);
         } finally {
             setLoading(false);
