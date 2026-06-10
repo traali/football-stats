@@ -1,0 +1,6 @@
+[91m[1mError: [0m{
+  "name": "UnknownError",
+  "data": {
+    "message": "Unexpected server error. Check server logs for details."
+  }
+}
