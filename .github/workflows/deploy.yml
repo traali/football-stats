@@ -3,7 +3,7 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches:
-      - feature/modernization # Adjust if you want to deploy from main later
+      - main
 
 permissions:
   contents: read
