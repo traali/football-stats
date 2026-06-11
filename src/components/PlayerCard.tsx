@@ -81,25 +81,31 @@ export function PlayerCard({ stats }: { stats: PlayerStats }) {
                 </div>
             )}
 
-            {/* Form / Last Matches */}
+            {/* Last Matches */}
             {hasHistory && (
                 <div className="space-y-3 pt-4 border-t border-border-hairline">
                     <h4 className="text-[10px] font-bold text-text-muted uppercase tracking-widest flex items-center">
                         <Activity className="w-3 h-3 mr-2" /> Viimeisimmät ottelut
                     </h4>
-                    <div className="flex gap-2">
-                        {stats.pastMatchesDetails.slice(0, 8).map((match, i) => (
-                            <div
-                                key={i}
-                                aria-hidden="true"
-                                title={`${match.date}: vs ${match.opponentName} (${match.playerTeamScore}-${match.opponentScore})`}
-                                className={cn(
-                                    "w-2.5 h-2.5 rounded-full shrink-0 min-w-[10px] min-h-[10px]",
-                                    match.resultIndicator === 'win' ? "bg-semantic-green" :
-                                        match.resultIndicator === 'loss' ? "bg-semantic-red" :
-                                            match.resultIndicator === 'fixture' ? "bg-semantic-gray" : "bg-semantic-amber"
+                    <div className="space-y-1.5">
+                        {stats.pastMatchesDetails.slice(0, 8).map((m, i) => (
+                            <div key={i} className="flex items-center gap-2 text-sm">
+                                <span className={cn(
+                                    "w-2 h-2 rounded-full shrink-0",
+                                    m.resultIndicator === 'win' ? "bg-semantic-green" :
+                                        m.resultIndicator === 'loss' ? "bg-semantic-red" :
+                                            m.resultIndicator === 'fixture' ? "bg-semantic-gray" : "bg-semantic-amber"
+                                )} />
+                                <span className="text-text-muted text-xs shrink-0">{m.date?.slice(5)}</span>
+                                <span className="text-text-primary font-medium truncate">{m.playerTeamNameInPastMatch}</span>
+                                <span className="text-text-secondary shrink-0">vs</span>
+                                <span className="text-text-secondary truncate">{m.opponentName}</span>
+                                {m.playerTeamScore !== undefined && (
+                                    <span className="text-text-primary font-mono text-xs shrink-0">
+                                        {m.playerTeamScore}-{m.opponentScore}
+                                    </span>
                                 )}
-                            />
+                            </div>
                         ))}
                     </div>
                 </div>
