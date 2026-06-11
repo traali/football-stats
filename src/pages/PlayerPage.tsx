@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, User, TrendingDown, Calendar } from 'lucide-react'
+import { cn } from '../utils/cn'
 import { getPlayerData } from '../services/api'
 import type { PlayerAPIResponse } from '../types/api'
 
@@ -159,6 +160,10 @@ export function PlayerPage() {
                             const oppName = isA ? m.team_B_name : m.team_A_name
                             const myScore = isA ? m.fs_A : m.fs_B
                             const oppScore = isA ? m.fs_B : m.fs_A
+                            const wld = m.winner_id && m.winner_id !== '0' && m.winner_id !== '-'
+                                ? (m.winner_id === m.team_id ? 'V' : 'H')
+                                : (m.fs_A && m.fs_B ? 'T' : null)
+                            const wldColor = wld === 'V' ? 'text-semantic-green' : wld === 'H' ? 'text-semantic-red' : 'text-accent'
                             return (
                                 <div
                                     key={m.match_id}
@@ -169,6 +174,7 @@ export function PlayerPage() {
                                     <span className="text-text-primary truncate text-right flex-1">{oppName}</span>
                                     <span className="font-mono font-bold mx-2 shrink-0 flex items-center gap-1">
                                         {m.fs_A ? `${myScore}–${oppScore}` : '–'}
+                                        {wld && <span className={cn('text-xs font-bold', wldColor)}>{wld}</span>}
                                         {Number(m.player_goals || 0) > 0 && <span className="text-accent text-xs">MAALI</span>}
                                     </span>
                                 </div>
