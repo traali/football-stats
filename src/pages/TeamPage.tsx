@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Heart, Users, Calendar, Shield } from 'lucide-react'
+import { ArrowLeft, Heart, Users, Calendar, Shield, CalendarDays } from 'lucide-react'
 import { cn } from '../utils/cn'
 import { getTeamProfile, getTeamMatches } from '../services/api'
 import { useFavorites } from '../hooks/useFavorites'
@@ -51,7 +51,26 @@ export function TeamPage() {
                                     <img src={team.crest} alt="" className="w-10 h-10 rounded-full object-contain bg-surface-2" />
                                 )}
                                 {!team?.crest && <Shield className="w-10 h-10 text-text-muted" />}
-                                <h1 className="text-xl font-bold text-text-primary truncate">{team?.team_name || teamId}</h1>
+                                <div>
+                                    <h1 className="text-xl font-bold text-text-primary truncate">{team?.team_name || teamId}</h1>
+                                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-text-muted mt-1">
+                                        {team?.birthyear && (
+                                            <span className="flex items-center gap-1">
+                                                <CalendarDays className="w-3.5 h-3.5 text-accent" />
+                                                {team.birthyear}
+                                            </span>
+                                        )}
+                                        {team?.primary_category && Object.values(team.primary_category).map((v, i) => (
+                                            <span key={i} className="text-xs bg-surface-2 px-2 py-0.5 rounded-full">{v}</span>
+                                        ))}
+                                        {team?.categories?.slice(0, 2).map((c, i) => (
+                                            Object.values(c).map((v, j) => (
+                                                <span key={`${i}-${j}`} className="text-xs bg-surface-2 px-2 py-0.5 rounded-full">{v}</span>
+                                            ))
+                                        ))}
+                                        {team?.club_name && <span className="text-text-muted">{team.club_name}</span>}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <button
