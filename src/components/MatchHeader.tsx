@@ -1,4 +1,4 @@
-import { MatchDetails, GroupDetails, TeamBasic, MatchEvent } from '../types/api'
+import { MatchDetails, GroupDetails, TeamBasic } from '../types/api'
 import { motion } from 'framer-motion'
 import { Calendar, Clock, Users, Goal } from 'lucide-react'
 
@@ -62,26 +62,27 @@ export function MatchHeader({ match, group, teamA, teamB }: { match: MatchDetail
                 </div>
 
                 {/* Goal Scorers */}
-                {match.events && match.events.length > 0 && (
+                {match.goals && match.goals.length > 0 && (
                     <div className="w-full max-w-md space-y-2">
                         {[match.team_A_id, match.team_B_id].map((teamId) => {
-                            const teamEvents = match.events!.filter(
-                                e => e.team_id === teamId && e.event_type === 'goal'
-                            )
-                            if (teamEvents.length === 0) return null
+                            const teamGoals = match.goals!.filter(g => g.team_id === teamId)
+                            if (teamGoals.length === 0) return null
                             const teamName = teamId === match.team_A_id ? match.team_A_name : match.team_B_name
                             return (
-                                <div key={teamId} className="flex items-center gap-2 text-sm">
-                                    <Goal className="w-3.5 h-3.5 text-accent shrink-0" />
-                                    <span className="font-semibold text-text-primary">{teamName}:</span>
-                                    <span className="text-text-secondary">
-                                        {teamEvents.map((e, i) => (
-                                            <span key={i}>
-                                                {i > 0 && ', '}
-                                                {e.player_name}{e.minute ? ` (${e.minute}')` : ''}
-                                            </span>
+                                <div key={teamId} className="space-y-1">
+                                    <h4 className="text-xs font-bold text-text-primary">{teamName}</h4>
+                                    <div className="space-y-0.5">
+                                        {teamGoals.map((g, i) => (
+                                            <div key={i} className="flex items-center gap-2 text-sm text-text-secondary">
+                                                <Goal className="w-3 h-3 text-accent shrink-0" />
+                                                <span>{g.player_name}</span>
+                                                <span className="text-text-muted text-xs">{g.time}</span>
+                                                {g.description === 'rp' && (
+                                                    <span className="text-[10px] text-semantic-amber font-medium">(rp)</span>
+                                                )}
+                                            </div>
                                         ))}
-                                    </span>
+                                    </div>
                                 </div>
                             )
                         })}

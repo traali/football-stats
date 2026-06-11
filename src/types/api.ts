@@ -1,37 +1,43 @@
 export interface PlayerMatchEntry {
-    player_goals?: string;
-    player_warnings?: string;
-    player_suspensions?: string;
-    team_name?: string;
+    match_id?: string;
+    season_id?: string;
+    date?: string;
+    time?: string;
+    status?: string;
     team_id?: string;
-    team_A_name?: string;
+    team_name?: string;
     team_A_id?: string;
+    team_A_name?: string;
+    team_B_id?: string;
     team_B_name?: string;
     fs_A?: string;
     fs_B?: string;
     winner_id?: string;
-    season_id?: string;
-    status?: string;
-    date?: string;
+    player_goals?: string;
+    player_warnings?: string;
+    player_suspensions?: string;
 }
 
 export interface PlayerAPIResponse {
     birthyear: string;
-    firstname: string;
-    lastname: string;
+    first_name: string;
+    last_name: string;
     img_url?: string;
     matches: PlayerMatchEntry[];
     [key: string]: unknown;
 }
 
-export interface MatchEvent {
+export interface MatchGoal {
     event_id?: string;
-    event_type?: string;
+    team_id?: string;
     player_id?: string;
     player_name?: string;
-    team_id?: string;
-    minute?: string;
-    extra_minute?: string;
+    player_shirt_number?: string;
+    time?: string;
+    time_min?: string;
+    score_A?: number;
+    score_B?: number;
+    description?: string;
 }
 
 export interface MatchDetails {
@@ -52,7 +58,7 @@ export interface MatchDetails {
     referee_1_name?: string;
     referee_1_id?: string;
     lineups: PlayerLineupInfo[];
-    events?: MatchEvent[];
+    goals?: MatchGoal[];
 }
 
 export interface Competition {
