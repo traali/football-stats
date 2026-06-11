@@ -1,6 +1,6 @@
-import { MatchDetails, GroupDetails, TeamBasic } from '../types/api'
+import { MatchDetails, GroupDetails, TeamBasic, MatchEvent } from '../types/api'
 import { motion } from 'framer-motion'
-import { Calendar, Users } from 'lucide-react'
+import { Calendar, Clock, Users, Goal } from 'lucide-react'
 
 function LiveBadge() {
     return (
@@ -61,19 +61,55 @@ export function MatchHeader({ match, group, teamA, teamB }: { match: MatchDetail
                     </div>
                 </div>
 
-                {/* Match Meta */}
-                <div className="flex flex-wrap items-center justify-center gap-4 text-text-muted text-sm">
-                    <div className="flex items-center">
-                        <Calendar className="w-3.5 h-3.5 mr-1.5 text-accent" />
-                        {match.date} {match.time && !isLive && `• ${match.time}`}
+                {/* Goal Scorers */}
+                {match.events && match.events.length > 0 && (
+                    <div className="w-full max-w-md space-y-2">
+                        {[match.team_A_id, match.team_B_id].map((teamId) => {
+                            const teamEvents = match.events!.filter(
+                                e => e.team_id === teamId && e.event_type === 'goal'
+                            )
+                            if (teamEvents.length === 0) return null
+                            const teamName = teamId === match.team_A_id ? match.team_A_name : match.team_B_name
+                            return (
+                                <div key={teamId} className="flex items-center gap-2 text-sm">
+                                    <Goal className="w-3.5 h-3.5 text-accent shrink-0" />
+                                    <span className="font-semibold text-text-primary">{teamName}:</span>
+                                    <span className="text-text-secondary">
+                                        {teamEvents.map((e, i) => (
+                                            <span key={i}>
+                                                {i > 0 && ', '}
+                                                {e.player_name}{e.minute ? ` (${e.minute}')` : ''}
+                                            </span>
+                                        ))}
+                                    </span>
+                                </div>
+                            )
+                        })}
                     </div>
-                    {match.referee_1_name && (
-                        <div className="flex items-center">
-                            <Users className="w-3.5 h-3.5 mr-1.5 text-accent" />
-                            Tuomari: {match.referee_1_name}
-                        </div>
-                    )}
+                )}
+
+                {/* Kickoff */}
+                <div className="flex flex-col items-center gap-1">
+                    <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Ottelu alkaa</span>
+                    <div className="flex items-center gap-2 text-text-primary">
+                        <Calendar className="w-4 h-4 text-accent" />
+                        <span className="text-base font-semibold">{match.date}</span>
+                        {match.time && !isLive && (
+                            <>
+                                <Clock className="w-4 h-4 text-accent" />
+                                <span className="text-base font-semibold">{match.time}</span>
+                            </>
+                        )}
+                    </div>
                 </div>
+
+                {/* Referee */}
+                {match.referee_1_name && (
+                    <div className="flex items-center gap-1.5 text-text-muted text-sm">
+                        <Users className="w-3.5 h-3.5 text-accent" />
+                        Tuomari: {match.referee_1_name}
+                    </div>
+                )}
             </div>
         </motion.div>
     )

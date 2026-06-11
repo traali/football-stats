@@ -61,6 +61,26 @@ export function PlayerCard({ stats }: { stats: PlayerStats }) {
                 <StatBadge label={`Kausi ${new Date().getFullYear() - 1}`} value={`${stats.gamesPlayedLastSeason} (${stats.goalsScoredLastSeason})`} icon={<Calendar />} />
             </div>
 
+            {/* Teams This Year */}
+            {stats.gamesPlayedThisYear > 0 && (
+                <div className="pt-3 border-t border-border-hairline space-y-2">
+                    <h4 className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Joukkueet tänä vuonna</h4>
+                    <div className="space-y-1.5">
+                        {Object.entries(stats.gamesByTeamThisYear).map(([team, games]) => {
+                            const goals = stats.goalsByTeamThisYear[team] || 0
+                            return (
+                                <div key={team} className="flex items-center justify-between text-sm">
+                                    <span className="text-text-primary font-medium truncate mr-2">{team}</span>
+                                    <span className="text-text-secondary shrink-0">
+                                        {games} ott. / {goals} maalia
+                                    </span>
+                                </div>
+                            )
+                        })}
+                    </div>
+                </div>
+            )}
+
             {/* Form / Last Matches */}
             {hasHistory && (
                 <div className="space-y-3 pt-4 border-t border-border-hairline">

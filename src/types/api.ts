@@ -24,6 +24,16 @@ export interface PlayerAPIResponse {
     [key: string]: unknown;
 }
 
+export interface MatchEvent {
+    event_id?: string;
+    event_type?: string;
+    player_id?: string;
+    player_name?: string;
+    team_id?: string;
+    minute?: string;
+    extra_minute?: string;
+}
+
 export interface MatchDetails {
     match_id: string;
     competition_id: string;
@@ -42,6 +52,7 @@ export interface MatchDetails {
     referee_1_name?: string;
     referee_1_id?: string;
     lineups: PlayerLineupInfo[];
+    events?: MatchEvent[];
 }
 
 export interface Competition {
