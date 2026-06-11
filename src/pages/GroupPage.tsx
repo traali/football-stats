@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, TrendingUp, Calendar } from 'lucide-react'
+import { cn } from '../utils/cn'
 import { getGroupFull } from '../services/api'
 import { StandingsTable } from '../components/StandingsTable'
 import type { GroupResponse, PlayerStatsEntry } from '../types/api'
@@ -87,18 +88,27 @@ export function GroupPage() {
                             <Calendar className="w-5 h-5 text-accent" /> Viimeisimmät ottelut
                         </h2>
                         <div className="space-y-1">
-                            {pastMatches.reverse().map((m) => (
-                                <div
-                                    key={m.match_id}
-                                    onClick={() => navigate(`/match/${m.match_id}`)}
-                                    className="flex items-center justify-between py-2 px-2 rounded-lg hover:bg-surface-2 cursor-pointer transition-colors text-sm"
-                                >
-                                    <span className="text-text-muted text-xs w-12 shrink-0">{m.date?.slice(5)}</span>
-                                    <span className="text-text-primary truncate text-right min-w-0 flex-1">{m.team_A_name}</span>
-                                    <span className="font-mono font-bold text-text-primary mx-2 shrink-0">{m.fs_A}–{m.fs_B}</span>
-                                    <span className="text-text-primary truncate min-w-0 flex-1">{m.team_B_name}</span>
-                                </div>
-                            ))}
+                            {[...pastMatches].reverse().map((m) => {
+                                const wld = m.winner_id && m.winner_id !== '0' && m.winner_id !== '-'
+                                    ? (m.winner_id === m.team_A_id ? 'V' : m.winner_id === m.team_B_id ? 'H' : null)
+                                    : (m.fs_A && m.fs_B ? 'T' : null)
+                                const wldColor = wld === 'V' ? 'text-semantic-green' : wld === 'H' ? 'text-semantic-red' : 'text-accent'
+                                return (
+                                    <div
+                                        key={m.match_id}
+                                        onClick={() => navigate(`/match/${m.match_id}`)}
+                                        className="flex items-center justify-between py-2 px-2 rounded-lg hover:bg-surface-2 cursor-pointer transition-colors text-sm"
+                                    >
+                                        <span className="text-text-muted text-xs w-12 shrink-0">{m.date?.slice(5)}</span>
+                                        <span className="text-text-primary truncate text-right min-w-0 flex-1">{m.team_A_name}</span>
+                                        <span className="font-mono font-bold text-text-primary mx-2 shrink-0 flex items-center gap-1">
+                                            {m.fs_A}–{m.fs_B}
+                                            {wld && <span className={cn('text-xs font-bold', wldColor)}>{wld}</span>}
+                                        </span>
+                                        <span className="text-text-primary truncate min-w-0 flex-1">{m.team_B_name}</span>
+                                    </div>
+                                )
+                            })}
                         </div>
                     </div>
                 )}
@@ -116,7 +126,9 @@ export function GroupPage() {
                                     className="flex items-center justify-between py-2 px-2 rounded-lg hover:bg-surface-2 cursor-pointer transition-colors text-sm"
                                 >
                                     <span className="text-text-muted text-xs w-12 shrink-0">{m.date?.slice(5)}</span>
-                                    <span className="text-text-muted">{m.team_A_name} vs {m.team_B_name}</span>
+                                    <span className="text-text-primary truncate text-right min-w-0 flex-1">{m.team_A_name}</span>
+                                    <span className="font-mono font-bold text-text-muted mx-2 shrink-0">vs</span>
+                                    <span className="text-text-primary truncate min-w-0 flex-1">{m.team_B_name}</span>
                                 </div>
                             ))}
                         </div>

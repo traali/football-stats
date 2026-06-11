@@ -150,12 +150,12 @@ export function PlayerPage() {
                                 H: m => !!(m.winner_id && m.winner_id !== '0' && m.winner_id !== '-' && m.winner_id !== m.team_id),
                                 maalia: m => parseInt(m.player_goals || '0') > 0,
                             }
-                            const statLabels: Record<string, { label: string; count: number; color: string }> = {
-                                O: { label: 'O', count: s.matches, color: 'text-text-muted' },
-                                V: { label: 'V', count: s.wins, color: 'text-semantic-green' },
-                                T: { label: 'T', count: s.draws, color: 'text-accent' },
-                                H: { label: 'H', count: s.losses, color: 'text-semantic-red' },
-                                maalia: { label: 'maalia', count: s.goals, color: 'text-accent font-bold' },
+                            const statLabels: Record<string, { label: string; count: number; color: string; bg: string }> = {
+                                O: { label: 'O', count: s.matches, color: 'text-text-primary', bg: 'bg-surface-3' },
+                                V: { label: 'V', count: s.wins, color: 'text-semantic-green', bg: 'bg-semantic-green/15' },
+                                T: { label: 'T', count: s.draws, color: 'text-accent', bg: 'bg-accent/15' },
+                                H: { label: 'H', count: s.losses, color: 'text-semantic-red', bg: 'bg-semantic-red/15' },
+                                maalia: { label: 'maalia', count: s.goals, color: 'text-accent font-bold', bg: 'bg-accent/15' },
                             }
                             return (
                                 <div key={s.seasonName} className="space-y-1">
@@ -168,9 +168,9 @@ export function PlayerPage() {
                                                     key={key}
                                                     onClick={() => setExpanded(isExpanded ? null : { season: s.seasonName, stat: key })}
                                                     className={cn(
-                                                        'px-2.5 py-1 rounded-lg transition-colors',
-                                                        isExpanded ? 'bg-surface-3 ring-1 ring-accent/50' : 'hover:bg-surface-2',
-                                                        st.color,
+                                                        'px-2.5 py-1 rounded-lg transition-colors font-medium',
+                                                        isExpanded ? 'ring-1 ring-accent/50' : 'hover:brightness-110',
+                                                        st.bg, st.color,
                                                     )}
                                                 >
                                                     {st.count} {st.label}

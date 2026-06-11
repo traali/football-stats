@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../utils/cn'
 import type { StandingTeam, MatchSummary } from '../types/api'
@@ -13,6 +13,7 @@ export function StandingsTable({ teams, matches = [], teamAId, teamBId, selected
     compact?: boolean
 }) {
     const navigate = useNavigate()
+    const [hoveredTeam, setHoveredTeam] = useState<string | null>(null)
 
     const sorted = [...teams].sort((a, b) => (parseInt(a.current_standing) || 999) - (parseInt(b.current_standing) || 999))
 
@@ -97,17 +98,21 @@ export function StandingsTable({ teams, matches = [], teamAId, teamBId, selected
                             const isSelected = team.team_id === selectedTeam
                             const results = opponentResults.get(team.team_id) || []
                             const primaryResult = results[0]
+                            const isHovered = hoveredTeam === team.team_id && !selectedTeam
 
                             return (
                                 <tr
                                     key={team.team_id}
                                     onClick={() => onSelectTeam?.(isSelected ? null : team.team_id)}
+                                    onMouseEnter={() => setHoveredTeam(team.team_id)}
+                                    onMouseLeave={() => setHoveredTeam(null)}
                                     className={cn(
-                                        'cursor-pointer transition-colors',
+                                        'cursor-pointer transition-colors relative',
                                         isSelected && 'bg-surface-3 ring-1 ring-inset ring-accent/30',
-                                        !isSelected && primaryResult && resultConfig[primaryResult.result].bg,
-                                        !isSelected && !primaryResult && isMatchTeam && 'bg-accent-muted',
-                                        !isSelected && !primaryResult && !isMatchTeam && 'hover:bg-surface-2',
+                                        isHovered && 'bg-surface-2',
+                                        !isSelected && !isHovered && primaryResult && resultConfig[primaryResult.result].bg,
+                                        !isSelected && !isHovered && !primaryResult && isMatchTeam && 'bg-accent-muted',
+                                        !isSelected && !isHovered && !primaryResult && !isMatchTeam && 'hover:bg-surface-2',
                                     )}
                                 >
                                     <td className="px-3 py-3 font-bold text-text-muted font-mono text-sm">{team.current_standing}</td>
@@ -119,7 +124,7 @@ export function StandingsTable({ teams, matches = [], teamAId, teamBId, selected
                                                     <span
                                                         onClick={(e) => { e.stopPropagation(); navigate(`/match/${primaryResult.matchId}`) }}
                                                         className={cn('w-2.5 h-2.5 rounded-full shrink-0 cursor-pointer hover:scale-125 transition-transform', resultConfig[primaryResult.result].dot)}
-                                                        title={primaryResult.result === 'upcoming' ? 'Tuleva ottelu' : `Siirry otteluun`}
+                                                        title={primaryResult.result === 'upcoming' ? 'Tuleva ottelu' : 'Siirry otteluun'}
                                                     />
                                                 )}
                                                 <span
@@ -146,6 +151,19 @@ export function StandingsTable({ teams, matches = [], teamAId, teamBId, selected
                                     <td className="px-3 py-3 text-center font-bold text-text-primary font-mono text-sm">{team.points}</td>
                                     {!compact && <td className="px-2 py-3 text-right text-text-secondary font-mono text-sm">{team.goals_for}</td>}
                                     {!compact && <td className="px-2 py-3 text-right text-text-secondary font-mono text-sm">{team.goals_against}</td>}
+
+                                    {/* Hover tooltip — shows opponent results when no team selected */}
+                                    {isHovered && matches.length > 0 && (
+                                        <td colSpan={9} className="absolute left-0 right-0 top-full z-50 p-0">
+                                            <div
+                                                className="bg-surface-3 border border-border-hairline rounded-xl p-3 shadow-xl mx-2 mb-1 space-y-1.5 max-h-48 overflow-y-auto"
+                                                onMouseEnter={() => setHoveredTeam(team.team_id)}
+                                                onMouseLeave={() => setHoveredTeam(null)}
+                                            >
+                                                <HoverTooltipContent teamId={team.team_id} matches={matches} navigate={navigate} />
+                                            </div>
+                                        </td>
+                                    )}
                                 </tr>
                             )
                         })}
@@ -153,5 +171,71 @@ export function StandingsTable({ teams, matches = [], teamAId, teamBId, selected
                 </table>
             </div>
         </div>
+    )
+}
+
+function HoverTooltipContent({ teamId, matches, navigate }: { teamId: string; matches: MatchSummary[]; navigate: ReturnType<typeof useNavigate> }) {
+    const past: Array<{ opponent: string; matchId: string; result: 'win' | 'draw' | 'loss' }> = []
+    const upcoming: Array<{ opponent: string; matchId: string }> = []
+
+    for (const m of matches) {
+        if (m.team_A_id !== teamId && m.team_B_id !== teamId) continue
+        const isA = m.team_A_id === teamId
+        const opponent = isA ? m.team_B_name : m.team_A_name
+        const myScore = parseInt(isA ? m.fs_A : m.fs_B)
+        const oppScore = parseInt(isA ? m.fs_B : m.fs_A)
+        if (m.status === 'Played' && !isNaN(myScore) && !isNaN(oppScore)) {
+            past.push({
+                opponent,
+                matchId: m.match_id,
+                result: myScore > oppScore ? 'win' : myScore < oppScore ? 'loss' : 'draw',
+            })
+        } else if (m.status === 'Fixture') {
+            upcoming.push({ opponent, matchId: m.match_id })
+        }
+    }
+
+    const rc = { win: 'text-semantic-green bg-semantic-green/15', draw: 'text-accent bg-accent/15', loss: 'text-semantic-red bg-semantic-red/15' }
+    const rl = { win: 'V', draw: 'T', loss: 'H' }
+
+    if (past.length === 0 && upcoming.length === 0) return <p className="text-text-muted text-xs">Ei ottelutietoja</p>
+
+    return (
+        <>
+            {past.length > 0 && (
+                <div>
+                    <p className="text-[10px] uppercase tracking-wider text-text-muted mb-1">Pelatut</p>
+                    <div className="flex flex-wrap gap-1">
+                        {past.map((p, i) => (
+                            <span
+                                key={p.matchId + i}
+                                onClick={(e) => { e.stopPropagation(); navigate(`/match/${p.matchId}`) }}
+                                className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium cursor-pointer hover:opacity-80 transition-opacity ${rc[p.result]}`}
+                            >
+                                {p.opponent}
+                                <span className="font-bold">{rl[p.result]}</span>
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            )}
+            {upcoming.length > 0 && (
+                <div>
+                    <p className="text-[10px] uppercase tracking-wider text-text-muted mb-1">Tulevat</p>
+                    <div className="flex flex-wrap gap-1">
+                        {upcoming.map((p, i) => (
+                            <span
+                                key={p.matchId + i}
+                                onClick={(e) => { e.stopPropagation(); navigate(`/match/${p.matchId}`) }}
+                                className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium cursor-pointer hover:opacity-80 transition-opacity text-text-muted bg-surface-2"
+                            >
+                                {p.opponent}
+                                <span>?</span>
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </>
     )
 }
