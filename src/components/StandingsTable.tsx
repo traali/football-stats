@@ -1,22 +1,79 @@
-import { useState } from 'react'
+import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { cn } from '../utils/cn'
 import type { StandingTeam, MatchSummary } from '../types/api'
 
-export function StandingsTable({ teams, matches = [], teamAId, teamBId, compact }: {
+export function StandingsTable({ teams, matches = [], teamAId, teamBId, selectedTeam, onSelectTeam, compact }: {
     teams: StandingTeam[]
     matches?: MatchSummary[]
     teamAId?: string
     teamBId?: string
+    selectedTeam?: string | null
+    onSelectTeam?: (teamId: string | null) => void
     compact?: boolean
 }) {
     const navigate = useNavigate()
-    const [hoveredTeam, setHoveredTeam] = useState<string | null>(null)
 
     const sorted = [...teams].sort((a, b) => (parseInt(a.current_standing) || 999) - (parseInt(b.current_standing) || 999))
 
+    const opponentResults = useMemo(() => {
+        const map = new Map<string, { result: 'win' | 'draw' | 'loss' | 'upcoming'; opponentTeamId: string }[]>()
+        if (!selectedTeam || matches.length === 0) return map
+        for (const m of matches) {
+            if (m.team_A_id !== selectedTeam && m.team_B_id !== selectedTeam) continue
+            const isA = m.team_A_id === selectedTeam
+            const opponentTeamId = isA ? m.team_B_id : m.team_A_id
+            if (!opponentTeamId) continue
+            const myScore = parseInt(isA ? m.fs_A : m.fs_B)
+            const oppScore = parseInt(isA ? m.fs_B : m.fs_A)
+            let result: 'win' | 'draw' | 'loss' | 'upcoming'
+            if (m.status === 'Fixture') {
+                result = 'upcoming'
+            } else if (isNaN(myScore) || isNaN(oppScore)) {
+                continue
+            } else if (myScore > oppScore) {
+                result = 'win'
+            } else if (myScore < oppScore) {
+                result = 'loss'
+            } else {
+                result = 'draw'
+            }
+            const existing = map.get(opponentTeamId) || []
+            existing.push({ result, opponentTeamId })
+            map.set(opponentTeamId, existing)
+        }
+        return map
+    }, [selectedTeam, matches])
+
+    const resultColor = { win: 'text-semantic-green', draw: 'text-accent', loss: 'text-semantic-red', upcoming: 'text-text-muted' }
+    const resultBg = { win: 'bg-semantic-green/8', draw: 'bg-accent/8', loss: 'bg-semantic-red/8', upcoming: 'bg-surface-2' }
+    const resultLabel = { win: 'V', draw: 'T', loss: 'H', upcoming: '?' }
+
     return (
-        <div className="bg-surface-1 border border-border-hairline rounded-xl relative">
-            <div className="overflow-x-auto rounded-xl">
+        <div className="bg-surface-1 border border-border-hairline rounded-xl overflow-hidden">
+            {selectedTeam && (
+                <div className="px-4 py-2 bg-surface-3 border-b border-border-hairline flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-3">
+                        <span className="text-text-primary font-medium">
+                            {teams.find(t => t.team_id === selectedTeam)?.team_name || selectedTeam}
+                        </span>
+                        <span className="text-text-muted">vastustajat:</span>
+                        <span className="flex items-center gap-2">
+                            <span className="inline-flex items-center gap-0.5"><span className="w-2 h-2 rounded-full bg-semantic-green" /> V</span>
+                            <span className="inline-flex items-center gap-0.5"><span className="w-2 h-2 rounded-full bg-accent" /> T</span>
+                            <span className="inline-flex items-center gap-0.5"><span className="w-2 h-2 rounded-full bg-semantic-red" /> H</span>
+                            <span className="inline-flex items-center gap-0.5"><span className="w-2 h-2 rounded-full bg-text-muted" /> ?</span>
+                        </span>
+                    </div>
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onSelectTeam?.(null) }}
+                        className="text-text-muted hover:text-text-primary transition-colors px-2 py-1"
+                    >
+                        Tyhjennä
+                    </button>
+                </div>
+            )}
+            <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left">
                     <thead className="text-xs uppercase tracking-widest text-text-muted bg-surface-3">
                         <tr>
@@ -34,19 +91,42 @@ export function StandingsTable({ teams, matches = [], teamAId, teamBId, compact 
                     <tbody className="divide-y divide-border-hairline">
                         {sorted.map((team) => {
                             const isMatchTeam = teamAId && teamBId && (team.team_id === teamAId || team.team_id === teamBId)
+                            const isSelected = team.team_id === selectedTeam
+                            const results = opponentResults.get(team.team_id) || []
+                            const primaryResult = results[0]?.result
+
                             return (
                                 <tr
                                     key={team.team_id}
-                                    onClick={() => navigate(`/team/${team.team_id}`)}
-                                    onMouseEnter={() => setHoveredTeam(team.team_id)}
-                                    onMouseLeave={() => setHoveredTeam(null)}
-                                    className={`cursor-pointer transition-colors relative ${isMatchTeam ? "bg-accent-muted" : "hover:bg-surface-2"}`}
+                                    onClick={() => onSelectTeam?.(isSelected ? null : team.team_id)}
+                                    className={cn(
+                                        'cursor-pointer transition-colors',
+                                        isSelected && 'bg-surface-3 ring-1 ring-inset ring-accent/30',
+                                        !isSelected && primaryResult && resultBg[primaryResult],
+                                        !isSelected && !primaryResult && isMatchTeam && 'bg-accent-muted',
+                                        !isSelected && !primaryResult && !isMatchTeam && 'hover:bg-surface-2',
+                                    )}
                                 >
                                     <td className="px-3 py-3 font-bold text-text-muted font-mono text-sm">{team.current_standing}</td>
-                                    <td className={`px-3 py-3 font-medium text-sm ${isMatchTeam ? 'text-accent' : 'text-text-secondary'}`}>
+                                    <td className={cn('px-3 py-3 font-medium text-sm', isMatchTeam && !isSelected ? 'text-accent' : 'text-text-secondary')}>
                                         <div className="flex items-center gap-2">
-                                            {isMatchTeam && <span className="w-0.5 h-4 rounded-full bg-gradient-to-b from-bmw-cyan via-bmw-magenta to-bmw-amber shrink-0" />}
-                                            <span className="truncate">{team.team_name}</span>
+                                            {isMatchTeam && !isSelected && <span className="w-0.5 h-4 rounded-full bg-gradient-to-b from-bmw-cyan via-bmw-magenta to-bmw-amber shrink-0" />}
+                                            <div className="flex items-center gap-1.5 min-w-0">
+                                                {primaryResult && (
+                                                    <span className={cn('w-2 h-2 rounded-full shrink-0', resultColor[primaryResult].replace('text-', 'bg-'))} />
+                                                )}
+                                                <span
+                                                    className="truncate hover:text-accent"
+                                                    onClick={(e) => { e.stopPropagation(); navigate(`/team/${team.team_id}`) }}
+                                                >
+                                                    {team.team_name}
+                                                </span>
+                                            </div>
+                                            {primaryResult && results.length > 0 && (
+                                                <span className={cn('text-xs font-bold shrink-0', resultColor[primaryResult])}>
+                                                    {resultLabel[primaryResult]}
+                                                </span>
+                                            )}
                                         </div>
                                     </td>
                                     <td className="px-2 py-3 text-center text-text-secondary font-mono text-sm">{team.matches_played}</td>
@@ -62,102 +142,6 @@ export function StandingsTable({ teams, matches = [], teamAId, teamBId, compact 
                     </tbody>
                 </table>
             </div>
-
-            {/* Hover popup — overlay */}
-            {hoveredTeam && matches.length > 0 && (
-                <div className="absolute inset-x-0 top-[48px] z-50 px-2">
-                    <OpponentPopup
-                        teamId={hoveredTeam}
-                        matches={matches}
-                        teams={sorted}
-                        onClose={() => setHoveredTeam(null)}
-                    />
-                </div>
-            )}
-        </div>
-    )
-}
-
-function OpponentPopup({ teamId, matches, teams, onClose }: {
-    teamId: string
-    matches: MatchSummary[]
-    teams: StandingTeam[]
-    onClose: () => void
-}) {
-    const navigate = useNavigate()
-    const past: Array<{ opponent: string; opponentId: string; result: 'win' | 'draw' | 'loss' }> = []
-    const upcoming: Array<{ opponent: string; opponentId: string }> = []
-
-    for (const m of matches) {
-        if (m.team_A_id !== teamId && m.team_B_id !== teamId) continue
-        const isA = m.team_A_id === teamId
-        const opponent = isA ? m.team_B_name : m.team_A_name
-        const opponentId = isA ? m.team_B_id : m.team_A_id
-        const myScore = parseInt(isA ? m.fs_A : m.fs_B)
-        const oppScore = parseInt(isA ? m.fs_B : m.fs_A)
-        if (m.status === 'Played' && !isNaN(myScore) && !isNaN(oppScore)) {
-            past.push({ opponent, opponentId, result: myScore > oppScore ? 'win' : myScore < oppScore ? 'loss' : 'draw' })
-        } else if (m.status === 'Fixture') {
-            upcoming.push({ opponent, opponentId })
-        }
-    }
-
-    const team = teams.find(t => t.team_id === teamId)
-
-    const resultColor = { win: 'text-semantic-green', draw: 'text-accent', loss: 'text-semantic-red' }
-    const resultBg = { win: 'bg-semantic-green/10', draw: 'bg-accent/10', loss: 'bg-semantic-red/10' }
-    const resultLabel = { win: 'V', draw: 'T', loss: 'H' }
-
-    return (
-        <div
-            className="bg-surface-3 border border-border-hairline rounded-xl p-4 shadow-xl mx-2 mb-2 space-y-3 max-h-64 overflow-y-auto"
-            onMouseEnter={() => {}} /* keep open when hovering popup */
-            onMouseLeave={onClose}
-            onClick={onClose}
-        >
-            {team && (
-                <p className="text-sm font-bold text-text-primary truncate">{team.team_name}</p>
-            )}
-
-            {past.length > 0 && (
-                <div>
-                    <p className="text-xs uppercase tracking-wider text-text-muted mb-2">Pelatut</p>
-                    <div className="flex flex-wrap gap-1.5">
-                        {past.map((p, i) => (
-                            <span
-                                key={p.opponentId + i}
-                                onClick={(e) => { e.stopPropagation(); navigate(`/team/${p.opponentId}`) }}
-                                className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium cursor-pointer hover:opacity-80 transition-opacity ${resultColor[p.result]} ${resultBg[p.result]}`}
-                            >
-                                {p.opponent}
-                                <span className="font-bold">{resultLabel[p.result]}</span>
-                            </span>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {upcoming.length > 0 && (
-                <div>
-                    <p className="text-xs uppercase tracking-wider text-text-muted mb-2">Tulevat</p>
-                    <div className="flex flex-wrap gap-1.5">
-                        {upcoming.map((p, i) => (
-                            <span
-                                key={p.opponentId + i}
-                                onClick={(e) => { e.stopPropagation(); navigate(`/team/${p.opponentId}`) }}
-                                className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium cursor-pointer hover:opacity-80 transition-opacity text-text-muted bg-surface-2"
-                            >
-                                {p.opponent}
-                                <span className="text-xs">?</span>
-                            </span>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {past.length === 0 && upcoming.length === 0 && (
-                <p className="text-text-muted text-xs">Ei ottelutietoja</p>
-            )}
         </div>
     )
 }

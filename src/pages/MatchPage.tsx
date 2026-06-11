@@ -14,6 +14,7 @@ export function MatchPage() {
     const { matchId = '' } = useParams()
     const navigate = useNavigate()
     const [searchValue, setSearchValue] = useState(matchId)
+    const [selectedTeam, setSelectedTeam] = useState<string | null>(null)
     const { loading, error, data, fetchData } = useMatchData()
 
     useEffect(() => {
@@ -157,8 +158,11 @@ export function MatchPage() {
                                         {data.group?.teams && (
                                             <StandingsTable
                                                 teams={data.group.teams}
+                                                matches={data.group.matches || []}
                                                 teamAId={data.match.team_A_id}
                                                 teamBId={data.match.team_B_id}
+                                                selectedTeam={selectedTeam}
+                                                onSelectTeam={setSelectedTeam}
                                             />
                                         )}
                                     </aside>

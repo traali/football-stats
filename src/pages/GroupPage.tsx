@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, TrendingUp, Calendar } from 'lucide-react'
 import { getGroupFull } from '../services/api'
 import { StandingsTable } from '../components/StandingsTable'
-import type { GroupResponse, PlayerStatsEntry, MatchSummary } from '../types/api'
+import type { GroupResponse, PlayerStatsEntry } from '../types/api'
 
 export function GroupPage() {
     const { compId, catId, groupId } = useParams()
@@ -11,6 +11,7 @@ export function GroupPage() {
     const [group, setGroup] = useState<GroupResponse | null>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const [selectedTeam, setSelectedTeam] = useState<string | null>(null)
 
     useEffect(() => {
         if (!compId || !catId || !groupId) return
@@ -48,7 +49,7 @@ export function GroupPage() {
                     <h2 className="text-lg font-bold text-text-primary flex items-center gap-2">
                         <TrendingUp className="w-5 h-5 text-accent" /> Sarjataulukko
                     </h2>
-                    <StandingsTable teams={group.teams || []} />
+                    <StandingsTable teams={group.teams || []} matches={group.matches || []} selectedTeam={selectedTeam} onSelectTeam={setSelectedTeam} />
                 </div>
 
                 {topScorers.length > 0 && (
