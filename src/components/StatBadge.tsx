@@ -26,7 +26,7 @@ export function StatBadge({ label, value, icon, variant = 'default' }: StatBadge
         )}>
             {icon && <div className="mb-1 opacity-60 [&>svg]:w-4 [&>svg]:h-4">{icon}</div>}
             <div className="text-lg font-bold text-text-primary leading-none font-mono tabular-nums">{value}</div>
-            <div className="text-[10px] uppercase tracking-tight opacity-70 mt-1 font-medium">{label}</div>
+            <div className="text-xs uppercase tracking-tight opacity-70 mt-1 font-medium">{label}</div>
         </div>
     )
 }

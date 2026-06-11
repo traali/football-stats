@@ -14,7 +14,7 @@ function LiveBadge() {
                 animate={{ opacity: [1, 0.4, 1] }}
                 transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
             />
-            <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-semantic-red">LIVE</span>
+            <span className="text-xs font-bold uppercase tracking-[0.1em] text-semantic-red">LIVE</span>
         </motion.div>
     )
 }
@@ -34,7 +34,7 @@ export function MatchHeader({ match, group, teamA, teamB }: { match: MatchDetail
                 {/* League Info */}
                 <div className="flex flex-col items-center space-y-2">
                     <div className="flex items-center gap-2">
-                        <div className="px-3 py-1 bg-accent/10 border border-accent/20 rounded-md text-accent text-[10px] font-bold uppercase tracking-widest">
+                        <div className="px-3 py-1 bg-accent/10 border border-accent/20 rounded-md text-accent text-xs font-bold uppercase tracking-widest">
                             {match.competition_name}
                         </div>
                         {isLive && <LiveBadge />}
@@ -50,7 +50,7 @@ export function MatchHeader({ match, group, teamA, teamB }: { match: MatchDetail
                     </div>
 
                     <div className="flex flex-col items-center shrink-0">
-                        <div className="text-4xl md:text-6xl font-black tabular-nums tracking-tighter text-text-primary font-mono leading-none">
+                        <div className="text-4xl md:text-6xl lg:text-7xl font-bold tabular-nums tracking-tighter text-text-primary font-mono leading-none">
                             {match.fs_A ?? '-'} <span className="text-accent opacity-80 mx-1">:</span> {match.fs_B ?? '-'}
                         </div>
                     </div>
@@ -78,7 +78,7 @@ export function MatchHeader({ match, group, teamA, teamB }: { match: MatchDetail
                                                 <span>{g.player_name}</span>
                                                 <span className="text-text-muted text-xs">{g.time}</span>
                                                 {g.description === 'rp' && (
-                                                    <span className="text-[10px] text-semantic-amber font-medium">(rp)</span>
+                                                    <span className="text-xs text-semantic-amber font-medium">(rp)</span>
                                                 )}
                                             </div>
                                         ))}
@@ -91,7 +91,7 @@ export function MatchHeader({ match, group, teamA, teamB }: { match: MatchDetail
 
                 {/* Kickoff */}
                 <div className="flex flex-col items-center gap-1">
-                    <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Ottelu alkaa</span>
+                    <span className="text-xs font-bold text-text-muted uppercase tracking-widest">Ottelu alkaa</span>
                     <div className="flex items-center gap-2 text-text-primary">
                         <Calendar className="w-4 h-4 text-accent" />
                         <span className="text-base font-semibold">{match.date}</span>
@@ -103,6 +103,36 @@ export function MatchHeader({ match, group, teamA, teamB }: { match: MatchDetail
                         )}
                     </div>
                 </div>
+
+                {/* Bookings */}
+                {match.bookings && match.bookings.length > 0 && (
+                    <div className="w-full max-w-md space-y-2 pt-2 border-t border-border-hairline">
+                        <h4 className="text-xs font-bold text-text-muted uppercase tracking-widest">Kortit</h4>
+                        <div className="grid grid-cols-2 gap-4">
+                            {[match.team_A_id, match.team_B_id].map((teamId) => {
+                                const teamBookings = match.bookings!.filter(b => b.team_id === teamId)
+                                if (teamBookings.length === 0) return null
+                                const teamName = teamId === match.team_A_id ? match.team_A_name : match.team_B_name
+                                return (
+                                    <div key={teamId} className="space-y-1">
+                                        <h5 className="text-xs font-bold text-text-primary truncate">{teamName}</h5>
+                                        <div className="space-y-0.5">
+                                            {teamBookings.map((b, i) => (
+                                                <div key={i} className="flex items-center gap-1.5 text-xs text-text-secondary">
+                                                    <span className={b.code === 'red' ? 'text-semantic-red' : 'text-accent'}>
+                                                        {b.code === 'red' ? '🟥' : '🟨'}
+                                                    </span>
+                                                    <span>{b.player_name}</span>
+                                                    {b.time_min && <span className="text-text-muted">{b.time_min}'</span>}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    </div>
+                )}
 
                 {/* Referee */}
                 {match.referee_1_name && (

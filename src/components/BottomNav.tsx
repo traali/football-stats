@@ -1,10 +1,12 @@
 import { NavLink } from 'react-router-dom'
-import { Home, Search } from 'lucide-react'
+import { Home, Search, LayoutGrid, Heart } from 'lucide-react'
 import { cn } from '../utils/cn'
 
 const navItems = [
     { to: '/', label: 'Etusivu', icon: Home },
+    { to: '/competition/spl', label: 'Selaa', icon: LayoutGrid },
     { to: '/match/', label: 'Ottelu', icon: Search },
+    { to: '/favorites', label: 'Suosikit', icon: Heart },
 ]
 
 export function BottomNav() {
@@ -24,7 +26,7 @@ export function BottomNav() {
                     {({ isActive }) => (
                         <>
                             <item.icon className={cn('w-5 h-5', isActive && 'drop-shadow-[0_0_6px_var(--color-accent-glow)]')} />
-                            <span className="text-[10px] font-medium uppercase tracking-wider">{item.label}</span>
+                            <span className="text-xs font-medium uppercase tracking-wider">{item.label}</span>
                         </>
                     )}
                 </NavLink>

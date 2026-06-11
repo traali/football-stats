@@ -68,7 +68,7 @@ export function MatchPage() {
 
                 <main className="space-y-16">
                     <AnimatePresence mode="wait">
-                        {error && (
+                        {error && !loading && (
                             <motion.div
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
@@ -79,7 +79,7 @@ export function MatchPage() {
                             </motion.div>
                         )}
 
-                        {loading && (
+                        {loading && !error && (
                             <motion.div
                                 key="loading"
                                 initial={{ opacity: 0 }}
@@ -111,7 +111,7 @@ export function MatchPage() {
                                 <MatchHeader match={data.match} group={data.group} teamA={data.teamA} teamB={data.teamB} />
 
                                 <div className="bg-surface-1 border border-border-hairline rounded-xl p-5 space-y-4">
-                                    <h4 className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Joukkuevertailu</h4>
+                                    <h4 className="text-xs font-bold text-text-muted uppercase tracking-widest">Joukkuevertailu</h4>
                                     <DualStatBar label="Maalit" valueA={Number(data.match.fs_A || 0)} valueB={Number(data.match.fs_B || 0)} />
                                     <DualStatBar label="Pelaajat" valueA={teamAPlayers.length} valueB={teamBPlayers.length} />
                                 </div>
@@ -154,9 +154,9 @@ export function MatchPage() {
                                     </div>
 
                                     <aside className="space-y-8">
-                                        {data.group && (
+                                        {data.group?.teams && (
                                             <StandingsTable
-                                                group={data.group}
+                                                teams={data.group.teams}
                                                 teamAId={data.match.team_A_id}
                                                 teamBId={data.match.team_B_id}
                                             />

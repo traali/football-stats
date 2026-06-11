@@ -40,6 +40,79 @@ export interface MatchGoal {
     description?: string;
 }
 
+export interface MatchBooking {
+    event_id?: string;
+    code?: string;
+    team_id?: string;
+    player_id?: string;
+    player_name?: string;
+    shirt_number?: string;
+    time?: string;
+    time_min?: string;
+}
+
+export interface PlayerStatsEntry {
+    player_id?: string;
+    player_name?: string;
+    first_name?: string;
+    last_name?: string;
+    team_id?: string;
+    team_name?: string;
+    img_url?: string;
+    crest?: string;
+    club_id?: string;
+    standing?: string;
+    matches?: string;
+    goals?: string;
+    assists?: string;
+    warnings?: string;
+    suspensions?: string;
+    playing_time?: string;
+    shots_on_target?: string;
+    shots_total?: string;
+    fouls?: string;
+}
+
+export interface TeamRosterPlayer {
+    player_id?: string;
+    first_name?: string;
+    last_name?: string;
+    shirt_number?: string;
+    birthyear?: string;
+    img_url?: string;
+}
+
+export interface TeamResponse {
+    team_id?: string;
+    team_name?: string;
+    club_name?: string;
+    club_id?: string;
+    crest?: string;
+    birthyear?: string;
+    gender?: string;
+    home_venue_id?: string;
+    club_www?: string;
+    kit_1_front?: string;
+    primary_category?: Record<string, string>;
+    players?: TeamRosterPlayer[];
+    categories?: Record<string, string>[];
+    groups?: Record<string, string>[];
+}
+
+export interface GroupResponse {
+    competition_id?: string;
+    competition_name?: string;
+    category_id?: string;
+    category_name?: string;
+    group_id?: string;
+    group_name?: string;
+    teams?: StandingTeam[];
+    matches?: MatchSummary[];
+    player_statistics?: PlayerStatsEntry[];
+    live_standings?: StandingTeam[];
+    rounds?: Record<string, string>[];
+}
+
 export interface MatchDetails {
     match_id: string;
     competition_id: string;
@@ -59,6 +132,10 @@ export interface MatchDetails {
     referee_1_id?: string;
     lineups: PlayerLineupInfo[];
     goals?: MatchGoal[];
+    bookings?: MatchBooking[];
+    venue_name?: string;
+    weather?: string;
+    attendance?: string;
 }
 
 export interface Competition {

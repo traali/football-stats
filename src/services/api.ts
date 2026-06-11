@@ -1,5 +1,5 @@
 import { APP_CONFIG } from '../types/config';
-import type { Category, Competition, DiscoveryMatch, GetMatchesParams, GroupDetails, MatchDetails, PlayerAPIResponse, ScoreEntry, Season, TeamBasic } from '../types/api';
+import type { Category, Competition, DiscoveryMatch, GetMatchesParams, GroupDetails, MatchDetails, PlayerAPIResponse, ScoreEntry, Season, TeamBasic, TeamResponse, GroupResponse } from '../types/api';
 
 // Simple rate limiter implementation
 const lastCallTimes: number[] = [];
@@ -38,7 +38,7 @@ const FETCH_TIMEOUT = 10000
 
 export async function fetchAPIData<T>(endpoint: string, params: Record<string, string | number | boolean | undefined> = {}, signal?: AbortSignal): Promise<T> {
     if (!checkRateLimit(endpoint)) {
-        throw new Error(`Rajapinnan käyttöraja täynnä kohteelle ${endpoint}. Yritä hetken päästä uudelleen.`);
+        throw new Error('Palvelun käyttöraja täynnä. Yritä hetken päästä uudelleen.');
     }
 
     if (APP_CONFIG.RATE_LIMIT.THROTTLE_DELAY > 0) {
@@ -154,9 +154,38 @@ export async function getScore(params: Pick<GetMatchesParams, 'competition_id' |
     return data.score || [];
 }
 
+export async function getGroups(competitionId: string, categoryId: string, signal?: AbortSignal): Promise<GroupDetails[]> {
+    const data = await fetchAPIData<{ groups?: GroupDetails[] }>("getGroups", {
+        competition_id: competitionId,
+        category_id: categoryId,
+    }, signal);
+    return data.groups || [];
+}
+
 export async function getSeasons(competitionId: string): Promise<Season[]> {
     const data = await fetchAPIData<{ seasons?: Season[] }>("getSeasons", {
         competition_id: competitionId,
     });
     return data.seasons || [];
+}
+
+export async function getTeamProfile(teamId: string, signal?: AbortSignal): Promise<TeamResponse | null> {
+    if (!teamId) return null;
+    const data = await fetchAPIData<{ team: TeamResponse }>("getTeam", { team_id: teamId }, signal);
+    return data.team || null;
+}
+
+export async function getTeamMatches(teamId: string, signal?: AbortSignal): Promise<DiscoveryMatch[]> {
+    const data = await fetchAPIData<{ matches?: DiscoveryMatch[] }>("getMatches", { team_id: teamId }, signal);
+    return data.matches || [];
+}
+
+export async function getGroupFull(competitionId: string, categoryId: string, groupId: string, signal?: AbortSignal): Promise<GroupResponse | null> {
+    const data = await fetchAPIData<{ group: GroupResponse }>("getGroup", {
+        competition_id: competitionId,
+        category_id: categoryId,
+        group_id: groupId,
+        matches: 1,
+    }, signal);
+    return data.group || null;
 }

@@ -36,7 +36,7 @@ export function PlayerCard({ stats }: { stats: PlayerStats }) {
                             </div>
                         )}
                         {stats.isCaptainInMatch && (
-                            <div className="absolute -top-2 -right-2 bg-accent text-text-inverse text-[10px] font-bold px-1.5 py-0.5 rounded-md border-2 border-canvas">
+                            <div className="absolute -top-2 -right-2 bg-accent text-text-inverse text-xs font-bold px-1.5 py-0.5 rounded-md border-2 border-canvas">
                                 C
                             </div>
                         )}
@@ -64,7 +64,7 @@ export function PlayerCard({ stats }: { stats: PlayerStats }) {
             {/* Teams This Year */}
             {stats.gamesPlayedThisYear > 0 && (
                 <div className="pt-3 border-t border-border-hairline space-y-2">
-                    <h4 className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Joukkueet tänä vuonna</h4>
+                    <h4 className="text-xs font-bold text-text-muted uppercase tracking-widest">Joukkueet tänä vuonna</h4>
                     <div className="space-y-1.5">
                         {Object.entries(stats.gamesByTeamThisYear).map(([team, games]) => {
                             const goals = stats.goalsByTeamThisYear[team] || 0
@@ -85,7 +85,7 @@ export function PlayerCard({ stats }: { stats: PlayerStats }) {
             {/* Last Matches */}
             {hasHistory && (
                 <div className="space-y-3 pt-4 border-t border-border-hairline">
-                    <h4 className="text-[10px] font-bold text-text-muted uppercase tracking-widest flex items-center">
+                    <h4 className="text-xs font-bold text-text-muted uppercase tracking-widest flex items-center">
                         <Activity className="w-3 h-3 mr-2" /> Viimeisimmät ottelut
                     </h4>
                     <div className="space-y-1.5">
