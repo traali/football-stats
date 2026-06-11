@@ -19,7 +19,7 @@ export function useMatchData() {
     const mountedRef = useRef(true);
 
     useEffect(() => {
-        return () => { mountedRef.current = false; };
+        return () => { mountedRef.current = false; abortRef.current?.abort(); };
     }, []);
 
     const fetchData = useCallback(async (matchId: string) => {
@@ -30,20 +30,27 @@ export function useMatchData() {
         setData(null);
         setLoading(true);
         setError(null);
+
+        if (!/^\d+$/.test(matchId)) {
+            setError('Virheellinen ottelun ID');
+            setLoading(false);
+            return;
+        }
+
         try {
-            const match = await getMatchDetails(matchId);
+            const match = await getMatchDetails(matchId, controller.signal);
             if (controller.signal.aborted || !mountedRef.current) return;
 
             const [group, teamA, teamB] = await Promise.all([
-                getGroupDetails(match.competition_id, match.category_id, match.group_id),
-                getTeamData(match.team_A_id),
-                getTeamData(match.team_B_id),
+                getGroupDetails(match.competition_id, match.category_id, match.group_id, controller.signal),
+                getTeamData(match.team_A_id, controller.signal),
+                getTeamData(match.team_B_id, controller.signal),
             ]);
             if (controller.signal.aborted || !mountedRef.current) return;
 
             const playersInMatch: PlayerLineupInfo[] = match.lineups || [];
             const playerIds = playersInMatch.map(p => p.player_id);
-            const playerDataList = await batchFetch(playerIds, getPlayerData, 5);
+            const playerDataList = await batchFetch(playerIds, getPlayerData, 5, controller.signal);
             if (controller.signal.aborted || !mountedRef.current) return;
 
             const processedPlayers: PlayerStats[] = []
@@ -73,6 +80,7 @@ export function useMatchData() {
 
             setData({ match, group, players: processedPlayers, teamA, teamB });
         } catch (err: unknown) {
+            if (controller.signal.aborted || !mountedRef.current) return;
             setError(err instanceof Error ? err.message : 'Virhe ladattaessa tietoja');
             setData(null);
         } finally {

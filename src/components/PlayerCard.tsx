@@ -1,13 +1,9 @@
+import { useState } from 'react'
 import { motion, type Variants } from 'framer-motion'
 import { PlayerStats } from '../types/api'
 import { User, Shield, AlertTriangle, Target, Activity, Calendar } from 'lucide-react'
-import { twMerge } from 'tailwind-merge'
-import { clsx, type ClassValue } from 'clsx'
+import { cn } from '../utils/cn'
 import { StatBadge } from './StatBadge'
-
-function cn(...inputs: ClassValue[]) {
-    return twMerge(clsx(inputs))
-}
 
 const cardVariants: Variants = {
     hidden: { opacity: 0, y: 16 },
@@ -15,6 +11,7 @@ const cardVariants: Variants = {
 }
 
 export function PlayerCard({ stats }: { stats: PlayerStats }) {
+    const [imgError, setImgError] = useState(false);
     const hasHistory = stats.pastMatchesDetails && stats.pastMatchesDetails.length > 0;
 
     return (
@@ -26,12 +23,12 @@ export function PlayerCard({ stats }: { stats: PlayerStats }) {
             <div className="flex items-start justify-between">
                 <div className="flex items-center space-x-4">
                     <div className="relative">
-                        {stats.img_url ? (
+                        {!imgError && stats.img_url ? (
                             <img
                                 src={stats.img_url}
                                 alt={stats.name}
                                 className="w-16 h-16 rounded-xl object-cover border border-border-hairline"
-                                onError={(e) => (e.currentTarget.style.display = 'none')}
+                                onError={() => setImgError(true)}
                             />
                         ) : (
                             <div className="w-16 h-16 rounded-xl bg-surface-2 border border-border-hairline flex items-center justify-center">
@@ -74,8 +71,7 @@ export function PlayerCard({ stats }: { stats: PlayerStats }) {
                         {stats.pastMatchesDetails.slice(0, 8).map((match, i) => (
                             <div
                                 key={i}
-                                role="button"
-                                tabIndex={0}
+                                aria-hidden="true"
                                 title={`${match.date}: vs ${match.opponentName} (${match.playerTeamScore}-${match.opponentScore})`}
                                 className={cn(
                                     "w-2.5 h-2.5 rounded-full shrink-0 min-w-[10px] min-h-[10px]",

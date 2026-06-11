@@ -1,11 +1,6 @@
 import { forwardRef, type ReactNode, type ButtonHTMLAttributes } from 'react'
 import { Loader2 } from 'lucide-react'
-import { twMerge } from 'tailwind-merge'
-import { clsx, type ClassValue } from 'clsx'
-
-function cn(...inputs: ClassValue[]) {
-    return twMerge(clsx(inputs))
-}
+import { cn } from '../utils/cn'
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger'
 type ButtonSize = 'md' | 'dense'

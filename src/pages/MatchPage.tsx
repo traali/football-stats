@@ -48,7 +48,7 @@ export function MatchPage() {
 
                 <section className="max-w-xl mx-auto">
                     <form onSubmit={handleSearch} className="relative group">
-                        <div className="relative flex items-center bg-surface-2 border border-border-hairline rounded-lg overflow-hidden focus-within:border-accent focus-within:ring-1 focus-within:ring-accent transition-all duration-200">
+                        <div className="relative flex items-center bg-surface-2 border border-border-hairline rounded-lg overflow-hidden focus-within:border-accent transition-all duration-200">
                             <div className="pl-4 text-text-muted">
                                 <Search className="w-5 h-5" />
                             </div>
@@ -57,7 +57,7 @@ export function MatchPage() {
                                 value={searchValue}
                                 onChange={(e) => setSearchValue(e.target.value)}
                                 placeholder="Match ID (esim. 3760372)"
-                                className="flex-grow bg-transparent border-none focus:ring-0 text-text-primary px-4 py-3 placeholder:text-text-muted text-lg"
+                                className="grow bg-transparent border-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:outline-none text-text-primary px-4 py-3 placeholder:text-text-muted text-lg"
                             />
                             <Button type="submit" variant="primary" loading={loading} className="min-w-[100px]">
                                 Hae
@@ -121,7 +121,7 @@ export function MatchPage() {
                                         <div className="space-y-6">
                                             <div className="flex items-center">
                                                 <div className="w-1 h-8 mr-4 rounded-full bg-gradient-to-b from-bmw-cyan via-bmw-magenta to-bmw-amber shrink-0" />
-                                                <h2 className="text-3xl font-black text-text-primary">{data.match.team_A_name}</h2>
+                                                <h2 className="text-3xl font-bold text-text-primary">{data.match.team_A_name}</h2>
                                             </div>
                                             <motion.div
                                                 className="grid grid-cols-1 md:grid-cols-2 gap-5"
@@ -138,7 +138,7 @@ export function MatchPage() {
                                         <div className="space-y-6">
                                             <div className="flex items-center">
                                                 <div className="w-1 h-8 mr-4 rounded-full bg-gradient-to-b from-bmw-cyan via-bmw-magenta to-bmw-amber shrink-0" />
-                                                <h2 className="text-3xl font-black text-text-primary">{data.match.team_B_name}</h2>
+                                                <h2 className="text-3xl font-bold text-text-primary">{data.match.team_B_name}</h2>
                                             </div>
                                             <motion.div
                                                 className="grid grid-cols-1 md:grid-cols-2 gap-5"

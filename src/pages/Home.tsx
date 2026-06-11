@@ -38,7 +38,7 @@ export function Home() {
 
                 <section className="max-w-xl mx-auto">
                     <form onSubmit={handleSubmit} className="relative group">
-                        <div className="relative flex items-center bg-surface-2 border border-border-hairline rounded-lg overflow-hidden focus-within:border-accent focus-within:ring-1 focus-within:ring-accent transition-all duration-200">
+                        <div className="relative flex items-center bg-surface-2 border border-border-hairline rounded-lg overflow-hidden focus-within:border-accent transition-all duration-200">
                             <div className="pl-4 text-text-muted">
                                 <Search className="w-5 h-5" />
                             </div>
@@ -47,7 +47,7 @@ export function Home() {
                                 value={matchId}
                                 onChange={(e) => setMatchId(e.target.value)}
                                 placeholder="Match ID (esim. 3760372)"
-                                className="flex-grow bg-transparent border-none focus:ring-0 text-text-primary px-4 py-3 placeholder:text-text-muted text-lg"
+                                className="grow bg-transparent border-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:outline-none text-text-primary px-4 py-3 placeholder:text-text-muted text-lg"
                             />
                             <Button type="submit" className="min-w-[100px]">
                                 Hae

@@ -1,15 +1,10 @@
 import { NavLink } from 'react-router-dom'
 import { Home, Search } from 'lucide-react'
-import { twMerge } from 'tailwind-merge'
-import { clsx, type ClassValue } from 'clsx'
-
-function cn(...inputs: ClassValue[]) {
-    return twMerge(clsx(inputs))
-}
+import { cn } from '../utils/cn'
 
 const navItems = [
     { to: '/', label: 'Etusivu', icon: Home },
-    { to: '/match/3760372', label: 'Ottelu', icon: Search },
+    { to: '/match/', label: 'Ottelu', icon: Search },
 ]
 
 export function BottomNav() {
@@ -21,7 +16,7 @@ export function BottomNav() {
                     to={item.to}
                     className={({ isActive }) =>
                         cn(
-                            'flex flex-col items-center justify-center gap-0.5 py-2 px-4 min-w-[64px] min-h-[48px] transition-colors duration-200',
+                            'flex flex-col items-center justify-center gap-0.5 py-2 px-4 min-w-[64px] min-h-[48px] transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50',
                             isActive ? 'text-accent' : 'text-text-muted hover:text-text-secondary',
                         )
                     }

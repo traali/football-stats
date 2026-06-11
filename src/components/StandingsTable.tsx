@@ -13,12 +13,12 @@ export function StandingsTable({ group, teamAId, teamBId }: { group: GroupDetail
                 <table className="w-full text-sm text-left">
                     <thead className="text-[10px] uppercase tracking-widest text-text-muted bg-surface-3">
                         <tr>
-                            <th className="px-5 py-3 font-medium">#</th>
-                            <th className="px-5 py-3 font-medium">Joukkue</th>
-                            <th className="px-3 py-3 font-medium text-center">O</th>
-                            <th className="px-3 py-3 font-medium text-center">V</th>
-                            <th className="px-3 py-3 font-medium text-center">T</th>
-                            <th className="px-3 py-3 font-medium text-center">H</th>
+                            <th className="px-5 py-3 font-bold">#</th>
+                            <th className="px-5 py-3 font-bold">Joukkue</th>
+                            <th className="px-3 py-3 font-bold text-center">O</th>
+                            <th className="px-3 py-3 font-bold text-center">V</th>
+                            <th className="px-3 py-3 font-bold text-center">T</th>
+                            <th className="px-3 py-3 font-bold text-center">H</th>
                             <th className="px-3 py-3 font-medium text-center font-bold text-text-primary">P</th>
                         </tr>
                     </thead>

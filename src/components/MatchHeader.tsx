@@ -46,7 +46,7 @@ export function MatchHeader({ match, group, teamA, teamB }: { match: MatchDetail
                 <div className="flex items-center justify-center space-x-4 md:space-x-8 w-full">
                     <div className="flex-1 flex flex-col items-end space-y-2">
                         {crestA && <img src={crestA} alt={match.team_A_name} className="w-8 h-8 object-contain mb-1" />}
-                        <h3 className="text-xl md:text-3xl font-black text-text-primary text-right leading-tight">{match.team_A_name}</h3>
+                        <h3 className="text-xl md:text-3xl font-bold text-text-primary text-right leading-tight">{match.team_A_name}</h3>
                     </div>
 
                     <div className="flex flex-col items-center shrink-0">
@@ -57,7 +57,7 @@ export function MatchHeader({ match, group, teamA, teamB }: { match: MatchDetail
 
                     <div className="flex-1 flex flex-col items-start space-y-2">
                         {crestB && <img src={crestB} alt={match.team_B_name} className="w-8 h-8 object-contain mb-1" />}
-                        <h3 className="text-xl md:text-3xl font-black text-text-primary text-left leading-tight">{match.team_B_name}</h3>
+                        <h3 className="text-xl md:text-3xl font-bold text-text-primary text-left leading-tight">{match.team_B_name}</h3>
                     </div>
                 </div>
 
