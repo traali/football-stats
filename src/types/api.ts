@@ -205,6 +205,7 @@ export interface PlayerStats {
     gamesPlayedLastSeason: number;
     goalsScoredLastSeason: number;
     goalsByTeamThisYear: Record<string, number>;
+    warningsByTeamThisYear: Record<string, number>;
     gamesByTeamThisYear: Record<string, number>;
     goalsForThisSpecificTeamInSeason: number;
     pastMatchesDetails: PastMatchDetail[];

@@ -7,6 +7,7 @@ interface ProcessedStats {
     warningsThisYear: number;
     suspensionsThisYear: number;
     goalsByTeamThisYear: Record<string, number>;
+    warningsByTeamThisYear: Record<string, number>;
     gamesByTeamThisYear: Record<string, number>;
     goalsForThisSpecificTeamInSeason: number;
     pastMatchesDetails: PastMatchDetail[];
@@ -27,6 +28,7 @@ export function processPlayerMatchHistory(
         warningsThisYear: 0,
         suspensionsThisYear: 0,
         goalsByTeamThisYear: {} as Record<string, number>,
+        warningsByTeamThisYear: {} as Record<string, number>,
         gamesByTeamThisYear: {} as Record<string, number>,
         goalsForThisSpecificTeamInSeason: 0,
         pastMatchesDetails: [] as PastMatchDetail[],
@@ -50,6 +52,7 @@ export function processPlayerMatchHistory(
                 stats.suspensionsThisYear += suspensions;
 
                 stats.goalsByTeamThisYear[teamName] = (stats.goalsByTeamThisYear[teamName] || 0) + goals;
+                stats.warningsByTeamThisYear[teamName] = (stats.warningsByTeamThisYear[teamName] || 0) + warnings;
                 stats.gamesByTeamThisYear[teamName] = (stats.gamesByTeamThisYear[teamName] || 0) + 1;
 
                 if (teamName === teamNameForContext) {

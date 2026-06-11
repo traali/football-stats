@@ -68,11 +68,12 @@ export function PlayerCard({ stats }: { stats: PlayerStats }) {
                     <div className="space-y-1.5">
                         {Object.entries(stats.gamesByTeamThisYear).map(([team, games]) => {
                             const goals = stats.goalsByTeamThisYear[team] || 0
+                            const warnings = stats.warningsByTeamThisYear[team] || 0
                             return (
                                 <div key={team} className="flex items-center justify-between text-sm">
                                     <span className="text-text-primary font-medium truncate mr-2">{team}</span>
                                     <span className="text-text-secondary shrink-0">
-                                        {games} ott. / {goals} maalia
+                                        {games} ott. / {goals} maalia{warnings > 0 ? ` / ${warnings} var.` : ''}
                                     </span>
                                 </div>
                             )
