@@ -17,7 +17,8 @@ export function StandingsTable({ teams, matches = [], teamAId, teamBId, selected
     const sorted = [...teams].sort((a, b) => (parseInt(a.current_standing) || 999) - (parseInt(b.current_standing) || 999))
 
     const opponentResults = useMemo(() => {
-        const map = new Map<string, { result: 'win' | 'draw' | 'loss' | 'upcoming'; opponentTeamId: string }[]>()
+        type Result = { result: 'win' | 'draw' | 'loss' | 'upcoming'; matchId: string }
+        const map = new Map<string, Result[]>()
         if (!selectedTeam || matches.length === 0) return map
         for (const m of matches) {
             if (m.team_A_id !== selectedTeam && m.team_B_id !== selectedTeam) continue
@@ -39,15 +40,18 @@ export function StandingsTable({ teams, matches = [], teamAId, teamBId, selected
                 result = 'draw'
             }
             const existing = map.get(opponentTeamId) || []
-            existing.push({ result, opponentTeamId })
+            existing.push({ result, matchId: m.match_id })
             map.set(opponentTeamId, existing)
         }
         return map
     }, [selectedTeam, matches])
 
-    const resultColor = { win: 'text-semantic-green', draw: 'text-accent', loss: 'text-semantic-red', upcoming: 'text-text-muted' }
-    const resultBg = { win: 'bg-semantic-green/8', draw: 'bg-accent/8', loss: 'bg-semantic-red/8', upcoming: 'bg-surface-2' }
-    const resultLabel = { win: 'V', draw: 'T', loss: 'H', upcoming: '?' }
+    const resultConfig = {
+        win: { color: 'text-semantic-green', bg: 'bg-semantic-green/8', dot: 'bg-semantic-green', label: 'V' },
+        draw: { color: 'text-accent', bg: 'bg-accent/8', dot: 'bg-accent', label: 'T' },
+        loss: { color: 'text-semantic-red', bg: 'bg-semantic-red/8', dot: 'bg-semantic-red', label: 'H' },
+        upcoming: { color: 'text-text-muted', bg: 'bg-surface-2', dot: 'bg-text-muted', label: '?' },
+    }
 
     return (
         <div className="bg-surface-1 border border-border-hairline rounded-xl overflow-hidden">
@@ -59,16 +63,15 @@ export function StandingsTable({ teams, matches = [], teamAId, teamBId, selected
                         </span>
                         <span className="text-text-muted">vastustajat:</span>
                         <span className="flex items-center gap-2">
-                            <span className="inline-flex items-center gap-0.5"><span className="w-2 h-2 rounded-full bg-semantic-green" /> V</span>
-                            <span className="inline-flex items-center gap-0.5"><span className="w-2 h-2 rounded-full bg-accent" /> T</span>
-                            <span className="inline-flex items-center gap-0.5"><span className="w-2 h-2 rounded-full bg-semantic-red" /> H</span>
-                            <span className="inline-flex items-center gap-0.5"><span className="w-2 h-2 rounded-full bg-text-muted" /> ?</span>
+                            {(['win', 'draw', 'loss', 'upcoming'] as const).map(k => (
+                                <span key={k} className="inline-flex items-center gap-0.5">
+                                    <span className={cn('w-2 h-2 rounded-full', resultConfig[k].dot)} />
+                                    {' '}{resultConfig[k].label}
+                                </span>
+                            ))}
                         </span>
                     </div>
-                    <button
-                        onClick={(e) => { e.stopPropagation(); onSelectTeam?.(null) }}
-                        className="text-text-muted hover:text-text-primary transition-colors px-2 py-1"
-                    >
+                    <button onClick={(e) => { e.stopPropagation(); onSelectTeam?.(null) }} className="text-text-muted hover:text-text-primary transition-colors px-2 py-1">
                         Tyhjennä
                     </button>
                 </div>
@@ -93,7 +96,7 @@ export function StandingsTable({ teams, matches = [], teamAId, teamBId, selected
                             const isMatchTeam = teamAId && teamBId && (team.team_id === teamAId || team.team_id === teamBId)
                             const isSelected = team.team_id === selectedTeam
                             const results = opponentResults.get(team.team_id) || []
-                            const primaryResult = results[0]?.result
+                            const primaryResult = results[0]
 
                             return (
                                 <tr
@@ -102,7 +105,7 @@ export function StandingsTable({ teams, matches = [], teamAId, teamBId, selected
                                     className={cn(
                                         'cursor-pointer transition-colors',
                                         isSelected && 'bg-surface-3 ring-1 ring-inset ring-accent/30',
-                                        !isSelected && primaryResult && resultBg[primaryResult],
+                                        !isSelected && primaryResult && resultConfig[primaryResult.result].bg,
                                         !isSelected && !primaryResult && isMatchTeam && 'bg-accent-muted',
                                         !isSelected && !primaryResult && !isMatchTeam && 'hover:bg-surface-2',
                                     )}
@@ -113,7 +116,11 @@ export function StandingsTable({ teams, matches = [], teamAId, teamBId, selected
                                             {isMatchTeam && !isSelected && <span className="w-0.5 h-4 rounded-full bg-gradient-to-b from-bmw-cyan via-bmw-magenta to-bmw-amber shrink-0" />}
                                             <div className="flex items-center gap-1.5 min-w-0">
                                                 {primaryResult && (
-                                                    <span className={cn('w-2 h-2 rounded-full shrink-0', resultColor[primaryResult].replace('text-', 'bg-'))} />
+                                                    <span
+                                                        onClick={(e) => { e.stopPropagation(); navigate(`/match/${primaryResult.matchId}`) }}
+                                                        className={cn('w-2.5 h-2.5 rounded-full shrink-0 cursor-pointer hover:scale-125 transition-transform', resultConfig[primaryResult.result].dot)}
+                                                        title={primaryResult.result === 'upcoming' ? 'Tuleva ottelu' : `Siirry otteluun`}
+                                                    />
                                                 )}
                                                 <span
                                                     className="truncate hover:text-accent"
@@ -122,9 +129,12 @@ export function StandingsTable({ teams, matches = [], teamAId, teamBId, selected
                                                     {team.team_name}
                                                 </span>
                                             </div>
-                                            {primaryResult && results.length > 0 && (
-                                                <span className={cn('text-xs font-bold shrink-0', resultColor[primaryResult])}>
-                                                    {resultLabel[primaryResult]}
+                                            {primaryResult && (
+                                                <span
+                                                    onClick={(e) => { e.stopPropagation(); navigate(`/match/${primaryResult.matchId}`) }}
+                                                    className={cn('text-xs font-bold shrink-0 cursor-pointer hover:opacity-70 transition-opacity', resultConfig[primaryResult.result].color)}
+                                                >
+                                                    {resultConfig[primaryResult.result].label}
                                                 </span>
                                             )}
                                         </div>
