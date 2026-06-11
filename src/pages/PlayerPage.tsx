@@ -43,6 +43,7 @@ export function PlayerPage() {
     const [player, setPlayer] = useState<PlayerAPIResponse | null>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const [expanded, setExpanded] = useState<{ season: string; stat: string } | null>(null)
 
     useEffect(() => {
         if (!playerId) return
@@ -137,18 +138,79 @@ export function PlayerPage() {
                         <h2 className="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-1.5">
                             <TrendingDown className="w-4 h-4 text-accent" /> Kausivertailu
                         </h2>
-                        {seasons.map(s => (
-                            <div key={s.seasonName} className="space-y-1">
-                                <p className="text-text-primary text-sm font-medium">{s.seasonName}</p>
-                                <div className="flex items-center gap-3 text-xs text-text-muted">
-                                    <span>{s.matches} O</span>
-                                    <span className="text-semantic-green">{s.wins} V</span>
-                                    <span className="text-accent">{s.draws} T</span>
-                                    <span className="text-semantic-red">{s.losses} H</span>
-                                    <span className="text-accent font-bold">{s.goals} maalia</span>
+                        {seasons.map(s => {
+                            const seasonMatches = (player.matches || []).filter(m =>
+                                m.season_id === s.seasonName && m.status === 'Played'
+                            )
+                            const statFilters: Record<string, (m: typeof seasonMatches[0]) => boolean> = {
+                                O: () => true,
+                                V: m => !!(m.winner_id && m.winner_id === m.team_id),
+                                T: m => !m.winner_id || m.winner_id === '0' || m.winner_id === '-',
+                                H: m => !!(m.winner_id && m.winner_id !== '0' && m.winner_id !== '-' && m.winner_id !== m.team_id),
+                                maalia: m => parseInt(m.player_goals || '0') > 0,
+                            }
+                            const statLabels: Record<string, { label: string; count: number; color: string }> = {
+                                O: { label: 'O', count: s.matches, color: 'text-text-muted' },
+                                V: { label: 'V', count: s.wins, color: 'text-semantic-green' },
+                                T: { label: 'T', count: s.draws, color: 'text-accent' },
+                                H: { label: 'H', count: s.losses, color: 'text-semantic-red' },
+                                maalia: { label: 'maalia', count: s.goals, color: 'text-accent font-bold' },
+                            }
+                            return (
+                                <div key={s.seasonName} className="space-y-1">
+                                    <p className="text-text-primary text-sm font-medium">{s.seasonName}</p>
+                                    <div className="flex items-center gap-2 text-xs flex-wrap">
+                                        {Object.entries(statLabels).map(([key, st]) => {
+                                            const isExpanded = expanded?.season === s.seasonName && expanded?.stat === key
+                                            return (
+                                                <button
+                                                    key={key}
+                                                    onClick={() => setExpanded(isExpanded ? null : { season: s.seasonName, stat: key })}
+                                                    className={cn(
+                                                        'px-2.5 py-1 rounded-lg transition-colors',
+                                                        isExpanded ? 'bg-surface-3 ring-1 ring-accent/50' : 'hover:bg-surface-2',
+                                                        st.color,
+                                                    )}
+                                                >
+                                                    {st.count} {st.label}
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
+                                    {expanded?.season === s.seasonName && (
+                                        <div className="space-y-0.5 pt-1">
+                                            {seasonMatches.filter(statFilters[expanded.stat] || statFilters.O).map(m => {
+                                                const isA = m.team_A_id === m.team_id
+                                                const oppName = isA ? m.team_B_name : m.team_A_name
+                                                const myScore = isA ? m.fs_A : m.fs_B
+                                                const oppScore = isA ? m.fs_B : m.fs_A
+                                                const wld = m.winner_id && m.winner_id !== '0' && m.winner_id !== '-'
+                                                    ? (m.winner_id === m.team_id ? 'V' : 'H')
+                                                    : (m.fs_A && m.fs_B ? 'T' : null)
+                                                const wldColor = wld === 'V' ? 'text-semantic-green' : wld === 'H' ? 'text-semantic-red' : 'text-accent'
+                                                return (
+                                                    <div
+                                                        key={m.match_id}
+                                                        onClick={() => navigate(`/match/${m.match_id}`)}
+                                                        className="flex items-center justify-between py-1 px-2 rounded-md hover:bg-surface-2 cursor-pointer transition-colors text-xs"
+                                                    >
+                                                        <span className="text-text-muted w-10 shrink-0">{m.date?.slice(5)}</span>
+                                                        <span className="text-text-primary truncate text-right flex-1">{oppName}</span>
+                                                        <span className="font-mono font-bold mx-1.5 shrink-0 flex items-center gap-1">
+                                                            {m.fs_A ? `${myScore}–${oppScore}` : '–'}
+                                                            {wld && <span className={cn('text-xs font-bold', wldColor)}>{wld}</span>}
+                                                        </span>
+                                                    </div>
+                                                )
+                                            })}
+                                            {seasonMatches.filter(statFilters[expanded.stat] || statFilters.O).length === 0 && (
+                                                <p className="text-text-muted text-xs py-2">Ei otteluita</p>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
-                            </div>
-                        ))}
+                            )
+                        })}
                     </div>
                 )}
 
