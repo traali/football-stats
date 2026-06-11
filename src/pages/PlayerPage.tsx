@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, User, TrendingDown } from 'lucide-react'
+import { ArrowLeft, User, TrendingDown, Calendar } from 'lucide-react'
 import { getPlayerData } from '../services/api'
 import type { PlayerAPIResponse } from '../types/api'
 
@@ -60,6 +60,11 @@ export function PlayerPage() {
     const teamKeys = stats ? [...new Set(stats.map(s => s.team_id).filter(Boolean))] : []
 
     const playerName = `${player.first_name || ''} ${player.last_name || ''}`.trim()
+    const age = player.birthyear ? new Date().getFullYear() - parseInt(player.birthyear) : null
+
+    const groupLevels = stats
+        ? [...new Set(stats.map(s => [s.competition_name, s.category_name, s.group_name].filter(Boolean).join(' / ')).filter(Boolean))]
+        : []
 
     const pastMatches = (player.matches || [])
         .filter(m => m.status === 'Played')
@@ -84,6 +89,17 @@ export function PlayerPage() {
                         </div>
                         <div className="min-w-0">
                             <h1 className="text-xl font-bold text-text-primary truncate">{playerName}</h1>
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-text-muted mt-1">
+                                {age !== null && (
+                                    <span className="flex items-center gap-1">
+                                        <Calendar className="w-3.5 h-3.5 text-accent" />
+                                        {age} v ({player.birthyear})
+                                    </span>
+                                )}
+                                {groupLevels.slice(0, 3).map((g, i) => (
+                                    <span key={i} className="text-xs bg-surface-2 px-2 py-0.5 rounded-full">{g}</span>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </div>
