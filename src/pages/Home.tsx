@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Search, Trophy, Heart, Star, Shield, Activity, ChevronRight } from 'lucide-react'
+import { Search, Trophy, Heart, Shield, Activity, ChevronRight } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '../components/Button'
 import { getCompetitions } from '../services/api'
 import { useFavorites } from '../hooks/useFavorites'
-import { cn } from '../utils/cn'
 import type { Competition } from '../types/api'
 
 const SPL_IDS = ['spl', 'spf', 'b_jun', 'c_jun', 'd_jun']

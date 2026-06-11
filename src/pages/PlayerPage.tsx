@@ -63,6 +63,7 @@ export function PlayerPage() {
 
     const playerName = `${player.first_name || ''} ${player.last_name || ''}`.trim()
     const age = player.birthyear ? new Date().getFullYear() - parseInt(player.birthyear) : null
+    const ageValid = age !== null && !isNaN(age)
 
     const groupLevels = stats
         ? [...new Set(stats.map(s => [s.competition_name, s.category_name, s.group_name].filter(Boolean).join(' / ')).filter(Boolean))]
@@ -92,7 +93,7 @@ export function PlayerPage() {
                         <div className="min-w-0">
                             <h1 className="text-xl font-bold text-text-primary truncate">{playerName}</h1>
                             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-text-muted mt-1">
-                                {age !== null && (
+                                {ageValid && (
                                     <span className="flex items-center gap-1">
                                         <Calendar className="w-3.5 h-3.5 text-accent" />
                                         {age} v ({player.birthyear})
