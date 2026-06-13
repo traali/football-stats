@@ -26,10 +26,11 @@ function buildSeasonStats(matches?: PlayerAPIResponse['matches'] | null): Season
         }
         s.matches++
         s.goals += parseInt(m.player_goals || '0') || 0
-        const isWin = m.winner_id && m.winner_id !== '0' && m.winner_id !== '-' && m.winner_id === m.team_id
-        const isLoss = m.winner_id && m.winner_id !== '0' && m.winner_id !== '-' && m.winner_id !== m.team_id
-        if (isWin) s.wins++
-        else if (isLoss) s.losses++
+        const isA = m.team_id === m.team_A_id
+        const myScore = isA ? parseInt(m.fs_A || '0', 10) : parseInt(m.fs_B || '0', 10)
+        const oppScore = isA ? parseInt(m.fs_B || '0', 10) : parseInt(m.fs_A || '0', 10)
+        if (myScore > oppScore) s.wins++
+        else if (myScore < oppScore) s.losses++
         else s.draws++
     }
     return [...bySeason.entries()]
@@ -145,9 +146,24 @@ export function PlayerPage() {
                             )
                             const statFilters: Record<string, (m: typeof seasonMatches[0]) => boolean> = {
                                 O: () => true,
-                                V: m => !!(m.winner_id && m.winner_id === m.team_id),
-                                T: m => !m.winner_id || m.winner_id === '0' || m.winner_id === '-',
-                                H: m => !!(m.winner_id && m.winner_id !== '0' && m.winner_id !== '-' && m.winner_id !== m.team_id),
+                                V: m => {
+                                    const isA = m.team_id === m.team_A_id
+                                    const myScore = isA ? parseInt(m.fs_A || '0', 10) : parseInt(m.fs_B || '0', 10)
+                                    const oppScore = isA ? parseInt(m.fs_B || '0', 10) : parseInt(m.fs_A || '0', 10)
+                                    return myScore > oppScore
+                                },
+                                T: m => {
+                                    const isA = m.team_id === m.team_A_id
+                                    const myScore = isA ? parseInt(m.fs_A || '0', 10) : parseInt(m.fs_B || '0', 10)
+                                    const oppScore = isA ? parseInt(m.fs_B || '0', 10) : parseInt(m.fs_A || '0', 10)
+                                    return myScore === oppScore
+                                },
+                                H: m => {
+                                    const isA = m.team_id === m.team_A_id
+                                    const myScore = isA ? parseInt(m.fs_A || '0', 10) : parseInt(m.fs_B || '0', 10)
+                                    const oppScore = isA ? parseInt(m.fs_B || '0', 10) : parseInt(m.fs_A || '0', 10)
+                                    return myScore < oppScore
+                                },
                                 maalia: m => parseInt(m.player_goals || '0') > 0,
                             }
                             const statLabels: Record<string, { label: string; count: number; color: string; bg: string }> = {
@@ -181,13 +197,11 @@ export function PlayerPage() {
                                     {expanded?.season === s.seasonName && (
                                         <div className="space-y-0.5 pt-1">
                                             {seasonMatches.filter(statFilters[expanded.stat] || statFilters.O).map(m => {
-                                                const isA = m.team_A_id === m.team_id
+                                                const isA = m.team_id === m.team_A_id
                                                 const oppName = isA ? m.team_B_name : m.team_A_name
-                                                const myScore = isA ? m.fs_A : m.fs_B
-                                                const oppScore = isA ? m.fs_B : m.fs_A
-                                                const wld = m.winner_id && m.winner_id !== '0' && m.winner_id !== '-'
-                                                    ? (m.winner_id === m.team_id ? 'V' : 'H')
-                                                    : (m.fs_A && m.fs_B ? 'T' : null)
+                                                const myScore = isA ? parseInt(m.fs_A || '0', 10) : parseInt(m.fs_B || '0', 10)
+                                                const oppScore = isA ? parseInt(m.fs_B || '0', 10) : parseInt(m.fs_A || '0', 10)
+                                                const wld = myScore > oppScore ? 'V' : myScore < oppScore ? 'H' : 'T'
                                                 const wldColor = wld === 'V' ? 'text-semantic-green' : wld === 'H' ? 'text-semantic-red' : 'text-accent'
                                                 return (
                                                     <div
@@ -219,13 +233,15 @@ export function PlayerPage() {
                     <div className="bg-surface-1 border border-border-hairline rounded-xl p-5 space-y-3">
                         <h2 className="text-sm font-bold text-text-primary uppercase tracking-wider">Viimeisimmät ottelut</h2>
                         {pastMatches.map(m => {
-                            const isA = m.team_A_id === m.team_id
+                            const isA = m.team_id === m.team_A_id
                             const oppName = isA ? m.team_B_name : m.team_A_name
                             const myScore = isA ? m.fs_A : m.fs_B
                             const oppScore = isA ? m.fs_B : m.fs_A
-                            const wld = m.winner_id && m.winner_id !== '0' && m.winner_id !== '-'
-                                ? (m.winner_id === m.team_id ? 'V' : 'H')
-                                : (m.fs_A && m.fs_B ? 'T' : null)
+                            const wld = (() => {
+                                const myScoreVal = parseInt(myScore || '0', 10)
+                                const oppScoreVal = parseInt(oppScore || '0', 10)
+                                return myScoreVal > oppScoreVal ? 'V' : myScoreVal < oppScoreVal ? 'H' : 'T'
+                            })()
                             const wldColor = wld === 'V' ? 'text-semantic-green' : wld === 'H' ? 'text-semantic-red' : 'text-accent'
                             return (
                                 <div

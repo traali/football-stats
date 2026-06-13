@@ -73,10 +73,16 @@ export function processPlayerMatchHistory(
                         opponentScore = match.fs_A ?? "";
                     }
 
-                    if (match.winner_id === match.team_id) {
-                        resultIndicator = 'win';
-                    } else if (match.winner_id && match.winner_id !== "0" && match.winner_id !== "-") {
-                        resultIndicator = 'loss';
+                    const myScore = parseInt(playerTeamScore, 10);
+                    const oppScore = parseInt(opponentScore, 10);
+                    if (!isNaN(myScore) && !isNaN(oppScore)) {
+                        if (myScore > oppScore) {
+                            resultIndicator = 'win';
+                        } else if (myScore < oppScore) {
+                            resultIndicator = 'loss';
+                        } else {
+                            resultIndicator = 'draw';
+                        }
                     }
 
                     stats.pastMatchesDetails.push({
