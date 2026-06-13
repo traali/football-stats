@@ -1,4 +1,4 @@
-import { createBrowserRouter, Outlet } from 'react-router-dom'
+import { createHashRouter, Outlet } from 'react-router-dom'
 import { Home } from './pages/Home'
 import { MatchPage } from './pages/MatchPage'
 import { NotFound } from './pages/NotFound'
@@ -19,7 +19,7 @@ function Layout() {
     )
 }
 
-export const router = createBrowserRouter([
+export const router = createHashRouter([
     {
         element: <Layout />,
         errorElement: <NotFound />,
@@ -35,6 +35,4 @@ export const router = createBrowserRouter([
             { path: '*', element: <NotFound /> },
         ],
     },
-], {
-    basename: import.meta.env.BASE_URL,
-})
+])
