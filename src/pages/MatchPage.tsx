@@ -8,6 +8,7 @@ import { PlayerCard } from '../components/PlayerCard'
 import { StandingsTable } from '../components/StandingsTable'
 import { Button } from '../components/Button'
 import { DualStatBar } from '../components/DualStatBar'
+import { PreMatchComparison } from '../components/PreMatchComparison'
 import { MatchHeaderSkeleton, PlayerCardSkeleton, StandingsTableSkeleton } from '../components/Skeleton'
 
 export function MatchPage() {
@@ -110,6 +111,16 @@ export function MatchPage() {
                                 className="space-y-12"
                             >
                                 <MatchHeader match={data.match} group={data.group} teamA={data.teamA} teamB={data.teamB} />
+
+                                {data.match.status !== 'Played' && data.group?.matches && (
+                                    <PreMatchComparison
+                                        teamAId={data.match.team_A_id}
+                                        teamBId={data.match.team_B_id}
+                                        teamAName={data.match.team_A_name}
+                                        teamBName={data.match.team_B_name}
+                                        matches={data.group.matches}
+                                    />
+                                )}
 
                                 <div className="bg-surface-1 border border-border-hairline rounded-xl p-5 space-y-4">
                                     <h4 className="text-xs font-bold text-text-muted uppercase tracking-widest">Joukkuevertailu</h4>
