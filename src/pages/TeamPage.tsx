@@ -60,14 +60,34 @@ export function TeamPage() {
                                                 {team.birthyear}
                                             </span>
                                         )}
-                                        {team?.primary_category && Object.values(team.primary_category).map((v, i) => (
-                                            <span key={i} className="text-xs bg-surface-2 px-2 py-0.5 rounded-full">{v}</span>
-                                        ))}
-                                        {team?.categories?.slice(0, 2).map((c, i) => (
-                                            Object.values(c).map((v, j) => (
-                                                <span key={`${i}-${j}`} className="text-xs bg-surface-2 px-2 py-0.5 rounded-full">{v}</span>
-                                            ))
-                                        ))}
+                                        {(() => {
+                                            const getCategoryName = (c: any): string | null => {
+                                                if (!c) return null;
+                                                const name = c.category_name;
+                                                if (typeof name === 'string') return name;
+                                                if (name && typeof name.fi === 'string') return name.fi;
+                                                if (c.category_name_translations && typeof c.category_name_translations.fi === 'string') {
+                                                    return c.category_name_translations.fi;
+                                                }
+                                                return null;
+                                            };
+                                            const primaryCatName = getCategoryName(team?.primary_category);
+                                            const categoryNames = new Set<string>();
+                                            if (primaryCatName) {
+                                                categoryNames.add(primaryCatName);
+                                            }
+                                            if (team?.categories) {
+                                                team.categories.forEach(c => {
+                                                    const name = getCategoryName(c);
+                                                    if (name) categoryNames.add(name);
+                                                });
+                                            }
+                                            return Array.from(categoryNames).slice(0, 3).map((name, idx) => (
+                                                <span key={idx} className="text-xs bg-surface-2 px-2 py-0.5 rounded-full text-text-primary">
+                                                    {name}
+                                                </span>
+                                            ));
+                                        })()}
                                         {team?.club_name && <span className="text-text-muted">{team.club_name}</span>}
                                     </div>
                                 </div>

@@ -25,6 +25,7 @@ export const router = createHashRouter([
         errorElement: <NotFound />,
         children: [
             { path: '/', element: <Home /> },
+            { path: '/match', element: <MatchPage /> },
             { path: '/match/:matchId', element: <MatchPage /> },
             { path: '/competition/:compId', element: <CompetitionPage /> },
             { path: '/competition/:compId/category/:catId', element: <CategoryPage /> },

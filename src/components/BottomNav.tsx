@@ -5,7 +5,7 @@ import { cn } from '../utils/cn'
 const navItems = [
     { to: '/', label: 'Etusivu', icon: Home },
     { to: '/competition/spl', label: 'Selaa', icon: LayoutGrid },
-    { to: '/match/', label: 'Ottelu', icon: Search },
+    { to: '/match', label: 'Ottelu', icon: Search },
     { to: '/favorites', label: 'Suosikit', icon: Heart },
 ]
 
