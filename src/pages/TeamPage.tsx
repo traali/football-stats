@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Heart, Users, Calendar, Shield, CalendarDays, User } from 'lucide-react'
 import { cn } from '../utils/cn'
-import { getTeamProfile, getTeamMatches } from '../services/api'
+import { getTeamProfile, getTeamMatches, getGroupFull, batchFetch } from '../services/api'
 import { useFavorites } from '../hooks/useFavorites'
 import type { TeamResponse, DiscoveryMatch } from '../types/api'
 import { APP_CONFIG } from '../types/config'
@@ -18,6 +18,10 @@ export function TeamPage() {
     const [error, setError] = useState<string | null>(null)
     const [tab, setTab] = useState<'roster' | 'matches'>('matches')
     const [selectedYear, setSelectedYear] = useState<string>('all')
+
+    // Historical players state
+    const [historicalPlayersByYear, setHistoricalPlayersByYear] = useState<Record<string, { player_id: string; first_name: string; last_name: string; img_url?: string }[]>>({})
+    const [loadingPlayers, setLoadingPlayers] = useState(false)
 
     const fav = teamId ? isFavorite(teamId) : false
 
@@ -59,12 +63,124 @@ export function TeamPage() {
         return [...yearsSet].sort((a, b) => b.localeCompare(a))
     }, [filteredMatches])
 
+    // Extract relevant groups matching allowed years
+    const relevantGroups = useMemo(() => {
+        if (!team?.groups) return []
+        return (team.groups as any[]).filter(g => {
+            const season = g.competition_season
+            return season && allowedYears.includes(season)
+        })
+    }, [team?.groups, allowedYears])
+
+    // Fetch players for all historical groups to compute roster transitions
+    useEffect(() => {
+        if (!teamId || relevantGroups.length === 0) return
+        let active = true
+        setLoadingPlayers(true)
+
+        const fetchPlayers = async () => {
+            try {
+                const groupKeys = relevantGroups.map(g => `${g.competition_id}:${g.category_id}:${g.group_id}`)
+                
+                const results = await batchFetch(
+                    groupKeys,
+                    async (key, signal) => {
+                        const [compId, catId, groupId] = key.split(':')
+                        return getGroupFull(compId, catId, groupId, signal)
+                    },
+                    5
+                )
+
+                if (!active) return
+
+                const playersBySeason: Record<string, Record<string, { player_id: string; first_name: string; last_name: string; img_url?: string }>> = {}
+
+                allowedYears.forEach(yr => {
+                    playersBySeason[yr] = {}
+                })
+
+                results.forEach((groupData, idx) => {
+                    if (!groupData) return
+                    const groupMeta = relevantGroups[idx]
+                    const season = groupMeta.competition_season
+                    if (!season || !playersBySeason[season]) return
+
+                    const stats = groupData.player_statistics || []
+                    stats.forEach(p => {
+                        if (p.team_id === teamId && p.player_id) {
+                            playersBySeason[season][p.player_id] = {
+                                player_id: p.player_id,
+                                first_name: p.first_name || p.player_name?.split(' ')[1] || '',
+                                last_name: p.last_name || p.player_name?.split(' ')[0] || '',
+                                img_url: p.img_url
+                            }
+                        }
+                    })
+                })
+
+                // Union current active squad with APP_CONFIG.CURRENT_YEAR
+                if (team?.players && playersBySeason[APP_CONFIG.CURRENT_YEAR]) {
+                    team.players.forEach(p => {
+                        if (p.player_id) {
+                            playersBySeason[APP_CONFIG.CURRENT_YEAR][p.player_id] = {
+                                player_id: p.player_id,
+                                first_name: p.first_name || '',
+                                last_name: p.last_name || '',
+                                img_url: p.img_url
+                            }
+                        }
+                    })
+                }
+
+                const finalPlayers: Record<string, { player_id: string; first_name: string; last_name: string; img_url?: string }[]> = {}
+                Object.entries(playersBySeason).forEach(([yr, map]) => {
+                    finalPlayers[yr] = Object.values(map)
+                })
+
+                setHistoricalPlayersByYear(finalPlayers)
+            } catch (err) {
+                console.error('Failed to fetch historical player data:', err)
+            } finally {
+                if (active) setLoadingPlayers(false)
+            }
+        }
+
+        fetchPlayers()
+
+        return () => {
+            active = false
+        }
+    }, [relevantGroups, teamId, team?.players, allowedYears])
+
     // Calculate dynamic team statistics grouped by year/season
     const statsByYear = useMemo(() => {
-        const map = new Map<string, { played: number; wins: number; draws: number; losses: number; goalsFor: number; goalsAgainst: number; diffStr: string }>()
+        const map = new Map<string, {
+            played: number;
+            wins: number;
+            draws: number;
+            losses: number;
+            goalsFor: number;
+            goalsAgainst: number;
+            diffStr: string;
+            ppg: number;
+            goalsScoredPerMatch: number;
+            goalsConcededPerMatch: number;
+        }>()
 
-        // Initialize "all" total statistics
-        map.set('all', { played: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, diffStr: '0' })
+        const createEmptyStat = () => ({
+            played: 0,
+            wins: 0,
+            draws: 0,
+            losses: 0,
+            goalsFor: 0,
+            goalsAgainst: 0,
+            diffStr: '0',
+            ppg: 0,
+            goalsScoredPerMatch: 0,
+            goalsConcededPerMatch: 0
+        })
+
+        map.set('all', createEmptyStat())
 
         filteredMatches.forEach(m => {
             if (m.status !== 'Played' || !m.date) return
@@ -73,7 +189,7 @@ export function TeamPage() {
 
             let s = map.get(year)
             if (!s) {
-                s = { played: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, diffStr: '0' }
+                s = createEmptyStat()
                 map.set(year, s)
             }
 
@@ -89,7 +205,6 @@ export function TeamPage() {
                 else s.draws++
             }
 
-            // Also accumulate in "all"
             const allStats = map.get('all')!
             allStats.played++
             allStats.goalsFor += myScore
@@ -99,8 +214,12 @@ export function TeamPage() {
             else allStats.draws++
         })
 
-        // Calculate diffStr for all entries
         for (const [_, s] of map.entries()) {
+            if (s.played > 0) {
+                s.ppg = (s.wins * 3 + s.draws) / s.played
+                s.goalsScoredPerMatch = s.goalsFor / s.played
+                s.goalsConcededPerMatch = s.goalsAgainst / s.played
+            }
             const diff = s.goalsFor - s.goalsAgainst
             s.diffStr = diff > 0 ? `+${diff}` : `${diff}`
         }
@@ -109,8 +228,78 @@ export function TeamPage() {
     }, [filteredMatches, teamId])
 
     const displayStats = useMemo(() => {
-        return statsByYear.get(selectedYear) || { played: 0, wins: 0, draws: 0, losses: 0, diffStr: '0' }
+        return statsByYear.get(selectedYear) || { played: 0, wins: 0, draws: 0, losses: 0, diffStr: '0', ppg: 0 }
     }, [statsByYear, selectedYear])
+
+    // Performance comparison vs previous season
+    const performanceComparison = useMemo(() => {
+        const currentYear = years[0] || APP_CONFIG.CURRENT_YEAR
+        const targetYear = selectedYear === 'all' ? currentYear : selectedYear
+        const prevYear = String(parseInt(targetYear) - 1)
+
+        const currentStats = statsByYear.get(targetYear)
+        const prevStats = statsByYear.get(prevYear)
+
+        if (!currentStats || currentStats.played === 0) {
+            return null
+        }
+
+        const currentPPG = currentStats.ppg
+        const prevPPG = prevStats && prevStats.played > 0 ? prevStats.ppg : null
+
+        let trend: 'better' | 'worse' | 'neutral' = 'neutral'
+        let ppgDiffStr = ''
+
+        if (prevPPG !== null) {
+            const diff = currentPPG - prevPPG
+            if (diff > 0.15) {
+                trend = 'better'
+            } else if (diff < -0.15) {
+                trend = 'worse'
+            } else {
+                trend = 'neutral'
+            }
+            ppgDiffStr = diff > 0 ? `+${diff.toFixed(2)}` : diff.toFixed(2)
+        }
+
+        return {
+            targetYear,
+            prevYear,
+            currentPPG,
+            prevPPG,
+            trend,
+            ppgDiff: prevPPG !== null ? currentPPG - prevPPG : null,
+            ppgDiffStr,
+            currentGoalsScored: currentStats.goalsScoredPerMatch,
+            prevGoalsScored: prevStats && prevStats.played > 0 ? prevStats.goalsScoredPerMatch : null,
+            currentGoalsConceded: currentStats.goalsConcededPerMatch,
+            prevGoalsConceded: prevStats && prevStats.played > 0 ? prevStats.goalsConcededPerMatch : null,
+        }
+    }, [statsByYear, selectedYear, years])
+
+    // Compute player transitions (new vs gone players)
+    const playerTransitions = useMemo(() => {
+        const currentYear = years[0] || APP_CONFIG.CURRENT_YEAR
+        const targetYear = selectedYear === 'all' ? currentYear : selectedYear
+        const prevYear = String(parseInt(targetYear) - 1)
+
+        const targetPlayers = historicalPlayersByYear[targetYear] || []
+        const prevPlayers = historicalPlayersByYear[prevYear] || []
+
+        const targetIds = new Set(targetPlayers.map(p => p.player_id))
+        const prevIds = new Set(prevPlayers.map(p => p.player_id))
+
+        const newPlayers = targetPlayers.filter(p => !prevIds.has(p.player_id))
+        const gonePlayers = prevPlayers.filter(p => !targetIds.has(p.player_id))
+
+        return {
+            targetYear,
+            prevYear,
+            hasComparisonData: prevPlayers.length > 0 || historicalPlayersByYear[prevYear] !== undefined,
+            newPlayers,
+            gonePlayers
+        }
+    }, [historicalPlayersByYear, selectedYear, years])
     
     // Sort matches: past matches played date desc, upcoming fixtures date asc (filtered by year if applicable)
     const pastMatches = useMemo(() => {
@@ -182,6 +371,111 @@ export function TeamPage() {
                     ))}
                 </div>
             )}
+        </div>
+    )
+
+    // Render roster transitions (new vs gone players)
+    const transitionsContent = (
+        <div className="space-y-4">
+            {/* New Players Bento Box */}
+            <div className="bg-surface-1 border border-border-hairline rounded-xl p-5 space-y-3">
+                <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                        <Users className="w-4 h-4 text-semantic-green" /> Uudet pelaajat ({playerTransitions.newPlayers.length})
+                    </span>
+                    <span className="text-[10px] text-text-muted font-mono font-normal">
+                        Kausi {playerTransitions.targetYear} vs {playerTransitions.prevYear}
+                    </span>
+                </h3>
+                
+                {loadingPlayers ? (
+                    <div className="flex items-center justify-center py-6">
+                        <div className="w-5 h-5 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                    </div>
+                ) : playerTransitions.newPlayers.length === 0 ? (
+                    <p className="text-text-muted text-xs text-center py-6 bg-surface-2 border border-border-hairline border-dashed rounded-lg">
+                        Ei uusia pelaajia tällä kaudella
+                    </p>
+                ) : (
+                    <div className="grid grid-cols-1 gap-2">
+                        {playerTransitions.newPlayers.map(p => (
+                            <div
+                                key={p.player_id}
+                                onClick={() => navigate(`/player/${p.player_id}`)}
+                                className="bg-surface-2 border border-border-hairline hover:border-accent/30 rounded-lg p-2.5 flex items-center justify-between cursor-pointer hover:bg-surface-3 transition-all active:scale-[0.98] min-h-[44px]"
+                            >
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                    <div className="w-7 h-7 rounded-full bg-surface-3 flex items-center justify-center shrink-0 border border-border-hairline">
+                                        {p.img_url ? (
+                                            <img src={p.img_url} alt="" className="w-full h-full rounded-full object-cover" />
+                                        ) : (
+                                            <User className="w-3.5 h-3.5 text-text-muted" />
+                                        )}
+                                    </div>
+                                    <p className="text-text-primary font-semibold text-xs truncate">
+                                        {p.first_name} {p.last_name}
+                                    </p>
+                                </div>
+                                <span className="bg-semantic-green/10 border border-semantic-green/20 text-semantic-green text-[9px] px-1.5 py-0.5 rounded font-mono font-bold shrink-0 uppercase tracking-wide">
+                                    Uusi
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            {/* Gone Players Bento Box */}
+            <div className="bg-surface-1 border border-border-hairline rounded-xl p-5 space-y-3">
+                <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                        <Users className="w-4 h-4 text-semantic-red" /> Lähteneet pelaajat ({playerTransitions.gonePlayers.length})
+                    </span>
+                    <span className="text-[10px] text-text-muted font-mono font-normal">
+                        Kauden {playerTransitions.prevYear} jälkeen
+                    </span>
+                </h3>
+                
+                {loadingPlayers ? (
+                    <div className="flex items-center justify-center py-6">
+                        <div className="w-5 h-5 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                    </div>
+                ) : !playerTransitions.hasComparisonData ? (
+                    <p className="text-text-muted text-xs text-center py-6 bg-surface-2 border border-border-hairline border-dashed rounded-lg">
+                        Ei vertailutietoja edelliseltä kaudelta
+                    </p>
+                ) : playerTransitions.gonePlayers.length === 0 ? (
+                    <p className="text-text-muted text-xs text-center py-6 bg-surface-2 border border-border-hairline border-dashed rounded-lg">
+                        Ei lähteneitä pelaajia tällä kaudella
+                    </p>
+                ) : (
+                    <div className="grid grid-cols-1 gap-2">
+                        {playerTransitions.gonePlayers.map(p => (
+                            <div
+                                key={p.player_id}
+                                onClick={() => navigate(`/player/${p.player_id}`)}
+                                className="bg-surface-2 border border-border-hairline hover:border-accent/30 rounded-lg p-2.5 flex items-center justify-between cursor-pointer hover:bg-surface-3 transition-all active:scale-[0.98] min-h-[44px]"
+                            >
+                                <div className="flex items-center gap-2.5 min-w-0 opacity-60">
+                                    <div className="w-7 h-7 rounded-full bg-surface-3 flex items-center justify-center shrink-0 border border-border-hairline">
+                                        {p.img_url ? (
+                                            <img src={p.img_url} alt="" className="w-full h-full rounded-full object-cover grayscale" />
+                                        ) : (
+                                            <User className="w-3.5 h-3.5 text-text-muted" />
+                                        )}
+                                    </div>
+                                    <p className="text-text-primary font-semibold text-xs truncate">
+                                        {p.first_name} {p.last_name}
+                                    </p>
+                                </div>
+                                <span className="bg-semantic-red/10 border border-semantic-red/20 text-semantic-red text-[9px] px-1.5 py-0.5 rounded font-mono font-bold shrink-0 uppercase tracking-wide">
+                                    Lähtenyt
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
         </div>
     )
 
@@ -384,6 +678,63 @@ export function TeamPage() {
                             </div>
                         </div>
                     )}
+
+                    {/* Season-over-Season Comparison Timeline */}
+                    {years.length > 1 && (
+                        <div className="mt-4 pt-4 border-t border-border-hairline space-y-3">
+                            <div className="flex flex-wrap items-center justify-between gap-2 text-[10px] font-bold uppercase tracking-[0.08em] text-text-muted">
+                                <span>Kausivertailu (Pisteet per ottelu & maaliero)</span>
+                                {performanceComparison && performanceComparison.ppgDiff !== null && (
+                                    <span className={cn(
+                                        "font-bold uppercase tracking-[0.06em] px-1.5 py-0.5 rounded flex items-center gap-1 leading-none shrink-0",
+                                        performanceComparison.trend === 'better' ? "bg-semantic-green/10 text-semantic-green border border-semantic-green/20" :
+                                        performanceComparison.trend === 'worse' ? "bg-semantic-red/10 text-semantic-red border border-semantic-red/20" :
+                                        "bg-accent/10 text-accent border border-accent/20"
+                                    )}>
+                                        {performanceComparison.trend === 'better' && "▲ Kunto nouseva"}
+                                        {performanceComparison.trend === 'worse' && "▼ Kunto laskeva"}
+                                        {performanceComparison.trend === 'neutral' && "► Tasainen kunto"}
+                                        <span className="font-mono text-[10px]">({performanceComparison.ppgDiffStr} PPG vs {performanceComparison.prevYear})</span>
+                                    </span>
+                                )}
+                            </div>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                {years.map(yr => {
+                                    const yrStats = statsByYear.get(yr)
+                                    if (!yrStats || yrStats.played === 0) return null
+                                    const isActive = selectedYear === yr
+                                    return (
+                                        <div
+                                            key={yr}
+                                            onClick={() => setSelectedYear(yr)}
+                                            className={cn(
+                                                "p-3 rounded-xl border transition-all cursor-pointer select-none",
+                                                isActive
+                                                    ? "bg-accent/10 border-accent/40 text-accent font-bold"
+                                                    : "bg-surface-2 border-border-hairline hover:border-accent/20 text-text-secondary hover:text-text-primary"
+                                            )}
+                                        >
+                                            <div className="flex justify-between items-center text-xs">
+                                                <span className="font-bold">{yr}</span>
+                                                <span className={cn(
+                                                    "text-[10px] font-bold px-1 rounded leading-none shrink-0",
+                                                    parseInt(yrStats.diffStr) > 0 ? "bg-semantic-green/10 text-semantic-green" :
+                                                    parseInt(yrStats.diffStr) < 0 ? "bg-semantic-red/10 text-semantic-red" :
+                                                    "bg-text-muted/10 text-text-muted"
+                                                )}>
+                                                    {yrStats.diffStr}
+                                                </span>
+                                            </div>
+                                            <div className="mt-1.5 flex items-baseline justify-between">
+                                                <span className="text-sm font-mono tracking-tight">{yrStats.ppg.toFixed(2)} PPG</span>
+                                                <span className="text-[10px] text-text-muted">{yrStats.played} ottelua</span>
+                                            </div>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Mobile Tabbed Navigation & Contents */}
@@ -409,7 +760,12 @@ export function TeamPage() {
                         </button>
                     </div>
                     <div>
-                        {tab === 'matches' ? matchesContent : rosterContent}
+                        {tab === 'matches' ? matchesContent : (
+                            <div className="space-y-6">
+                                {rosterContent}
+                                {transitionsContent}
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -418,6 +774,7 @@ export function TeamPage() {
                     {/* Left Column (1/3) - Roster */}
                     <div className="col-span-1 space-y-6">
                         {rosterContent}
+                        {transitionsContent}
                     </div>
 
                     {/* Right Column (2/3) - Matches */}
