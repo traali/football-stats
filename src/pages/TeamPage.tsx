@@ -431,8 +431,8 @@ export function TeamPage() {
                     {rosterPlayers.map(p => (
                         <div
                             key={p.player_id}
-                            onClick={() => navigate(`/player/${p.player_id}`)}
-                            className="bg-surface-1 border border-border-hairline hover:border-accent/30 rounded-xl p-3.5 flex items-center justify-between cursor-pointer hover:bg-surface-2 transition-all active:scale-[0.98] min-h-[56px]"
+                            onClick={() => p.player_id && navigate(`/player/${p.player_id}`)}
+                            className={`bg-surface-1 border border-border-hairline hover:border-accent/30 rounded-xl p-3.5 flex items-center justify-between hover:bg-surface-2 transition-all active:scale-[0.98] min-h-[56px] ${p.player_id ? 'cursor-pointer' : 'cursor-default opacity-60'}`}
                         >
                             <div className="flex items-center gap-3 min-w-0">
                                 <div className="w-9 h-9 rounded-full bg-surface-3 flex items-center justify-center shrink-0 border border-border-hairline">

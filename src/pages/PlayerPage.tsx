@@ -48,14 +48,27 @@ export function PlayerPage() {
     const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null)
 
     useEffect(() => {
-        if (!playerId) return
+        if (!playerId) {
+            setError('Pelaajan tunnus puuttuu')
+            setLoading(false)
+            return
+        }
         setLoading(true)
+        setError(null)
         getPlayerData(playerId)
-            .then(p => { setPlayer(p); setLoading(false) })
+            .then(p => {
+                if (!p) {
+                    setError('Pelaajaa ei löytynyt')
+                } else {
+                    setPlayer(p)
+                }
+                setLoading(false)
+            })
             .catch(e => { setError(e.message); setLoading(false) })
     }, [playerId])
 
-    const seasons = useMemo(() => buildSeasonStats(player?.matches), [player?.matches])
+    const safeMatches = player?.matches ?? []
+    const seasons = useMemo(() => buildSeasonStats(safeMatches), [safeMatches])
 
     if (loading) return <div className="min-h-screen px-4 py-8"><div className="max-w-6xl mx-auto space-y-6"><div className="animate-pulse bg-surface-1 rounded-xl h-64" /></div></div>
     if (error || !player) return <div className="min-h-screen px-4 py-8 text-center text-semantic-red">{error || 'Pelaajaa ei löytynyt'}</div>
@@ -63,27 +76,27 @@ export function PlayerPage() {
     const stats = (player as Record<string, unknown>).player_statistics as Array<Record<string, string>> | undefined
     const teamKeys = stats ? [...new Set(stats.map(s => s.team_id).filter(Boolean))] : []
 
-    const playerName = `${player.first_name || ''} ${player.last_name || ''}`.trim()
+    const playerName = `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Tuntematon pelaaja'
     const age = player.birthyear ? new Date().getFullYear() - parseInt(player.birthyear) : null
-    const ageValid = age !== null && !isNaN(age)
+    const ageValid = age !== null && !isNaN(age) && age > 0 && age < 100
 
     const groupLevels = stats
         ? [...new Set(stats.map(s => [s.competition_name, s.category_name, s.group_name].filter(Boolean).join(' / ')).filter(Boolean))]
         : []
 
     const pastMatches = useMemo(() => {
-        const matches = (player?.matches || []).filter(m => m.status === 'Played')
+        const matches = safeMatches.filter(m => m.status === 'Played')
         const filtered = selectedTeamId ? matches.filter(m => m.team_id === selectedTeamId) : matches
         return filtered
             .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
             .slice(0, 30)
-    }, [player?.matches, selectedTeamId])
+    }, [safeMatches, selectedTeamId])
 
     const upcomingMatches = useMemo(() => {
-        const matches = (player?.matches || []).filter(m => m.status === 'Fixture')
+        const matches = safeMatches.filter(m => m.status === 'Fixture')
         const filtered = selectedTeamId ? matches.filter(m => m.team_id === selectedTeamId) : matches
         return filtered.slice(0, 5)
-    }, [player?.matches, selectedTeamId])
+    }, [safeMatches, selectedTeamId])
 
     return (
         <div className="min-h-screen px-4 py-6">
