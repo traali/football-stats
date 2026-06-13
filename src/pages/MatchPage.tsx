@@ -36,6 +36,14 @@ export function MatchPage() {
     const teamAPlayers = data?.players?.filter(p => p.teamIdInMatch === data.match.team_A_id) ?? []
     const teamBPlayers = data?.players?.filter(p => p.teamIdInMatch === data.match.team_B_id) ?? []
 
+    const teamAStanding = data?.group?.teams?.find(t => t.team_id === data?.match?.team_A_id)
+    const teamBStanding = data?.group?.teams?.find(t => t.team_id === data?.match?.team_B_id)
+    const teamATotalGoals = teamAStanding ? parseInt(teamAStanding.goals_for || '0', 10) : 0
+    const teamBTotalGoals = teamBStanding ? parseInt(teamBStanding.goals_for || '0', 10) : 0
+
+    const teamARosterGoals = teamAPlayers.reduce((sum, p) => sum + (p.goalsForThisSpecificTeamInSeason || 0), 0)
+    const teamBRosterGoals = teamBPlayers.reduce((sum, p) => sum + (p.goalsForThisSpecificTeamInSeason || 0), 0)
+
     const staggerContainer: Variants = {
         hidden: {},
         visible: { transition: { staggerChildren: 0.04 } },
@@ -134,10 +142,17 @@ export function MatchPage() {
                                     />
                                 )}
 
-                                <div className="bg-surface-1 border border-border-hairline rounded-xl p-5 space-y-4">
-                                    <h4 className="text-xs font-bold text-text-muted uppercase tracking-widest">Joukkuevertailu</h4>
-                                    <DualStatBar label="Maalit" valueA={Number(data.match.fs_A || 0)} valueB={Number(data.match.fs_B || 0)} />
-                                    <DualStatBar label="Pelaajat" valueA={teamAPlayers.length} valueB={teamBPlayers.length} />
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="bg-surface-1 border border-border-hairline rounded-xl p-5 space-y-4">
+                                        <h4 className="text-xs font-bold text-text-muted uppercase tracking-widest">Joukkuevertailu (Ottelu)</h4>
+                                        <DualStatBar label="Maalit" valueA={Number(data.match.fs_A || 0)} valueB={Number(data.match.fs_B || 0)} />
+                                        <DualStatBar label="Pelaajat" valueA={teamAPlayers.length} valueB={teamBPlayers.length} />
+                                    </div>
+                                    <div className="bg-surface-1 border border-border-hairline rounded-xl p-5 space-y-4">
+                                        <h4 className="text-xs font-bold text-text-muted uppercase tracking-widest">Maalitilastot</h4>
+                                        <DualStatBar label="Kauden maalit yhteensä" valueA={teamATotalGoals} valueB={teamBTotalGoals} />
+                                        <DualStatBar label="Kokoonpanon maalit" valueA={teamARosterGoals} valueB={teamBRosterGoals} />
+                                    </div>
                                 </div>
 
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
