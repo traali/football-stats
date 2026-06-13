@@ -5,6 +5,7 @@ import { cn } from '../utils/cn'
 import { getTeamProfile, getTeamMatches } from '../services/api'
 import { useFavorites } from '../hooks/useFavorites'
 import type { TeamResponse, DiscoveryMatch } from '../types/api'
+import { APP_CONFIG } from '../types/config'
 
 export function TeamPage() {
     const { teamId } = useParams()
@@ -78,8 +79,13 @@ export function TeamPage() {
                                             }
                                             if (team?.categories) {
                                                 team.categories.forEach(c => {
-                                                    const name = getCategoryName(c);
-                                                    if (name) categoryNames.add(name);
+                                                    const isCurrent = c.competition_season === APP_CONFIG.CURRENT_YEAR || 
+                                                        c.competition_id?.includes(APP_CONFIG.CURRENT_YEAR) ||
+                                                        c.competition_id?.includes(APP_CONFIG.CURRENT_YEAR.slice(2));
+                                                    if (isCurrent) {
+                                                        const name = getCategoryName(c);
+                                                        if (name) categoryNames.add(name);
+                                                    }
                                                 });
                                             }
                                             return Array.from(categoryNames).slice(0, 3).map((name, idx) => (
