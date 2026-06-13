@@ -1,6 +1,7 @@
 import { MatchDetails, GroupDetails, TeamBasic } from '../types/api'
 import { motion } from 'framer-motion'
 import { Calendar, Clock, Users, Goal } from 'lucide-react'
+import { Link } from 'react-router-dom'
 
 function LiveBadge() {
     return (
@@ -44,10 +45,13 @@ export function MatchHeader({ match, group, teamA, teamB }: { match: MatchDetail
 
                 {/* Scoreline */}
                 <div className="flex items-center justify-center space-x-4 md:space-x-8 w-full">
-                    <div className="flex-1 flex flex-col items-end space-y-2">
+                    <Link
+                        to={`/team/${match.team_A_id}`}
+                        className="flex-1 flex flex-col items-end space-y-2 hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 ring-accent/50 rounded-xl p-1"
+                    >
                         {crestA && <img src={crestA} alt={match.team_A_name} className="w-8 h-8 object-contain mb-1" />}
-                        <h3 className="text-xl md:text-3xl font-bold text-text-primary text-right leading-tight">{match.team_A_name}</h3>
-                    </div>
+                        <h3 className="text-xl md:text-3xl font-bold text-text-primary text-right leading-tight hover:text-accent transition-colors">{match.team_A_name}</h3>
+                    </Link>
 
                     <div className="flex flex-col items-center shrink-0">
                         <div className="text-4xl md:text-6xl lg:text-7xl font-bold tabular-nums tracking-tighter text-text-primary font-mono leading-none">
@@ -55,10 +59,13 @@ export function MatchHeader({ match, group, teamA, teamB }: { match: MatchDetail
                         </div>
                     </div>
 
-                    <div className="flex-1 flex flex-col items-start space-y-2">
+                    <Link
+                        to={`/team/${match.team_B_id}`}
+                        className="flex-1 flex flex-col items-start space-y-2 hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 ring-accent/50 rounded-xl p-1"
+                    >
                         {crestB && <img src={crestB} alt={match.team_B_name} className="w-8 h-8 object-contain mb-1" />}
-                        <h3 className="text-xl md:text-3xl font-bold text-text-primary text-left leading-tight">{match.team_B_name}</h3>
-                    </div>
+                        <h3 className="text-xl md:text-3xl font-bold text-text-primary text-left leading-tight hover:text-accent transition-colors">{match.team_B_name}</h3>
+                    </Link>
                 </div>
 
                 {/* Goal Scorers */}

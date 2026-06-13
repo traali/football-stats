@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence, type Variants } from 'framer-motion'
 import { Search } from 'lucide-react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, Link } from 'react-router-dom'
 import { useMatchData } from '../hooks/useMatchData'
 import { MatchHeader } from '../components/MatchHeader'
 import { PlayerCard } from '../components/PlayerCard'
@@ -83,12 +83,17 @@ export function MatchPage() {
                             </button>
                             
                             <div className="flex items-center gap-3 md:gap-6">
-                                <span className="text-xs md:text-sm font-bold text-text-primary truncate max-w-[120px] md:max-w-[180px] text-right">
-                                    {data.match.team_A_name}
-                                </span>
-                                {(data.teamA?.img_url || data.teamA?.club_crest) && (
-                                    <img src={data.teamA.img_url || data.teamA.club_crest} alt="" className="w-6 h-6 object-contain shrink-0" />
-                                )}
+                                <Link
+                                    to={`/team/${data.match.team_A_id}`}
+                                    className="flex items-center gap-2 hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 ring-accent/50 rounded-lg p-0.5"
+                                >
+                                    <span className="text-xs md:text-sm font-bold text-text-primary truncate max-w-[120px] md:max-w-[180px] text-right hover:text-accent transition-colors">
+                                        {data.match.team_A_name}
+                                    </span>
+                                    {(data.teamA?.img_url || data.teamA?.club_crest) && (
+                                        <img src={data.teamA.img_url || data.teamA.club_crest} alt="" className="w-6 h-6 object-contain shrink-0" />
+                                    )}
+                                </Link>
                                 
                                 <div className="bg-surface-3 px-3 py-1 rounded-md border border-border-hairline font-mono font-bold text-sm md:text-base tabular-nums flex items-center gap-1 shrink-0">
                                     <span>{data.match.fs_A ?? '-'}</span>
@@ -96,12 +101,17 @@ export function MatchPage() {
                                     <span>{data.match.fs_B ?? '-'}</span>
                                 </div>
                                 
-                                {(data.teamB?.img_url || data.teamB?.club_crest) && (
-                                    <img src={data.teamB.img_url || data.teamB.club_crest} alt="" className="w-6 h-6 object-contain shrink-0" />
-                                )}
-                                <span className="text-xs md:text-sm font-bold text-text-primary truncate max-w-[120px] md:max-w-[180px]">
-                                    {data.match.team_B_name}
-                                </span>
+                                <Link
+                                    to={`/team/${data.match.team_B_id}`}
+                                    className="flex items-center gap-2 hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 ring-accent/50 rounded-lg p-0.5"
+                                >
+                                    {(data.teamB?.img_url || data.teamB?.club_crest) && (
+                                        <img src={data.teamB.img_url || data.teamB.club_crest} alt="" className="w-6 h-6 object-contain shrink-0" />
+                                    )}
+                                    <span className="text-xs md:text-sm font-bold text-text-primary truncate max-w-[120px] md:max-w-[180px] hover:text-accent transition-colors">
+                                        {data.match.team_B_name}
+                                    </span>
+                                </Link>
                             </div>
                             
                             <div className="w-14 flex justify-end">
