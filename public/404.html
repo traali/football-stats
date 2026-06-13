@@ -6,8 +6,7 @@
 </head>
 <body>
     <script>
-        sessionStorage.redirect = location.href;
-        location.replace('/football-stats/');
+        location.replace('/football-stats/?r=' + encodeURIComponent(location.pathname + location.search + location.hash));
     </script>
 </body>
 </html>
