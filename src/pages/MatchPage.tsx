@@ -9,6 +9,7 @@ import { StandingsTable } from '../components/StandingsTable'
 import { Button } from '../components/Button'
 import { DualStatBar } from '../components/DualStatBar'
 import { PreMatchComparison } from '../components/PreMatchComparison'
+import { CommonOpponents } from '../components/CommonOpponents'
 import { MatchHeaderSkeleton, PlayerCardSkeleton, StandingsTableSkeleton } from '../components/Skeleton'
 
 export function MatchPage() {
@@ -119,6 +120,17 @@ export function MatchPage() {
                                         teamAName={data.match.team_A_name}
                                         teamBName={data.match.team_B_name}
                                         matches={data.group.matches}
+                                    />
+                                )}
+
+                                {data.match.status !== 'Played' && data.group && (
+                                    <CommonOpponents
+                                        teamAId={data.match.team_A_id}
+                                        teamBId={data.match.team_B_id}
+                                        teamAName={data.match.team_A_name}
+                                        teamBName={data.match.team_B_name}
+                                        group={data.group}
+                                        upcomingMatch={data.match}
                                     />
                                 )}
 
