@@ -390,16 +390,38 @@ export function TeamPage() {
     )
 
     // Render roster list of players as a card grid
+    // Show historical roster for a selected year, or current squad for 'all'
+    const rosterYear = selectedYear === 'all' ? (years[0] || APP_CONFIG.CURRENT_YEAR) : selectedYear
+    type RosterEntry = { player_id: string; first_name: string; last_name: string; img_url?: string; birthyear?: string; shirt_number?: string }
+    const rosterPlayers: RosterEntry[] =
+        historicalPlayersByYear[rosterYear] && historicalPlayersByYear[rosterYear].length > 0
+            ? historicalPlayersByYear[rosterYear]
+            : players.filter(p => !!p.player_id).map(p => ({
+                player_id: p.player_id!,
+                first_name: p.first_name || '',
+                last_name: p.last_name || '',
+                img_url: p.img_url,
+                birthyear: p.birthyear,
+                shirt_number: p.shirt_number,
+            }))
+
     const rosterContent = (
         <div className="space-y-4">
-            <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
-                <Users className="w-4 h-4 text-accent" /> Joukkueen kokoonpano ({players.length})
+            <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center justify-between gap-2">
+                <span className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-accent" />
+                    {selectedYear === 'all' ? 'Nykyinen kokoonpano' : `Kokoonpano ${rosterYear}`}
+                    <span className="text-text-muted font-normal text-xs">({rosterPlayers.length})</span>
+                </span>
+                {loadingPlayers && (
+                    <span className="w-3.5 h-3.5 border-2 border-accent border-t-transparent rounded-full animate-spin shrink-0" />
+                )}
             </h3>
-            {players.length === 0 ? (
+            {rosterPlayers.length === 0 ? (
                 <p className="text-text-muted text-sm text-center py-8 bg-surface-1 border border-border-hairline rounded-xl">Ei pelaajatietoja</p>
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-3">
-                    {players.map(p => (
+                    {rosterPlayers.map(p => (
                         <div
                             key={p.player_id}
                             onClick={() => navigate(`/player/${p.player_id}`)}
