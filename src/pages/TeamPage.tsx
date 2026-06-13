@@ -300,6 +300,62 @@ export function TeamPage() {
             gonePlayers
         }
     }, [historicalPlayersByYear, selectedYear, years])
+
+    // Map category levels per year/season
+    const categoriesByYear = useMemo(() => {
+        const map = new Map<string, string[]>()
+        
+        const getCategoryName = (c: any): string | null => {
+            if (!c) return null;
+            const name = c.category_name;
+            if (typeof name === 'string') return name;
+            if (name && typeof name.fi === 'string') return name.fi;
+            if (c.category_name_translations && typeof c.category_name_translations.fi === 'string') {
+                return c.category_name_translations.fi;
+            }
+            return null;
+        };
+
+        if (team?.categories) {
+            (team.categories as any[]).forEach(c => {
+                const season = c.competition_season
+                if (!season) return
+                
+                const name = getCategoryName(c)
+                if (!name) return
+
+                let list = map.get(season)
+                if (!list) {
+                    list = []
+                    map.set(season, list)
+                }
+                if (!list.includes(name)) {
+                    list.push(name)
+                }
+            })
+        }
+
+        if (team?.groups) {
+            (team.groups as any[]).forEach(g => {
+                const season = g.competition_season
+                if (!season) return
+                
+                const name = getCategoryName(g)
+                if (!name) return
+
+                let list = map.get(season)
+                if (!list) {
+                    list = []
+                    map.set(season, list)
+                }
+                if (!list.includes(name)) {
+                    list.push(name)
+                }
+            })
+        }
+
+        return map
+    }, [team?.categories, team?.groups])
     
     // Sort matches: past matches played date desc, upcoming fixtures date asc (filtered by year if applicable)
     const pastMatches = useMemo(() => {
@@ -725,6 +781,14 @@ export function TeamPage() {
                                                     {yrStats.diffStr}
                                                 </span>
                                             </div>
+                                            
+                                            {/* Category / Division Level */}
+                                            {categoriesByYear.get(yr) && categoriesByYear.get(yr)!.length > 0 && (
+                                                <div className="text-[10px] text-text-muted truncate mt-1 select-none font-medium" title={categoriesByYear.get(yr)!.join(', ')}>
+                                                    {categoriesByYear.get(yr)!.join(' / ')}
+                                                </div>
+                                            )}
+
                                             <div className="mt-1.5 flex items-baseline justify-between">
                                                 <span className="text-sm font-mono tracking-tight">{yrStats.ppg.toFixed(2)} PPG</span>
                                                 <span className="text-[10px] text-text-muted">{yrStats.played} ottelua</span>
