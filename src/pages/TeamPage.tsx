@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Heart, Users, Calendar, Shield, CalendarDays, User } from 'lucide-react'
+import { ArrowLeft, Heart, Users, Calendar, Shield, CalendarDays, User, TrendingUp } from 'lucide-react'
 import { cn } from '../utils/cn'
 import { getTeamProfile, getTeamMatches, getGroupFull, batchFetch } from '../services/api'
 import { useFavorites } from '../hooks/useFavorites'
@@ -22,6 +22,7 @@ export function TeamPage() {
     // Historical players state
     const [historicalPlayersByYear, setHistoricalPlayersByYear] = useState<Record<string, { player_id: string; first_name: string; last_name: string; img_url?: string }[]>>({})
     const [loadingPlayers, setLoadingPlayers] = useState(false)
+    const [teamTopScorers, setTeamTopScorers] = useState<Record<string, { player_id: string; first_name: string; last_name: string; goals: number; assists: number; img_url?: string }[]>>({})
 
     const fav = teamId ? isFavorite(teamId) : false
 
@@ -94,9 +95,11 @@ export function TeamPage() {
                 if (!active) return
 
                 const playersBySeason: Record<string, Record<string, { player_id: string; first_name: string; last_name: string; img_url?: string }>> = {}
+                const statsBySeason: Record<string, Record<string, { player_id: string; first_name: string; last_name: string; goals: number; assists: number; img_url?: string }>> = {}
 
                 allowedYears.forEach(yr => {
                     playersBySeason[yr] = {}
+                    statsBySeason[yr] = {}
                 })
 
                 results.forEach((groupData, idx) => {
@@ -107,12 +110,29 @@ export function TeamPage() {
 
                     const stats = groupData.player_statistics || []
                     stats.forEach(p => {
-                        // team_id can be number or string from API — coerce both sides
-                        if (String(p.team_id) === String(teamId) && p.player_id) {
-                            playersBySeason[season][String(p.player_id)] = {
-                                player_id: String(p.player_id),
+                        if (String(p.team_id) !== String(teamId) || !p.player_id) return
+                        const pid = String(p.player_id)
+                        // Roster info
+                        playersBySeason[season][pid] = {
+                            player_id: pid,
+                            first_name: p.first_name || p.player_name?.split(' ')[1] || '',
+                            last_name: p.last_name || p.player_name?.split(' ')[0] || '',
+                            img_url: p.img_url
+                        }
+                        // Stats accumulation
+                        const existing = statsBySeason[season][pid]
+                        const g = parseInt(p.goals || '0')
+                        const a = parseInt(p.assists || '0')
+                        if (existing) {
+                            existing.goals += g
+                            existing.assists += a
+                        } else {
+                            statsBySeason[season][pid] = {
+                                player_id: pid,
                                 first_name: p.first_name || p.player_name?.split(' ')[1] || '',
                                 last_name: p.last_name || p.player_name?.split(' ')[0] || '',
+                                goals: g,
+                                assists: a,
                                 img_url: p.img_url
                             }
                         }
@@ -124,7 +144,6 @@ export function TeamPage() {
                 if (team?.players) {
                     const curYrBucket = playersBySeason[APP_CONFIG.CURRENT_YEAR]
                     if (curYrBucket && Object.keys(curYrBucket).length === 0) {
-                        // No group stats found for current year — use team.players as the roster
                         team.players.forEach(p => {
                             if (p.player_id) {
                                 curYrBucket[String(p.player_id)] = {
@@ -142,8 +161,13 @@ export function TeamPage() {
                 Object.entries(playersBySeason).forEach(([yr, map]) => {
                     finalPlayers[yr] = Object.values(map)
                 })
+                const finalScorers: Record<string, { player_id: string; first_name: string; last_name: string; goals: number; assists: number; img_url?: string }[]> = {}
+                Object.entries(statsBySeason).forEach(([yr, map]) => {
+                    finalScorers[yr] = Object.values(map).sort((a, b) => b.goals - a.goals || b.assists - a.assists)
+                })
 
                 setHistoricalPlayersByYear(finalPlayers)
+                setTeamTopScorers(finalScorers)
             } catch (err) {
                 console.error('Failed to fetch historical player data:', err)
             } finally {
@@ -234,7 +258,7 @@ export function TeamPage() {
     }, [filteredMatches, teamId])
 
     const displayStats = useMemo(() => {
-        return statsByYear.get(selectedYear) || { played: 0, wins: 0, draws: 0, losses: 0, diffStr: '0', ppg: 0 }
+        return statsByYear.get(selectedYear) || { played: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, diffStr: '0', ppg: 0, goalsScoredPerMatch: 0, goalsConcededPerMatch: 0 }
     }, [statsByYear, selectedYear])
 
     // Performance comparison vs previous season
@@ -381,6 +405,39 @@ export function TeamPage() {
         return filtered.sort((a, b) => (a.date || '').localeCompare(a.date || '')).slice(0, 10)
     }, [filteredMatches, selectedYear])
 
+    // Home/Away split stats
+    const homeAwayStats = useMemo(() => {
+        const home = { played: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0 }
+        const away = { played: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0 }
+        filteredMatches.forEach(m => {
+            if (m.status !== 'Played' || !m.date) return
+            const isA = m.team_A_id === teamId
+            const myScore = parseInt(isA ? m.fs_A || '0' : m.fs_B || '0', 10)
+            const oppScore = parseInt(isA ? m.fs_B || '0' : m.fs_A || '0', 10)
+            if (isNaN(myScore) || isNaN(oppScore)) return
+            const s = isA ? home : away
+            s.played++
+            s.goalsFor += myScore
+            s.goalsAgainst += oppScore
+            if (myScore > oppScore) s.wins++
+            else if (myScore < oppScore) s.losses++
+            else s.draws++
+        })
+        const ppg = (s: typeof home) => s.played > 0 ? ((s.wins * 3 + s.draws) / s.played).toFixed(2) : '-'
+        return { home, away, homePPG: ppg(home), awayPPG: ppg(away) }
+    }, [filteredMatches, teamId])
+
+    // Last 5 matches form
+    const last5Form = useMemo(() => {
+        return pastMatches.slice(0, 5).map(m => {
+            const isA = m.team_A_id === teamId
+            const myScore = parseInt(isA ? m.fs_A || '0' : m.fs_B || '0', 10)
+            const oppScore = parseInt(isA ? m.fs_B || '0' : m.fs_A || '0', 10)
+            if (isNaN(myScore) || isNaN(oppScore)) return null
+            return myScore > oppScore ? 'V' as const : myScore < oppScore ? 'H' as const : 'T' as const
+        }).filter((r): r is 'V' | 'H' | 'T' => r !== null)
+    }, [pastMatches, teamId])
+
     if (loading) return (
         <div className="min-h-screen px-4 py-8">
             <div className="max-w-6xl mx-auto space-y-6">
@@ -411,6 +468,12 @@ export function TeamPage() {
                 birthyear: p.birthyear,
                 shirt_number: p.shirt_number,
             }))
+
+    // Top scorers/assisters for the selected year
+    const currentScorers = useMemo(() => {
+        const yr = selectedYear === 'all' ? (years[0] || APP_CONFIG.CURRENT_YEAR) : selectedYear
+        return (teamTopScorers[yr] || []).filter(p => p.goals > 0 || p.assists > 0)
+    }, [teamTopScorers, selectedYear, years])
 
     const rosterContent = (
         <div className="space-y-4">
@@ -572,6 +635,33 @@ export function TeamPage() {
         </div>
     )
 
+    // Render top scorers/assisters
+    const scorersContent = currentScorers.length > 0 ? (
+        <div className="bg-surface-1 border border-border-hairline rounded-xl p-5 space-y-3">
+            <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-accent" /> Parhaat maalintekijät
+            </h3>
+            <div className="space-y-1">
+                {currentScorers.map((p, i) => (
+                    <div
+                        key={p.player_id}
+                        onClick={() => navigate(`/player/${p.player_id}`)}
+                        className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-surface-2 border border-transparent hover:border-border-hairline cursor-pointer transition-all active:scale-[0.99] min-h-[44px]"
+                    >
+                        <div className="flex items-center gap-3 min-w-0">
+                            <span className="text-text-muted text-xs font-mono w-5 shrink-0">{i + 1}.</span>
+                            <span className="text-text-primary font-medium truncate text-sm">{p.first_name} {p.last_name}</span>
+                        </div>
+                        <div className="flex items-center gap-3 shrink-0 ml-2">
+                            <span className="text-accent font-bold font-mono text-sm">{p.goals} maalia</span>
+                            {p.assists > 0 && <span className="text-text-muted text-xs font-mono">{p.assists} syöttöä</span>}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    ) : null
+
     // Render matches list (upcoming + past)
     const matchesContent = (
         <div className="space-y-6">
@@ -667,6 +757,11 @@ export function TeamPage() {
                                         <Shield className="w-8 h-8" />
                                     </div>
                                 )}
+                                {team?.kit_1_front && (
+                                    <div className="w-14 h-14 rounded-xl bg-surface-2 border border-border-hairline p-1 flex items-center justify-center shrink-0">
+                                        <img src={team.kit_1_front} alt="Paita" className="w-full h-full object-contain rounded" />
+                                    </div>
+                                )}
                                 <div>
                                     <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-accent">Joukkueprofiili</span>
                                     <h1 className="text-2xl font-bold text-text-primary truncate mt-0.5">{team?.team_name || teamId}</h1>
@@ -712,6 +807,14 @@ export function TeamPage() {
                                         })()}
                                         {team?.club_name && <span className="text-text-muted font-medium">{team.club_name}</span>}
                                     </div>
+                                    {last5Form.length > 0 && (
+                                        <div className="flex items-center gap-1.5 mt-1.5">
+                                            <span className="text-[10px] text-text-muted uppercase tracking-wider font-bold">Kunto:</span>
+                                            {last5Form.map((r, i) => (
+                                                <span key={i} className={cn('w-2.5 h-2.5 rounded-full', r === 'V' ? 'bg-semantic-green' : r === 'H' ? 'bg-semantic-red' : 'bg-accent')} />
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -768,7 +871,36 @@ export function TeamPage() {
                                 <StatBadge label="Tasapelit" value={displayStats.draws} variant="warning" />
                                 <StatBadge label="Häviöt" value={displayStats.losses} variant="danger" />
                                 <StatBadge label="Maaliero" value={displayStats.diffStr} variant={parseInt(displayStats.diffStr) > 0 ? 'success' : parseInt(displayStats.diffStr) < 0 ? 'danger' : 'default'} />
+                                {displayStats.played > 0 && (
+                                    <>
+                                        <StatBadge label="Maalit/ottelu" value={displayStats.goalsScoredPerMatch.toFixed(2)} variant="success" />
+                                        <StatBadge label="Päästetyt/ottelu" value={displayStats.goalsConcededPerMatch.toFixed(2)} variant="danger" />
+                                    </>
+                                )}
                             </div>
+                            {/* Home/Away split */}
+                            {(homeAwayStats.home.played > 0 || homeAwayStats.away.played > 0) && (
+                                <div className="grid grid-cols-2 gap-2.5 pt-2">
+                                    <div className="bg-surface-2 border border-border-hairline rounded-lg p-2.5 space-y-1">
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Kotona</span>
+                                        <div className="flex items-center gap-2 text-xs font-mono">
+                                            <span className="text-semantic-green font-bold">{homeAwayStats.home.wins}V</span>
+                                            <span className="text-accent">{homeAwayStats.home.draws}T</span>
+                                            <span className="text-semantic-red">{homeAwayStats.home.losses}H</span>
+                                            <span className="text-text-muted ml-auto">{homeAwayStats.homePPG} PPG</span>
+                                        </div>
+                                    </div>
+                                    <div className="bg-surface-2 border border-border-hairline rounded-lg p-2.5 space-y-1">
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Vieraissa</span>
+                                        <div className="flex items-center gap-2 text-xs font-mono">
+                                            <span className="text-semantic-green font-bold">{homeAwayStats.away.wins}V</span>
+                                            <span className="text-accent">{homeAwayStats.away.draws}T</span>
+                                            <span className="text-semantic-red">{homeAwayStats.away.losses}H</span>
+                                            <span className="text-text-muted ml-auto">{homeAwayStats.awayPPG} PPG</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -864,6 +996,7 @@ export function TeamPage() {
                         {tab === 'matches' ? matchesContent : (
                             <div className="space-y-6">
                                 {rosterContent}
+                                {scorersContent}
                                 {transitionsContent}
                             </div>
                         )}
@@ -875,6 +1008,7 @@ export function TeamPage() {
                     {/* Left Column (1/3) - Roster */}
                     <div className="col-span-1 space-y-6">
                         {rosterContent}
+                        {scorersContent}
                         {transitionsContent}
                     </div>
 

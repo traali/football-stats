@@ -1,7 +1,8 @@
 import { MatchDetails, GroupDetails, TeamBasic } from '../types/api'
 import { motion } from 'framer-motion'
-import { Calendar, Clock, Users, Goal } from 'lucide-react'
+import { Calendar, Clock, Users, Goal, Timer } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { cn } from '../utils/cn'
 
 function LiveBadge() {
     return (
@@ -57,6 +58,12 @@ export function MatchHeader({ match, group, teamA, teamB }: { match: MatchDetail
                         <div className="text-4xl md:text-6xl lg:text-7xl font-bold tabular-nums tracking-tighter text-text-primary font-mono leading-none">
                             {match.fs_A ?? '-'} <span className="text-accent opacity-80 mx-1">:</span> {match.fs_B ?? '-'}
                         </div>
+                        {match.hts_A !== undefined && match.hts_B !== undefined && match.status === 'Played' && (
+                            <div className="flex items-center gap-1.5 text-xs text-text-muted font-mono mt-1">
+                                <Timer className="w-3 h-3" />
+                                <span>HT: {match.hts_A}–{match.hts_B}</span>
+                            </div>
+                        )}
                     </div>
 
                     <Link
@@ -68,31 +75,35 @@ export function MatchHeader({ match, group, teamA, teamB }: { match: MatchDetail
                     </Link>
                 </div>
 
-                {/* Goal Scorers */}
+                {/* Goal Timeline */}
                 {match.goals && match.goals.length > 0 && (
                     <div className="w-full max-w-md space-y-2">
-                        {[match.team_A_id, match.team_B_id].map((teamId) => {
-                            const teamGoals = match.goals!.filter(g => g.team_id === teamId)
-                            if (teamGoals.length === 0) return null
-                            const teamName = teamId === match.team_A_id ? match.team_A_name : match.team_B_name
-                            return (
-                                <div key={teamId} className="space-y-1">
-                                    <h4 className="text-xs font-bold text-text-primary">{teamName}</h4>
-                                    <div className="space-y-0.5">
-                                        {teamGoals.map((g, i) => (
-                                            <div key={i} className="flex items-center gap-2 text-sm text-text-secondary">
-                                                <Goal className="w-3 h-3 text-accent shrink-0" />
-                                                <span>{g.player_name}</span>
-                                                <span className="text-text-muted text-xs">{g.time}</span>
-                                                {g.description === 'rp' && (
-                                                    <span className="text-xs text-semantic-amber font-medium">(rp)</span>
-                                                )}
-                                            </div>
-                                        ))}
+                        <h4 className="text-xs font-bold text-text-muted uppercase tracking-widest">Maalit</h4>
+                        <div className="relative space-y-1 pl-6 before:absolute before:left-[9px] before:top-2 before:bottom-2 before:w-0.5 before:bg-border-hairline">
+                            {[...match.goals].sort((a, b) => {
+                                const ma = parseInt(a.time_min || '0')
+                                const mb = parseInt(b.time_min || '0')
+                                return ma - mb
+                            }).map((g, i) => {
+                                const isA = g.team_id === match.team_A_id
+                                return (
+                                    <div key={i} className="flex items-center gap-2.5 text-sm">
+                                        <div className={cn(
+                                            'w-[18px] h-[18px] rounded-full flex items-center justify-center shrink-0 -ml-6',
+                                            isA ? 'bg-bmw-cyan/20' : 'bg-bmw-magenta/20'
+                                        )}>
+                                            <div className={cn('w-1.5 h-1.5 rounded-full', isA ? 'bg-bmw-cyan' : 'bg-bmw-magenta')} />
+                                        </div>
+                                        <span className="text-text-muted text-xs font-mono w-8 shrink-0">{g.time_min}'</span>
+                                        <span className="text-text-primary font-medium truncate">{g.player_name}</span>
+                                        <span className="text-text-muted text-xs font-mono ml-auto shrink-0">
+                                            {g.score_A}–{g.score_B}
+                                        </span>
+                                        {g.description === 'rp' && <span className="text-xs text-semantic-amber font-medium shrink-0">(rp)</span>}
                                     </div>
-                                </div>
-                            )
-                        })}
+                                )
+                            })}
+                        </div>
                     </div>
                 )}
 

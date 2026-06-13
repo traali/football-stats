@@ -50,11 +50,37 @@ export function StandingsTable({ teams, matches = [], teamAId, teamBId, selected
     }, [activeTeamId, matches])
 
     const resultConfig = {
-        win: { color: 'text-semantic-green', bg: 'bg-semantic-green/15 border-l-2 border-semantic-green', dot: 'bg-semantic-green', label: 'V' },
-        draw: { color: 'text-accent', bg: 'bg-accent/15 border-l-2 border-accent', dot: 'bg-accent', label: 'T' },
-        loss: { color: 'text-semantic-red', bg: 'bg-semantic-red/15 border-l-2 border-semantic-red', dot: 'bg-semantic-red', label: 'H' },
-        upcoming: { color: 'text-text-muted', bg: 'bg-surface-2/40 border-l-2 border-text-muted', dot: 'bg-text-muted', label: '?' },
+        win: { color: 'text-semantic-green', bg: 'bg-semantic-green/8', dot: 'bg-semantic-green', label: 'V' },
+        draw: { color: 'text-accent', bg: 'bg-accent/8', dot: 'bg-accent', label: 'T' },
+        loss: { color: 'text-semantic-red', bg: 'bg-semantic-red/8', dot: 'bg-semantic-red', label: 'H' },
+        upcoming: { color: 'text-text-muted', bg: 'bg-surface-2', dot: 'bg-text-muted', label: '?' },
     }
+
+    // Compute last 5 results per team
+    const teamForm = useMemo(() => {
+        const map = new Map<string, string[]>()
+        for (const m of matches) {
+            if (m.status !== 'Played') continue
+            const myScoreA = parseInt(m.fs_A)
+            const oppScoreA = parseInt(m.fs_B)
+            if (isNaN(myScoreA) || isNaN(oppScoreA)) continue
+
+            const aResult = myScoreA > oppScoreA ? 'V' : myScoreA < oppScoreA ? 'H' : 'T'
+            const arrA = map.get(m.team_A_id) || []
+            arrA.push(aResult)
+            map.set(m.team_A_id, arrA)
+
+            const bResult = oppScoreA > myScoreA ? 'V' : oppScoreA < myScoreA ? 'H' : 'T'
+            const arrB = map.get(m.team_B_id) || []
+            arrB.push(bResult)
+            map.set(m.team_B_id, arrB)
+        }
+        const result = new Map<string, string[]>()
+        for (const [id, arr] of map) {
+            result.set(id, arr.slice(-5))
+        }
+        return result
+    }, [matches])
 
     return (
         <div className="bg-surface-1 border border-border-hairline rounded-xl overflow-hidden">
@@ -95,6 +121,7 @@ export function StandingsTable({ teams, matches = [], teamAId, teamBId, selected
                             <th className="px-3 py-3 font-bold text-center text-text-primary">P</th>
                             {!compact && <th className="px-2 py-3 font-bold text-right">TM</th>}
                             {!compact && <th className="px-2 py-3 font-bold text-right">PM</th>}
+                            <th className="px-3 py-3 font-bold text-center text-xs">Kunto</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-border-hairline">
@@ -156,6 +183,13 @@ export function StandingsTable({ teams, matches = [], teamAId, teamBId, selected
                                     <td className="px-3 py-3 text-center font-bold text-text-primary font-mono text-sm">{team.points}</td>
                                     {!compact && <td className="px-2 py-3 text-right text-text-secondary font-mono text-sm">{team.goals_for}</td>}
                                     {!compact && <td className="px-2 py-3 text-right text-text-secondary font-mono text-sm">{team.goals_against}</td>}
+                                    <td className="px-3 py-3 text-center">
+                                        <div className="flex items-center justify-center gap-0.5">
+                                            {(teamForm.get(team.team_id) || []).map((r, i) => (
+                                                <span key={i} className={cn('w-2 h-2 rounded-full', r === 'V' ? 'bg-semantic-green' : r === 'H' ? 'bg-semantic-red' : 'bg-accent')} />
+                                            ))}
+                                        </div>
+                                    </td>
                                 </tr>
                             )
                         })}
