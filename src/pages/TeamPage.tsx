@@ -17,6 +17,7 @@ export function TeamPage() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [tab, setTab] = useState<'roster' | 'matches'>('matches')
+    const [selectedYear, setSelectedYear] = useState<string>('all')
 
     const fav = teamId ? isFavorite(teamId) : false
 
@@ -32,54 +33,88 @@ export function TeamPage() {
     }, [teamId])
 
     const players = team?.players || []
-    
-    // Sort matches: past matches played date desc, upcoming fixtures date asc
-    const pastMatches = useMemo(() => {
-        return matches
-            .filter(m => m.date && new Date(m.date + 'T' + (m.time || '00:00:00')) < new Date())
-            .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
+
+    // Available years in the matches data
+    const years = useMemo(() => {
+        const yearsSet = new Set<string>()
+        matches.forEach(m => {
+            if (m.date) {
+                const y = m.date.slice(0, 4)
+                if (y && !isNaN(parseInt(y))) yearsSet.add(y)
+            }
+        })
+        return [...yearsSet].sort((a, b) => b.localeCompare(a))
     }, [matches])
 
-    const upcoming = useMemo(() => {
-        return matches
-            .filter(m => m.status === 'Fixture')
-            .sort((a, b) => (a.date || '').localeCompare(b.date || ''))
-            .slice(0, 10)
-    }, [matches])
+    // Calculate dynamic team statistics grouped by year/season
+    const statsByYear = useMemo(() => {
+        const map = new Map<string, { played: number; wins: number; draws: number; losses: number; goalsFor: number; goalsAgainst: number; diffStr: string }>()
 
-    // Calculate dynamic team statistics
-    const stats = useMemo(() => {
-        const played = matches.filter(m => m.status === 'Played')
-        let wins = 0
-        let draws = 0
-        let losses = 0
-        let goalsFor = 0
-        let goalsAgainst = 0
+        // Initialize "all" total statistics
+        map.set('all', { played: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, diffStr: '0' })
 
-        played.forEach(m => {
+        matches.forEach(m => {
+            if (m.status !== 'Played' || !m.date) return
+            const year = m.date.slice(0, 4)
+            if (!year || isNaN(parseInt(year))) return
+
+            let s = map.get(year)
+            if (!s) {
+                s = { played: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, diffStr: '0' }
+                map.set(year, s)
+            }
+
+            s.played++
             const isA = m.team_A_id === teamId
             const myScore = parseInt(isA ? m.fs_A || '0' : m.fs_B || '0', 10)
             const oppScore = parseInt(isA ? m.fs_B || '0' : m.fs_A || '0', 10)
             if (!isNaN(myScore) && !isNaN(oppScore)) {
-                goalsFor += myScore
-                goalsAgainst += oppScore
-                if (myScore > oppScore) wins++
-                else if (myScore < oppScore) losses++
-                else draws++
+                s.goalsFor += myScore
+                s.goalsAgainst += oppScore
+                if (myScore > oppScore) s.wins++
+                else if (myScore < oppScore) s.losses++
+                else s.draws++
             }
+
+            // Also accumulate in "all"
+            const allStats = map.get('all')!
+            allStats.played++
+            allStats.goalsFor += myScore
+            allStats.goalsAgainst += oppScore
+            if (myScore > oppScore) allStats.wins++
+            else if (myScore < oppScore) allStats.losses++
+            else allStats.draws++
         })
 
-        const diff = goalsFor - goalsAgainst
-        const diffStr = diff > 0 ? `+${diff}` : `${diff}`
-
-        return {
-            played: played.length,
-            wins,
-            draws,
-            losses,
-            diffStr,
+        // Calculate diffStr for all entries
+        for (const [_, s] of map.entries()) {
+            const diff = s.goalsFor - s.goalsAgainst
+            s.diffStr = diff > 0 ? `+${diff}` : `${diff}`
         }
+
+        return map
     }, [matches, teamId])
+
+    const displayStats = useMemo(() => {
+        return statsByYear.get(selectedYear) || { played: 0, wins: 0, draws: 0, losses: 0, diffStr: '0' }
+    }, [statsByYear, selectedYear])
+    
+    // Sort matches: past matches played date desc, upcoming fixtures date asc (filtered by year if applicable)
+    const pastMatches = useMemo(() => {
+        let filtered = matches.filter(m => m.date && new Date(m.date + 'T' + (m.time || '00:00:00')) < new Date())
+        if (selectedYear !== 'all') {
+            filtered = filtered.filter(m => m.date && m.date.startsWith(selectedYear))
+        }
+        return filtered.sort((a, b) => (b.date || '').localeCompare(a.date || ''))
+    }, [matches, selectedYear])
+
+    const upcoming = useMemo(() => {
+        let filtered = matches.filter(m => m.status === 'Fixture')
+        if (selectedYear !== 'all') {
+            filtered = filtered.filter(m => m.date && m.date.startsWith(selectedYear))
+        }
+        return filtered.sort((a, b) => (a.date || '').localeCompare(b.date || '')).slice(0, 10)
+    }, [matches, selectedYear])
 
     if (loading) return (
         <div className="min-h-screen px-4 py-8">
@@ -290,13 +325,50 @@ export function TeamPage() {
                     </div>
 
                     {/* Calculated Stats Badges Grid */}
-                    {stats.played > 0 && (
-                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 pt-4 border-t border-border-hairline">
-                            <StatBadge label="Ottelut" value={stats.played} />
-                            <StatBadge label="Voitot" value={stats.wins} variant="success" />
-                            <StatBadge label="Tasapelit" value={stats.draws} variant="warning" />
-                            <StatBadge label="Häviöt" value={stats.losses} variant="danger" />
-                            <StatBadge label="Maaliero" value={stats.diffStr} variant={parseInt(stats.diffStr) > 0 ? 'success' : parseInt(stats.diffStr) < 0 ? 'danger' : 'default'} />
+                    {statsByYear.get('all') && statsByYear.get('all')!.played > 0 && (
+                        <div className="space-y-4 pt-4 border-t border-border-hairline">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-text-secondary">
+                                    {selectedYear === 'all' ? 'Kausitilastot: Kaikki kaudet (Yhteensä)' : `Kausitilastot: Kausi ${selectedYear}`}
+                                </span>
+                                {years.length > 0 && (
+                                    <div className="flex items-center gap-1.5 bg-surface-2 p-1 rounded-lg border border-border-hairline">
+                                        <button
+                                            onClick={() => setSelectedYear('all')}
+                                            className={cn(
+                                                "text-xs px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer active:scale-95",
+                                                selectedYear === 'all' 
+                                                    ? "bg-accent text-text-inverse shadow-sm" 
+                                                    : "text-text-muted hover:text-text-primary"
+                                            )}
+                                        >
+                                            Yhteensä
+                                        </button>
+                                        {years.map(y => (
+                                            <button
+                                                key={y}
+                                                onClick={() => setSelectedYear(y)}
+                                                className={cn(
+                                                    "text-xs px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer active:scale-95",
+                                                    selectedYear === y 
+                                                        ? "bg-accent text-text-inverse shadow-sm" 
+                                                        : "text-text-muted hover:text-text-primary"
+                                                )}
+                                            >
+                                                {y}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                            
+                            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+                                <StatBadge label="Ottelut" value={displayStats.played} />
+                                <StatBadge label="Voitot" value={displayStats.wins} variant="success" />
+                                <StatBadge label="Tasapelit" value={displayStats.draws} variant="warning" />
+                                <StatBadge label="Häviöt" value={displayStats.losses} variant="danger" />
+                                <StatBadge label="Maaliero" value={displayStats.diffStr} variant={parseInt(displayStats.diffStr) > 0 ? 'success' : parseInt(displayStats.diffStr) < 0 ? 'danger' : 'default'} />
+                            </div>
                         </div>
                     )}
                 </div>
