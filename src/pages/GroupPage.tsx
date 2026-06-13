@@ -63,7 +63,7 @@ export function GroupPage() {
                                 <div
                                     key={p.player_id || i}
                                     onClick={() => p.player_id && navigate(`/player/${p.player_id}`)}
-                                    className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-surface-2 cursor-pointer transition-colors"
+                                    className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-surface-2 border border-transparent hover:border-border-hairline cursor-pointer transition-all active:scale-[0.99] min-h-[44px]"
                                 >
                                     <div className="flex items-center gap-3 min-w-0">
                                         <span className="text-text-muted text-xs font-mono w-5 shrink-0">{i + 1}.</span>
@@ -97,7 +97,7 @@ export function GroupPage() {
                                     <div
                                         key={m.match_id}
                                         onClick={() => navigate(`/match/${m.match_id}`)}
-                                        className="flex items-center justify-between py-2 px-2 rounded-lg hover:bg-surface-2 cursor-pointer transition-colors text-sm"
+                                        className="flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-surface-2 border border-transparent hover:border-border-hairline cursor-pointer transition-all active:scale-[0.99] text-sm min-h-[44px]"
                                     >
                                         <span className="text-text-muted text-xs w-12 shrink-0">{m.date?.slice(5)}</span>
                                         <span className="text-text-primary truncate text-right min-w-0 flex-1">{m.team_A_name}</span>
@@ -123,7 +123,7 @@ export function GroupPage() {
                                 <div
                                     key={m.match_id}
                                     onClick={() => navigate(`/match/${m.match_id}`)}
-                                    className="flex items-center justify-between py-2 px-2 rounded-lg hover:bg-surface-2 cursor-pointer transition-colors text-sm"
+                                    className="flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-surface-2 border border-transparent hover:border-border-hairline cursor-pointer transition-all active:scale-[0.99] text-sm min-h-[44px]"
                                 >
                                     <span className="text-text-muted text-xs w-12 shrink-0">{m.date?.slice(5)}</span>
                                     <span className="text-text-primary truncate text-right min-w-0 flex-1">{m.team_A_name}</span>

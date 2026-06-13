@@ -91,7 +91,9 @@ export function MatchHeader({ match, group, teamA, teamB }: { match: MatchDetail
 
                 {/* Kickoff */}
                 <div className="flex flex-col items-center gap-1">
-                    <span className="text-xs font-bold text-text-muted uppercase tracking-widest">Ottelu alkaa</span>
+                    <span className="text-xs font-bold text-text-muted uppercase tracking-widest">
+                        {match.status === 'Played' ? 'Alkamisaika' : 'Ottelu alkaa'}
+                    </span>
                     <div className="flex items-center gap-2 text-text-primary">
                         <Calendar className="w-4 h-4 text-accent" />
                         <span className="text-base font-semibold">{match.date}</span>

@@ -59,29 +59,32 @@ export function StandingsTable({ teams, matches = [], teamAId, teamBId, selected
     return (
         <div className="bg-surface-1 border border-border-hairline rounded-xl overflow-hidden">
             {selectedTeam && (
-                <div className="px-4 py-2 bg-surface-3 border-b border-border-hairline flex items-center justify-between text-xs">
+                <div className="px-4 py-2.5 bg-surface-3 border-b border-border-hairline flex items-center justify-between text-xs">
                     <div className="flex items-center gap-3">
-                        <span className="text-text-primary font-medium">
+                        <span className="text-text-primary font-semibold">
                             {teams.find(t => t.team_id === selectedTeam)?.team_name || selectedTeam}
                         </span>
                         <span className="text-text-muted">vastustajat:</span>
                         <span className="flex items-center gap-2">
                             {(['win', 'draw', 'loss', 'upcoming'] as const).map(k => (
-                                <span key={k} className="inline-flex items-center gap-0.5">
+                                <span key={k} className="inline-flex items-center gap-1">
                                     <span className={cn('w-2 h-2 rounded-full', resultConfig[k].dot)} />
-                                    {' '}{resultConfig[k].label}
+                                    <span className="text-text-secondary font-mono">{resultConfig[k].label}</span>
                                 </span>
                             ))}
                         </span>
                     </div>
-                    <button onClick={(e) => { e.stopPropagation(); onSelectTeam?.(null) }} className="text-text-muted hover:text-text-primary transition-colors px-2 py-1">
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onSelectTeam?.(null) }}
+                        className="bg-surface-2 border border-border-hairline hover:border-accent/30 text-text-secondary hover:text-text-primary active:scale-[0.97] transition-all rounded-md px-2.5 py-1 text-xs font-semibold cursor-pointer"
+                    >
                         Tyhjennä
                     </button>
                 </div>
             )}
             <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left">
-                    <thead className="text-xs uppercase tracking-widest text-text-muted bg-surface-3">
+                    <thead className="text-[10px] font-bold uppercase tracking-[0.08em] text-text-muted bg-surface-3">
                         <tr>
                             <th className="px-3 py-3 font-bold">#</th>
                             <th className="px-3 py-3 font-bold">Joukkue</th>

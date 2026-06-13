@@ -17,6 +17,7 @@ export function MatchPage() {
     const navigate = useNavigate()
     const [searchValue, setSearchValue] = useState(matchId)
     const [selectedTeam, setSelectedTeam] = useState<string | null>(null)
+    const [showStickyHeader, setShowStickyHeader] = useState(false)
     const { loading, error, data, fetchData } = useMatchData()
 
     useEffect(() => {
@@ -25,6 +26,18 @@ export function MatchPage() {
             fetchData(matchId.trim())
         }
     }, [matchId, fetchData])
+
+    useEffect(() => {
+        const handleScroll = () => {
+            if (window.scrollY > 280) {
+                setShowStickyHeader(true)
+            } else {
+                setShowStickyHeader(false)
+            }
+        }
+        window.addEventListener('scroll', handleScroll)
+        return () => window.removeEventListener('scroll', handleScroll)
+    }, [])
 
     const handleSearch = (e?: React.FormEvent) => {
         if (e) e.preventDefault()
@@ -51,6 +64,59 @@ export function MatchPage() {
 
     return (
         <div className="min-h-screen px-4 py-8 md:py-16">
+            {/* Sticky Score Bar */}
+            <AnimatePresence>
+                {showStickyHeader && data && (
+                    <motion.div
+                        initial={{ y: -64, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: -64, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="fixed top-0 left-0 right-0 z-50 bg-surface-1/95 backdrop-blur-xl border-b border-border-hairline h-14 flex items-center justify-center px-4"
+                    >
+                        <div className="max-w-6xl w-full flex items-center justify-between">
+                            <button
+                                onClick={() => navigate(-1)}
+                                className="flex items-center gap-1 text-xs text-text-muted hover:text-text-primary transition-colors min-h-[36px]"
+                            >
+                                <span className="font-semibold">&larr; Takaisin</span>
+                            </button>
+                            
+                            <div className="flex items-center gap-3 md:gap-6">
+                                <span className="text-xs md:text-sm font-bold text-text-primary truncate max-w-[120px] md:max-w-[180px] text-right">
+                                    {data.match.team_A_name}
+                                </span>
+                                {(data.teamA?.img_url || data.teamA?.club_crest) && (
+                                    <img src={data.teamA.img_url || data.teamA.club_crest} alt="" className="w-6 h-6 object-contain shrink-0" />
+                                )}
+                                
+                                <div className="bg-surface-3 px-3 py-1 rounded-md border border-border-hairline font-mono font-bold text-sm md:text-base tabular-nums flex items-center gap-1 shrink-0">
+                                    <span>{data.match.fs_A ?? '-'}</span>
+                                    <span className="text-accent">:</span>
+                                    <span>{data.match.fs_B ?? '-'}</span>
+                                </div>
+                                
+                                {(data.teamB?.img_url || data.teamB?.club_crest) && (
+                                    <img src={data.teamB.img_url || data.teamB.club_crest} alt="" className="w-6 h-6 object-contain shrink-0" />
+                                )}
+                                <span className="text-xs md:text-sm font-bold text-text-primary truncate max-w-[120px] md:max-w-[180px]">
+                                    {data.match.team_B_name}
+                                </span>
+                            </div>
+                            
+                            <div className="w-14 flex justify-end">
+                                {data.match.time && data.match.time.includes("'") && (
+                                    <span className="flex items-center gap-1 bg-semantic-red/10 border border-semantic-red/20 px-2 py-0.5 rounded text-[10px] font-bold text-semantic-red">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-semantic-red animate-pulse" />
+                                        LIVE
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             <div className="max-w-6xl mx-auto space-y-12">
                 <header className="text-center space-y-4">
                     <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-text-primary">Match View</h1>
