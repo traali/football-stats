@@ -442,6 +442,19 @@ export function TeamPage() {
         }).filter((r): r is 'V' | 'H' | 'T' => r !== null)
     }, [pastMatches, teamId])
 
+    // WARNING FOR FUTURE DEVELOPERS & AI AGENTS:
+    // ALL useMemo/useCallback/useState/useEffect hooks MUST be declared BEFORE
+    // any conditional early returns (loading, error, etc.). React's Rules of Hooks
+    // require hooks to always run in the same order. Placing a useMemo after an
+    // early return causes React error #310 (different number of hooks rendered)
+    // which crashes the page into the 404 errorElement. DO NOT move this below
+    // the loading/error guards.
+    // Top scorers/assisters for the selected year
+    const currentScorers = useMemo(() => {
+        const yr = selectedYear === 'all' ? (years[0] || APP_CONFIG.CURRENT_YEAR) : selectedYear
+        return (teamTopScorers[yr] || []).filter(p => p.goals > 0 || p.assists > 0)
+    }, [teamTopScorers, selectedYear, years])
+
     if (loading) return (
         <div className="min-h-screen px-4 py-8">
             <div className="max-w-6xl mx-auto space-y-6">
@@ -472,12 +485,6 @@ export function TeamPage() {
                 birthyear: p.birthyear,
                 shirt_number: p.shirt_number,
             }))
-
-    // Top scorers/assisters for the selected year
-    const currentScorers = useMemo(() => {
-        const yr = selectedYear === 'all' ? (years[0] || APP_CONFIG.CURRENT_YEAR) : selectedYear
-        return (teamTopScorers[yr] || []).filter(p => p.goals > 0 || p.assists > 0)
-    }, [teamTopScorers, selectedYear, years])
 
     const rosterContent = (
         <div className="space-y-4">
