@@ -124,6 +124,8 @@ export interface MatchDetails {
     team_B_name: string;
     fs_A?: string;
     fs_B?: string;
+    hts_A?: string;
+    hts_B?: string;
     status?: string;
     date: string;
     time?: string;
