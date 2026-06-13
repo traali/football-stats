@@ -34,17 +34,30 @@ export function TeamPage() {
 
     const players = team?.players || []
 
+    const allowedYears = useMemo(() => {
+        const currentYear = new Date().getFullYear()
+        return [currentYear, currentYear - 1, currentYear - 2, currentYear - 3].map(String)
+    }, [])
+
+    const filteredMatches = useMemo(() => {
+        return matches.filter(m => {
+            if (!m.date) return false
+            const y = m.date.slice(0, 4)
+            return allowedYears.includes(y)
+        })
+    }, [matches, allowedYears])
+
     // Available years in the matches data
     const years = useMemo(() => {
         const yearsSet = new Set<string>()
-        matches.forEach(m => {
+        filteredMatches.forEach(m => {
             if (m.date) {
                 const y = m.date.slice(0, 4)
                 if (y && !isNaN(parseInt(y))) yearsSet.add(y)
             }
         })
         return [...yearsSet].sort((a, b) => b.localeCompare(a))
-    }, [matches])
+    }, [filteredMatches])
 
     // Calculate dynamic team statistics grouped by year/season
     const statsByYear = useMemo(() => {
@@ -53,7 +66,7 @@ export function TeamPage() {
         // Initialize "all" total statistics
         map.set('all', { played: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, diffStr: '0' })
 
-        matches.forEach(m => {
+        filteredMatches.forEach(m => {
             if (m.status !== 'Played' || !m.date) return
             const year = m.date.slice(0, 4)
             if (!year || isNaN(parseInt(year))) return
@@ -93,7 +106,7 @@ export function TeamPage() {
         }
 
         return map
-    }, [matches, teamId])
+    }, [filteredMatches, teamId])
 
     const displayStats = useMemo(() => {
         return statsByYear.get(selectedYear) || { played: 0, wins: 0, draws: 0, losses: 0, diffStr: '0' }
@@ -101,20 +114,20 @@ export function TeamPage() {
     
     // Sort matches: past matches played date desc, upcoming fixtures date asc (filtered by year if applicable)
     const pastMatches = useMemo(() => {
-        let filtered = matches.filter(m => m.date && new Date(m.date + 'T' + (m.time || '00:00:00')) < new Date())
+        let filtered = filteredMatches.filter(m => m.date && new Date(m.date + 'T' + (m.time || '00:00:00')) < new Date())
         if (selectedYear !== 'all') {
             filtered = filtered.filter(m => m.date && m.date.startsWith(selectedYear))
         }
         return filtered.sort((a, b) => (b.date || '').localeCompare(a.date || ''))
-    }, [matches, selectedYear])
+    }, [filteredMatches, selectedYear])
 
     const upcoming = useMemo(() => {
-        let filtered = matches.filter(m => m.status === 'Fixture')
+        let filtered = filteredMatches.filter(m => m.status === 'Fixture')
         if (selectedYear !== 'all') {
             filtered = filtered.filter(m => m.date && m.date.startsWith(selectedYear))
         }
-        return filtered.sort((a, b) => (a.date || '').localeCompare(b.date || '')).slice(0, 10)
-    }, [matches, selectedYear])
+        return filtered.sort((a, b) => (a.date || '').localeCompare(a.date || '')).slice(0, 10)
+    }, [filteredMatches, selectedYear])
 
     if (loading) return (
         <div className="min-h-screen px-4 py-8">
