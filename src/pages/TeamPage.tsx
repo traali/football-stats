@@ -68,7 +68,8 @@ export function TeamPage() {
     const relevantGroups = useMemo(() => {
         if (!team?.groups) return []
         return (team.groups as any[]).filter(g => {
-            const season = g.competition_season
+            if (!g) return false
+            const season = g.competition_season ? String(g.competition_season) : ''
             return season && allowedYears.includes(season)
         })
     }, [team?.groups, allowedYears])
@@ -105,7 +106,8 @@ export function TeamPage() {
                 results.forEach((groupData, idx) => {
                     if (!groupData) return
                     const groupMeta = relevantGroups[idx]
-                    const season = groupMeta.competition_season
+                    if (!groupMeta) return
+                    const season = groupMeta.competition_season ? String(groupMeta.competition_season) : ''
                     if (!season || !playersBySeason[season]) return
 
                     const stats = groupData.player_statistics || []
@@ -223,6 +225,9 @@ export function TeamPage() {
             }
 
             s.played++
+            const allStats = map.get('all')!
+            allStats.played++
+
             const isA = m.team_A_id === teamId
             const myScore = parseInt(isA ? m.fs_A || '0' : m.fs_B || '0', 10)
             const oppScore = parseInt(isA ? m.fs_B || '0' : m.fs_A || '0', 10)
@@ -232,15 +237,13 @@ export function TeamPage() {
                 if (myScore > oppScore) s.wins++
                 else if (myScore < oppScore) s.losses++
                 else s.draws++
-            }
 
-            const allStats = map.get('all')!
-            allStats.played++
-            allStats.goalsFor += myScore
-            allStats.goalsAgainst += oppScore
-            if (myScore > oppScore) allStats.wins++
-            else if (myScore < oppScore) allStats.losses++
-            else allStats.draws++
+                allStats.goalsFor += myScore
+                allStats.goalsAgainst += oppScore
+                if (myScore > oppScore) allStats.wins++
+                else if (myScore < oppScore) allStats.losses++
+                else allStats.draws++
+            }
         })
 
         for (const [_, s] of map.entries()) {
@@ -348,7 +351,8 @@ export function TeamPage() {
 
         if (team?.categories) {
             (team.categories as any[]).forEach(c => {
-                const season = c.competition_season
+                if (!c) return
+                const season = c.competition_season ? String(c.competition_season) : ''
                 if (!season) return
                 
                 const name = getCategoryName(c)
@@ -367,7 +371,8 @@ export function TeamPage() {
 
         if (team?.groups) {
             (team.groups as any[]).forEach(g => {
-                const season = g.competition_season
+                if (!g) return
+                const season = g.competition_season ? String(g.competition_season) : ''
                 if (!season) return
                 
                 const name = getCategoryName(g)
@@ -788,10 +793,17 @@ export function TeamPage() {
                                                 categoryNames.add(primaryCatName);
                                             }
                                             if (team?.categories) {
+                                                // WARNING FOR FUTURE DEVELOPERS & AI AGENTS (e.g. DeepSeek):
+                                                // DO NOT simplify this loop or remove the String()/existence checks.
+                                                // 1. API responses can return numeric competition_id values. Calling `.includes()` directly on them throws a TypeError, crashing the page and causing React Router to render the 404 page.
+                                                // 2. Tournament entries (e.g. Helsinki Cup "hc2026") might have an empty competition_season in the API, but they must still be treated as current because their competition_id contains "2026" or "26".
                                                 team.categories.forEach(c => {
-                                                    const isCurrent = c.competition_season === APP_CONFIG.CURRENT_YEAR || 
-                                                        c.competition_id?.includes(APP_CONFIG.CURRENT_YEAR) ||
-                                                        c.competition_id?.includes(APP_CONFIG.CURRENT_YEAR.slice(2));
+                                                    if (!c) return;
+                                                    const season = c.competition_season ? String(c.competition_season) : '';
+                                                    const compId = c.competition_id ? String(c.competition_id) : '';
+                                                    const isCurrent = season === APP_CONFIG.CURRENT_YEAR || 
+                                                        (compId && compId.includes(APP_CONFIG.CURRENT_YEAR)) ||
+                                                        (compId && compId.includes(APP_CONFIG.CURRENT_YEAR.slice(2)));
                                                     if (isCurrent) {
                                                         const name = getCategoryName(c);
                                                         if (name) categoryNames.add(name);
