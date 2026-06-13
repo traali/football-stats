@@ -107,9 +107,10 @@ export function TeamPage() {
 
                     const stats = groupData.player_statistics || []
                     stats.forEach(p => {
-                        if (p.team_id === teamId && p.player_id) {
-                            playersBySeason[season][p.player_id] = {
-                                player_id: p.player_id,
+                        // team_id can be number or string from API — coerce both sides
+                        if (String(p.team_id) === String(teamId) && p.player_id) {
+                            playersBySeason[season][String(p.player_id)] = {
+                                player_id: String(p.player_id),
                                 first_name: p.first_name || p.player_name?.split(' ')[1] || '',
                                 last_name: p.last_name || p.player_name?.split(' ')[0] || '',
                                 img_url: p.img_url
@@ -119,17 +120,22 @@ export function TeamPage() {
                 })
 
                 // Union current active squad with APP_CONFIG.CURRENT_YEAR
-                if (team?.players && playersBySeason[APP_CONFIG.CURRENT_YEAR]) {
-                    team.players.forEach(p => {
-                        if (p.player_id) {
-                            playersBySeason[APP_CONFIG.CURRENT_YEAR][p.player_id] = {
-                                player_id: p.player_id,
-                                first_name: p.first_name || '',
-                                last_name: p.last_name || '',
-                                img_url: p.img_url
+                // Only merge if we got 0 players from group stats (API squad as fallback)
+                if (team?.players) {
+                    const curYrBucket = playersBySeason[APP_CONFIG.CURRENT_YEAR]
+                    if (curYrBucket && Object.keys(curYrBucket).length === 0) {
+                        // No group stats found for current year — use team.players as the roster
+                        team.players.forEach(p => {
+                            if (p.player_id) {
+                                curYrBucket[String(p.player_id)] = {
+                                    player_id: String(p.player_id),
+                                    first_name: p.first_name || '',
+                                    last_name: p.last_name || '',
+                                    img_url: p.img_url
+                                }
                             }
-                        }
-                    })
+                        })
+                    }
                 }
 
                 const finalPlayers: Record<string, { player_id: string; first_name: string; last_name: string; img_url?: string }[]> = {}
@@ -295,7 +301,8 @@ export function TeamPage() {
         return {
             targetYear,
             prevYear,
-            hasComparisonData: prevPlayers.length > 0 || historicalPlayersByYear[prevYear] !== undefined,
+            // hasComparisonData = true only if we actually have loaded data for prevYear (non-empty array)
+            hasComparisonData: prevPlayers.length > 0,
             newPlayers,
             gonePlayers
         }
@@ -459,7 +466,11 @@ export function TeamPage() {
             <div className="bg-surface-1 border border-border-hairline rounded-xl p-5 space-y-3">
                 <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center justify-between">
                     <span className="flex items-center gap-2">
-                        <Users className="w-4 h-4 text-semantic-green" /> Uudet pelaajat ({playerTransitions.newPlayers.length})
+                        <Users className="w-4 h-4 text-semantic-green" /> Uudet pelaajat
+                        {loadingPlayers
+                            ? <span className="w-3 h-3 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                            : <span className="text-text-muted font-normal text-xs">({playerTransitions.newPlayers.length})</span>
+                        }
                     </span>
                     <span className="text-[10px] text-text-muted font-mono font-normal">
                         Kausi {playerTransitions.targetYear} vs {playerTransitions.prevYear}
@@ -507,7 +518,11 @@ export function TeamPage() {
             <div className="bg-surface-1 border border-border-hairline rounded-xl p-5 space-y-3">
                 <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center justify-between">
                     <span className="flex items-center gap-2">
-                        <Users className="w-4 h-4 text-semantic-red" /> Lähteneet pelaajat ({playerTransitions.gonePlayers.length})
+                        <Users className="w-4 h-4 text-semantic-red" /> Lähteneet pelaajat
+                        {loadingPlayers
+                            ? <span className="w-3 h-3 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                            : <span className="text-text-muted font-normal text-xs">({playerTransitions.gonePlayers.length})</span>
+                        }
                     </span>
                     <span className="text-[10px] text-text-muted font-mono font-normal">
                         Kauden {playerTransitions.prevYear} jälkeen
