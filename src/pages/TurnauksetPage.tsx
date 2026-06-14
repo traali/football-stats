@@ -239,9 +239,10 @@ export function TurnauksetPage() {
                                     return (
                                         <tr
                                             key={s.team_id}
+                                            onClick={() => !isPPJ && navigate(`/turnaukset/${turnaus}/${sarja}/${s.team_id}`)}
                                             className={cn(
                                                 "border-b border-border-hairline/50 transition-colors",
-                                                isPPJ ? "bg-accent/5" : "hover:bg-surface-2"
+                                                isPPJ ? "bg-accent/5" : "hover:bg-surface-2 cursor-pointer"
                                             )}
                                         >
                                             <td className="py-2.5 pr-2 font-mono text-text-muted text-xs">{s.current_standing}</td>

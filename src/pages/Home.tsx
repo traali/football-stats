@@ -87,6 +87,27 @@ export function Home() {
 
                 <section className="space-y-3">
                     <h2 className="text-lg font-bold text-text-primary flex items-center gap-2">
+                        <Trophy className="w-5 h-5 text-accent" /> Turnaukset
+                    </h2>
+                    <div
+                        onClick={() => navigate('/turnaukset/hc2026/B13-8/185085')}
+                        className="bg-surface-1 border border-border-hairline rounded-xl p-4 flex items-center justify-between cursor-pointer hover:bg-surface-2 transition-colors"
+                    >
+                        <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-10 h-10 rounded-full bg-surface-2 border border-border-hairline flex items-center justify-center shrink-0">
+                                <Trophy className="w-5 h-5 text-accent" />
+                            </div>
+                            <div className="min-w-0">
+                                <p className="text-text-primary font-medium truncate">Helsinki Cup 2026</p>
+                                <p className="text-text-muted text-sm truncate">PPJ · B13 8v8 · Lohko M</p>
+                            </div>
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-text-muted shrink-0" />
+                    </div>
+                </section>
+
+                <section className="space-y-3">
+                    <h2 className="text-lg font-bold text-text-primary flex items-center gap-2">
                         <Activity className="w-5 h-5 text-accent" /> Sarjat
                     </h2>
                     {loading && <div className="animate-pulse bg-surface-1 rounded-xl h-48" />}
