@@ -1,4 +1,4 @@
-import { MatchDetails, GroupDetails, TeamBasic } from '../types/api'
+import { MatchDetails, GroupDetails, TeamResponse } from '../types/api'
 import { motion } from 'framer-motion'
 import { Calendar, Clock, Users, Goal, Timer } from 'lucide-react'
 import { Link } from 'react-router-dom'
@@ -21,7 +21,7 @@ function LiveBadge() {
     )
 }
 
-export function MatchHeader({ match, group, teamA, teamB }: { match: MatchDetails; group: GroupDetails | null; teamA?: TeamBasic | null; teamB?: TeamBasic | null }) {
+export function MatchHeader({ match, group, teamA, teamB }: { match: MatchDetails; group: GroupDetails | null; teamA?: TeamResponse | null; teamB?: TeamResponse | null }) {
     const isLive = !!(match.time && match.time.includes("'"))
     const crestA = teamA?.img_url || teamA?.club_crest
     const crestB = teamB?.img_url || teamB?.club_crest

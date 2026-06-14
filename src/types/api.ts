@@ -88,6 +88,8 @@ export interface TeamResponse {
     club_name?: string;
     club_id?: string;
     crest?: string;
+    img_url?: string;      // team/club crest image (same as club_crest on TeamBasic)
+    club_crest?: string;   // alias for crest — present on getTeam responses
     birthyear?: string;
     gender?: string;
     home_venue_id?: string;
