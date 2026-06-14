@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Trophy, Users, Shield, Calendar, MapPin, ChevronDown, ChevronRight, User, TrendingUp } from 'lucide-react'
 import { cn } from '../utils/cn'
 import { getGroups, getGroupFull, getTeamProfile, batchFetch } from '../services/api'
-import type { StandingTeam, TeamRosterPlayer, PlayerStatsEntry } from '../types/api'
+import type { StandingTeam, TeamRosterPlayer, PlayerStatsEntry, GroupDetails } from '../types/api'
 
 interface MatchWithVenue {
     match_id: string
@@ -63,6 +63,7 @@ export function TurnauksetPage() {
 
     const [playoffs, setPlayoffs] = useState<PlayoffInfo[]>([])
     const [expandedPlayoff, setExpandedPlayoff] = useState<string | null>(null)
+    const [allGroups, setAllGroups] = useState<GroupDetails[]>([])
 
     useEffect(() => {
         if (!turnaus || !sarja || !teamId) return
@@ -71,6 +72,7 @@ export function TurnauksetPage() {
         const fetchData = async () => {
             try {
                 const groups = await getGroups(turnaus, sarja)
+                setAllGroups(groups)
                 const found = groups.find(g =>
                     g.teams?.some(t => String(t.team_id) === teamId)
                 )
@@ -163,6 +165,39 @@ export function TurnauksetPage() {
         }
         return map
     }, [playerStats])
+
+    const groupLinkMap = useMemo(() => {
+        const map = new Map<string, { teamId: string; teamName: string }>()
+        for (const g of allGroups) {
+            const letter = g.group_name?.replace(/^Lohko\s+/i, '').trim()
+            if (!letter || letter.length > 2 || !g.teams?.length) continue
+            map.set(letter.toUpperCase(), {
+                teamId: String(g.teams[0].team_id),
+                teamName: g.teams[0].team_name || '',
+            })
+        }
+        return map
+    }, [allGroups])
+
+    const renderPlayoffTeamName = (name: string) => {
+        const m = name.match(/^([A-Z])\/(I{1,3})$/i)
+        if (m) {
+            const letter = m[1].toUpperCase()
+            const info = groupLinkMap.get(letter)
+            if (info) {
+                return (
+                    <a
+                        href={`#/turnaukset/${turnaus!}/${sarja!}/${info.teamId}`}
+                        onClick={e => { e.stopPropagation(); e.preventDefault(); navigate(`/turnaukset/${turnaus!}/${sarja!}/${info.teamId}`) }}
+                        className="text-accent hover:text-accent/80 underline underline-offset-2 decoration-accent/30 transition-colors"
+                    >
+                        {name}
+                    </a>
+                )
+            }
+        }
+        return <span>{name}</span>
+    }
 
     if (!turnaus || !sarja || !teamId) return (
         <div className="min-h-screen px-4 py-8 text-center text-semantic-red">
@@ -319,9 +354,9 @@ export function TurnauksetPage() {
                                                         </>
                                                     )}
                                                 </div>
-                                                {m.venue_name && (
-                                                    <p className="text-[10px] text-text-muted/60 flex items-center gap-1 mt-0.5 truncate">
-                                                        <MapPin className="w-2.5 h-2.5 shrink-0" />
+                                                {(m.venue_name || m.venue_location_name) && (
+                                                    <p className="text-xs text-text-muted/70 flex items-center gap-1 mt-0.5 truncate">
+                                                        <MapPin className="w-3 h-3 shrink-0" />
                                                         {m.venue_name}{m.venue_location_name ? ` · ${m.venue_location_name}` : ''}
                                                     </p>
                                                 )}
@@ -385,50 +420,42 @@ export function TurnauksetPage() {
                                             <div className="divide-y divide-border-hairline/50">
                                                 {[...p.matches]
                                                     .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))
-                                                    .map(m => {
-                                                        const involvesM = m.team_A_name?.includes('M/') || m.team_B_name?.includes('M/')
-                                                        return (
-                                                            <div
-                                                                key={m.match_id}
-                                                                onClick={() => navigate(`/match/${m.match_id}`)}
-                                                                className="flex items-center justify-between py-2.5 px-4 hover:bg-surface-2 cursor-pointer transition-all min-h-[44px]"
-                                                            >
-                                                                <div className="flex items-center gap-3 min-w-0 flex-1">
-                                                                    <div className="text-center shrink-0 w-14">
-                                                                        <p className="text-[10px] text-text-muted font-mono">{formatDate(m.date)}</p>
-                                                                        <p className="text-[9px] text-text-muted/60 font-mono">{formatTime(m.time)}</p>
-                                                                    </div>
-                                                                    <div className="min-w-0 flex-1 space-y-0.5">
-                                                                        <p className={cn(
-                                                                            "text-xs font-mono truncate",
-                                                                            involvesM ? "text-text-primary font-semibold" : "text-text-muted/80"
-                                                                        )}>
-                                                                            {m.team_A_name}
+                                                    .map(m => (
+                                                        <div
+                                                            key={m.match_id}
+                                                            onClick={() => navigate(`/match/${m.match_id}`)}
+                                                            className="flex items-center justify-between py-2.5 px-4 hover:bg-surface-2 cursor-pointer transition-all min-h-[44px]"
+                                                        >
+                                                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                                                                <div className="text-center shrink-0 w-14">
+                                                                    <p className="text-xs text-text-muted font-mono">{formatDate(m.date)}</p>
+                                                                    <p className="text-[11px] text-text-muted/70 font-mono">{formatTime(m.time)}</p>
+                                                                </div>
+                                                                <div className="min-w-0 flex-1 space-y-0.5">
+                                                                    <p className="text-xs font-mono truncate">
+                                                                        {renderPlayoffTeamName(m.team_A_name || '—')}
+                                                                    </p>
+                                                                    <p className="text-[10px] text-text-muted/40 text-center leading-none">vs</p>
+                                                                    <p className="text-xs font-mono truncate">
+                                                                        {renderPlayoffTeamName(m.team_B_name || '—')}
+                                                                    </p>
+                                                                    {(m.venue_name || m.venue_location_name) && (
+                                                                        <p className="text-xs text-text-muted/70 flex items-center gap-1 mt-1 truncate">
+                                                                            <MapPin className="w-3 h-3 shrink-0" />
+                                                                            {m.venue_name}{m.venue_location_name ? ` · ${m.venue_location_name}` : ''}
                                                                         </p>
-                                                                        <p className="text-[10px] text-text-muted/40 text-center leading-none">vs</p>
-                                                                        <p className={cn(
-                                                                            "text-xs font-mono truncate",
-                                                                            involvesM ? "text-text-primary font-semibold" : "text-text-muted/80"
-                                                                        )}>
-                                                                            {m.team_B_name}
+                                                                    )}
+                                                                    {m.referee_1_name && (
+                                                                        <p className="text-[10px] text-text-muted/50 flex items-center gap-1 mt-0.5 truncate">
+                                                                            <Users className="w-2.5 h-2.5 shrink-0" />
+                                                                            {m.referee_1_name}
                                                                         </p>
-                                                                        {m.venue_name && (
-                                                                            <p className="text-[9px] text-text-muted/50 flex items-center gap-1 mt-0.5 truncate">
-                                                                                <MapPin className="w-2 h-2 shrink-0" />
-                                                                                {m.venue_name}{m.venue_location_name ? ` · ${m.venue_location_name}` : ''}
-                                                                            </p>
-                                                                        )}
-                                                                        {m.referee_1_name && (
-                                                                            <p className="text-[9px] text-text-muted/40 flex items-center gap-1 mt-0.5 truncate">
-                                                                                <Users className="w-2 h-2 shrink-0" />
-                                                                                {m.referee_1_name}
-                                                                            </p>
-                                                                        )}
-                                                                    </div>
-                                                                 </div>
+                                                                    )}
+                                                                </div>
                                                              </div>
-                                                        )
-                                                    })}
+                                                          </div>
+                                                     )
+                                                    )}
                                             </div>
                                         )}
                                     </div>
