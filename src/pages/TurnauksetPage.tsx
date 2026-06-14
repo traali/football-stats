@@ -103,26 +103,25 @@ export function TurnauksetPage() {
                     setPlayers(teamData.players || [])
                 }
 
-                const playoffIds = ['16', '17', '18']
-                const playoffLabels = [
-                    { id: '16', name: 'A-fin', label: 'Sijoille 1.–2. (mestaruus)' },
-                    { id: '17', name: 'B-fin', label: 'Sijoille 3.–4.' },
-                    { id: '18', name: 'C-fin', label: 'Sijoille 5.–6.' },
-                ]
-
-                const playoffResults = await batchFetch(
-                    playoffIds,
-                    (id, signal) => getGroupFull(turnaus!, sarja!, id, signal),
-                    3,
-                )
-
-                if (cancelled) return
-
-                const parsedPlayoffs = playoffLabels.map((p, i) => ({
-                    ...p,
-                    matches: (playoffResults[i]?.matches || []) as MatchWithVenue[],
-                }))
-                setPlayoffs(parsedPlayoffs)
+                const playoffGroups = groups.filter(g => !g.teams?.length && g.group_id !== found.group_id)
+                if (playoffGroups.length > 0) {
+                    const playoffLabels = playoffGroups.map(g => ({
+                        id: g.group_id,
+                        name: g.group_name || `Lohko ${g.group_id}`,
+                        label: g.group_name || '',
+                    }))
+                    const playoffResults = await batchFetch(
+                        playoffLabels.map(p => p.id),
+                        (id, signal) => getGroupFull(turnaus!, sarja!, id, signal),
+                        3,
+                    )
+                    if (cancelled) return
+                    const parsedPlayoffs = playoffLabels.map((p, i) => ({
+                        ...p,
+                        matches: (playoffResults[i]?.matches || []) as MatchWithVenue[],
+                    }))
+                    setPlayoffs(parsedPlayoffs)
+                }
             } catch (err) {
                 if (!cancelled) setError((err as Error).message)
             } finally {
@@ -400,10 +399,10 @@ export function TurnauksetPage() {
                                     <div className="flex items-center gap-3">
                                         <div className={cn(
                                             "w-3 h-3 rounded-full shrink-0",
-                                            p.id === '16' ? 'bg-semantic-green' : p.id === '17' ? 'bg-accent' : 'bg-text-muted'
+                                            p.matches.length > 0 ? 'bg-accent' : 'bg-text-muted'
                                         )} />
                                         <span className="text-sm font-bold text-text-primary">{p.name}</span>
-                                        <span className="text-xs text-text-muted">{p.label}</span>
+                                        {p.label && <span className="text-xs text-text-muted">{p.label}</span>}
                                     </div>
                                     {expandedPlayoff === p.id ? (
                                         <ChevronDown className="w-4 h-4 text-text-muted" />
@@ -464,10 +463,11 @@ export function TurnauksetPage() {
                         ))}
                     </div>
 
-                    <p className="text-xs text-text-muted/60 pt-1">
-                        Lohkosta M: Sijat 1.–2. → A-fin, 3.–4. → B-fin, 5.–6. → C-fin ·
-                        M/I = Lohko M, sija 1
-                    </p>
+                    {playoffs.filter(p => p.matches.length > 0).length > 0 && (
+                        <p className="text-xs text-text-muted/60 pt-1">
+                            Esim. {groupName}/I = {groupName}-lohkon 1. sija · Roomalaiset numerot viittaavat lohkon sijoitukseen
+                        </p>
+                    )}
                 </div>
 
                 {topScorers.length > 0 && (
