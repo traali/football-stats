@@ -492,8 +492,9 @@ export function TurnauksetPage() {
                                     <div
                                         key={pid}
                                         onClick={() => pid && navigate(`/player/${pid}`)}
-                                        className="bg-surface-2 border border-border-hairline hover:border-accent/30 rounded-xl p-4 hover:bg-surface-3 transition-all active:scale-[0.98] cursor-pointer space-y-3"
+                                        className="relative bg-surface-2 border border-border-hairline hover:border-accent/30 rounded-xl p-4 hover:bg-surface-3 transition-all active:scale-[0.98] cursor-pointer space-y-3 overflow-hidden"
                                     >
+                                        <div className="absolute left-0 top-3 bottom-3 w-0.5 bg-accent/30 rounded-full" />
                                         <div className="flex items-center gap-3">
                                             <div className="w-12 h-12 rounded-full bg-surface-3 flex items-center justify-center shrink-0 border border-border-hairline">
                                                 {p.img_url ? (
