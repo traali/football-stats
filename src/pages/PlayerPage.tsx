@@ -70,6 +70,27 @@ export function PlayerPage() {
     const safeMatches = player?.matches ?? []
     const seasons = useMemo(() => buildSeasonStats(safeMatches), [safeMatches])
 
+    // WARNING FOR FUTURE DEVELOPERS & AI AGENTS:
+    // ALL useMemo/useCallback/useState/useEffect hooks MUST be declared BEFORE
+    // any conditional early returns (loading, error, etc.). React's Rules of Hooks
+    // require hooks to always run in the same order. Placing a useMemo after an
+    // early return causes React error #310 (different number of hooks rendered)
+    // which crashes the page into the 404 errorElement. DO NOT move these below
+    // the loading/error guards.
+    const pastMatches = useMemo(() => {
+        const matches = safeMatches.filter(m => m.status === 'Played')
+        const filtered = selectedTeamId ? matches.filter(m => m.team_id === selectedTeamId) : matches
+        return filtered
+            .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
+            .slice(0, 30)
+    }, [safeMatches, selectedTeamId])
+
+    const upcomingMatches = useMemo(() => {
+        const matches = safeMatches.filter(m => m.status === 'Fixture')
+        const filtered = selectedTeamId ? matches.filter(m => m.team_id === selectedTeamId) : matches
+        return filtered.slice(0, 5)
+    }, [safeMatches, selectedTeamId])
+
     if (loading) return <div className="min-h-screen px-4 py-8"><div className="max-w-6xl mx-auto space-y-6"><div className="animate-pulse bg-surface-1 rounded-xl h-64" /></div></div>
     if (error || !player) return <div className="min-h-screen px-4 py-8 text-center text-semantic-red">{error || 'Pelaajaa ei löytynyt'}</div>
 
@@ -84,19 +105,7 @@ export function PlayerPage() {
         ? [...new Set(stats.map(s => [s.competition_name, s.category_name, s.group_name].filter(Boolean).join(' / ')).filter(Boolean))]
         : []
 
-    const pastMatches = useMemo(() => {
-        const matches = safeMatches.filter(m => m.status === 'Played')
-        const filtered = selectedTeamId ? matches.filter(m => m.team_id === selectedTeamId) : matches
-        return filtered
-            .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
-            .slice(0, 30)
-    }, [safeMatches, selectedTeamId])
 
-    const upcomingMatches = useMemo(() => {
-        const matches = safeMatches.filter(m => m.status === 'Fixture')
-        const filtered = selectedTeamId ? matches.filter(m => m.team_id === selectedTeamId) : matches
-        return filtered.slice(0, 5)
-    }, [safeMatches, selectedTeamId])
 
     return (
         <div className="min-h-screen px-4 py-6">
