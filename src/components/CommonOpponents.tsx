@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Shield, ChevronDown, ChevronUp, Users, Goal, Calendar, AlertTriangle, Loader2 } from 'lucide-react'
+import { ChevronDown, ChevronUp, Users, AlertTriangle, Loader2 } from 'lucide-react'
 import { cn } from '../utils/cn'
 import { WLD_CONFIG } from '../utils/wld'
 import { getMatchDetails } from '../services/api'

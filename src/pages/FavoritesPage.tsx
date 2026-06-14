@@ -10,7 +10,7 @@ export function FavoritesPage() {
     const navigate = useNavigate()
     const { favorites, clear } = useFavorites()
     const [teams, setTeams] = useState<Record<string, TeamResponse | null>>({})
-    const [loading, setLoading] = useState(true)
+    const [, setLoading] = useState(true)
 
     useEffect(() => {
         if (favorites.length === 0) { setLoading(false); return }

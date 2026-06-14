@@ -9,7 +9,6 @@ import type {
     MatchDetails,
     PlayerAPIResponse,
     Season,
-    TeamBasic,
     TeamResponse,
     GroupResponse,
 } from '../types'

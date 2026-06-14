@@ -36,6 +36,7 @@ export function PlayerCard({ stats }: { stats: PlayerStats }) {
                                 <User className="w-8 h-8 text-text-muted" aria-label="Player avatar placeholder" />
                             </div>
                         )}
+                        
                         {stats.isCaptainInMatch && (
                             <div className="absolute -top-2 -right-2 bg-accent text-text-inverse text-xs font-bold px-1.5 py-0.5 rounded-md border-2 border-canvas">
                                 C

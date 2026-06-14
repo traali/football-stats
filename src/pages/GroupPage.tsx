@@ -1,11 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { TrendingUp, Calendar } from 'lucide-react'
-import { cn } from '../utils/cn'
-import { formatDate } from '../utils/dates'
-import { WLD_CONFIG } from '../utils/wld'
 import { getGroupFull } from '../services/api'
-import { StandingsTable, BackButton, PageLayout } from '../components'
+import { StandingsTable, BackButton, PageLayout, Card, MatchRowSymmetric, MatchRowFixture } from '../components'
 import type { GroupResponse, PlayerStatsEntry } from '../types'
 
 export function GroupPage() {
@@ -53,7 +50,7 @@ export function GroupPage() {
                 </div>
 
                 {topScorers.length > 0 && (
-                    <div className="bg-surface-1 border border-border-hairline rounded-xl p-5 space-y-3">
+                    <Card className="space-y-3">
                         <h2 className="text-lg font-bold text-text-primary flex items-center gap-2">
                             <TrendingUp className="w-5 h-5 text-accent" /> Maalintekijät
                         </h2>
@@ -78,59 +75,48 @@ export function GroupPage() {
                                 </div>
                             ))}
                         </div>
-                    </div>
+                    </Card>
                 )}
 
                 {pastMatches.length > 0 && (
-                    <div className="bg-surface-1 border border-border-hairline rounded-xl p-5 space-y-3">
+                    <Card className="space-y-3">
                         <h2 className="text-lg font-bold text-text-primary flex items-center gap-2">
                             <Calendar className="w-5 h-5 text-accent" /> Viimeisimmät ottelut
                         </h2>
                         <div className="space-y-1">
-                            {[...pastMatches].reverse().map((m) => {
-                                const wld = m.winner_id && m.winner_id !== '0' && m.winner_id !== '-'
-                                    ? (m.winner_id === m.team_A_id ? 'V' : m.winner_id === m.team_B_id ? 'H' : null)
-                                    : (m.fs_A && m.fs_B ? 'T' : null)
-                                return (
-                                    <div
-                                        key={m.match_id}
-                                        onClick={() => navigate(`/match/${m.match_id}`)}
-                                        className="flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-surface-2 border border-transparent hover:border-border-hairline cursor-pointer transition-all active:scale-[0.99] text-sm min-h-[44px]"
-                                    >
-                                        <span className="text-text-muted text-xs w-12 shrink-0">{formatDate(m.date, 'short')}</span>
-                                        <span className="text-text-primary truncate text-right min-w-0 flex-1">{m.team_A_name}</span>
-                                        <span className="font-mono font-bold text-text-primary mx-2 shrink-0 flex items-center gap-1">
-                                            {m.fs_A}–{m.fs_B}
-                                            {wld && <span className={cn('text-xs font-bold', WLD_CONFIG[wld as keyof typeof WLD_CONFIG]?.color || 'text-accent')}>{wld}</span>}
-                                        </span>
-                                        <span className="text-text-primary truncate min-w-0 flex-1">{m.team_B_name}</span>
-                                    </div>
-                                )
-                            })}
+                            {[...pastMatches].reverse().map((m) => (
+                                <MatchRowSymmetric
+                                    key={m.match_id}
+                                    matchId={m.match_id}
+                                    date={m.date}
+                                    teamAName={m.team_A_name}
+                                    teamBName={m.team_B_name}
+                                    scoreA={m.fs_A}
+                                    scoreB={m.fs_B}
+                                    winnerId={m.winner_id}
+                                />
+                            ))}
                         </div>
-                    </div>
+                    </Card>
                 )}
 
                 {upcomingMatches.length > 0 && (
-                    <div className="bg-surface-1 border border-border-hairline rounded-xl p-5 space-y-3">
+                    <Card className="space-y-3">
                         <h2 className="text-lg font-bold text-text-primary flex items-center gap-2">
                             <Calendar className="w-5 h-5 text-accent" /> Tulevat ottelut
                         </h2>
                         <div className="space-y-1">
                             {upcomingMatches.map((m) => (
-                                <div
+                                <MatchRowFixture
                                     key={m.match_id}
-                                    onClick={() => navigate(`/match/${m.match_id}`)}
-                                    className="flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-surface-2 border border-transparent hover:border-border-hairline cursor-pointer transition-all active:scale-[0.99] text-sm min-h-[44px]"
-                                >
-                                    <span className="text-text-muted text-xs w-12 shrink-0">{m.date?.slice(5)}</span>
-                                    <span className="text-text-primary truncate text-right min-w-0 flex-1">{m.team_A_name}</span>
-                                    <span className="font-mono font-bold text-text-muted mx-2 shrink-0">vs</span>
-                                    <span className="text-text-primary truncate min-w-0 flex-1">{m.team_B_name}</span>
-                                </div>
+                                    matchId={m.match_id}
+                                    date={m.date}
+                                    teamAName={m.team_A_name}
+                                    teamBName={m.team_B_name}
+                                />
                             ))}
                         </div>
-                    </div>
+                    </Card>
                 )}
         </PageLayout>
     )

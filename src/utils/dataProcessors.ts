@@ -1,4 +1,3 @@
-import { APP_CONFIG } from '../config';
 import type { PastMatchDetail, PlayerMatchEntry } from '../types';
 
 interface ProcessedStats {

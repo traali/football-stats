@@ -1,6 +1,6 @@
 import { MatchDetails, GroupDetails, TeamResponse } from '../types'
 import { motion } from 'framer-motion'
-import { Calendar, Clock, Users, Goal, Timer } from 'lucide-react'
+import { Calendar, Clock, Users, Timer } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { cn } from '../utils/cn'
 import { resolveCrest } from '../utils/crest'

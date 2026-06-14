@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../utils/cn'
-import { WLD_CONFIG, type WLDKey } from '../utils/wld'
+import { WLD_CONFIG } from '../utils/wld'
 import type { StandingTeam, MatchSummary } from '../types'
 
 export function StandingsTable({ teams, matches = [], teamAId, teamBId, selectedTeam, onSelectTeam, compact }: {

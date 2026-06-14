@@ -1,5 +1,4 @@
 import { useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { cn } from '../utils/cn'
 import { WLD_CONFIG } from '../utils/wld'
 import type { MatchSummary } from '../types'
@@ -11,8 +10,6 @@ export function PreMatchComparison({ teamAId, teamBId, teamAName, teamBName, mat
     teamBName: string
     matches: MatchSummary[]
 }) {
-    const navigate = useNavigate()
-
     const common = useMemo(() => {
         const aOpponents = new Map<string, { result: 'win' | 'draw' | 'loss'; matchId: string }[]>()
         const bOpponents = new Map<string, { result: 'win' | 'draw' | 'loss'; matchId: string }[]>()

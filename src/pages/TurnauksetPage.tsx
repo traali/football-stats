@@ -39,7 +39,7 @@ export function TurnauksetPage() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
-    const [groupId, setGroupId] = useState('')
+    const [, setGroupId] = useState('')
     const [groupName, setGroupName] = useState('')
     const [compName, setCompName] = useState('')
     const [catName, setCatName] = useState('')
