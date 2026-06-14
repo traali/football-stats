@@ -11,6 +11,7 @@ import { DualStatBar } from '../components/DualStatBar'
 import { PreMatchComparison } from '../components/PreMatchComparison'
 import { CommonOpponents } from '../components/CommonOpponents'
 import { MatchHeaderSkeleton, PlayerCardSkeleton, StandingsTableSkeleton } from '../components/Skeleton'
+import { resolveCrest } from '../utils/crest'
 
 export function MatchPage() {
     const { matchId = '' } = useParams()
@@ -90,8 +91,8 @@ export function MatchPage() {
                                     <span className="text-xs md:text-sm font-bold text-text-primary truncate max-w-[120px] md:max-w-[180px] text-right hover:text-accent transition-colors">
                                         {data.match.team_A_name}
                                     </span>
-                                    {(data.teamA?.img_url || data.teamA?.club_crest) && (
-                                        <img src={data.teamA.img_url || data.teamA.club_crest} alt="" className="w-6 h-6 object-contain shrink-0" />
+                                    {resolveCrest(data.teamA || {}) && (
+                                        <img src={resolveCrest(data.teamA || {})!} alt="" className="w-6 h-6 object-contain shrink-0" />
                                     )}
                                 </Link>
                                 
@@ -105,8 +106,8 @@ export function MatchPage() {
                                     to={`/team/${data.match.team_B_id}`}
                                     className="flex items-center gap-2 hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 ring-accent/50 rounded-lg p-0.5"
                                 >
-                                    {(data.teamB?.img_url || data.teamB?.club_crest) && (
-                                        <img src={data.teamB.img_url || data.teamB.club_crest} alt="" className="w-6 h-6 object-contain shrink-0" />
+                                    {resolveCrest(data.teamB || {}) && (
+                                        <img src={resolveCrest(data.teamB || {})!} alt="" className="w-6 h-6 object-contain shrink-0" />
                                     )}
                                     <span className="text-xs md:text-sm font-bold text-text-primary truncate max-w-[120px] md:max-w-[180px] hover:text-accent transition-colors">
                                         {data.match.team_B_name}

@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { Heart, Shield } from 'lucide-react'
 import { useFavorites } from '../hooks/useFavorites'
 import { getTeamProfile } from '../services/api'
-import type { TeamResponse } from '../types/api'
+import type { TeamResponse } from '../types'
+import { PageLayout } from '../components'
 
 export function FavoritesPage() {
     const navigate = useNavigate()
@@ -21,9 +22,8 @@ export function FavoritesPage() {
     }, [favorites])
 
     return (
-        <div className="min-h-screen px-4 py-6">
-            <div className="max-w-6xl mx-auto space-y-6">
-                <div className="flex items-center justify-between">
+        <PageLayout>
+            <div className="flex items-center justify-between">
                     <h1 className="text-2xl font-bold text-text-primary flex items-center gap-2">
                         <Heart className="w-6 h-6 text-semantic-red fill-semantic-red" /> Suosikit
                     </h1>
@@ -64,7 +64,6 @@ export function FavoritesPage() {
                         )
                     })}
                 </div>
-            </div>
-        </div>
+        </PageLayout>
     )
 }

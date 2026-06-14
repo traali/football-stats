@@ -1,9 +1,12 @@
 import { useEffect, useState, useMemo, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, User, TrendingDown, Calendar, ExternalLink } from 'lucide-react'
+import { User, TrendingDown, Calendar, ExternalLink } from 'lucide-react'
 import { cn } from '../utils/cn'
+import { formatDate } from '../utils/dates'
+import { WLD_CONFIG } from '../utils/wld'
 import { getPlayerData } from '../services/api'
-import type { PlayerAPIResponse } from '../types/api'
+import type { PlayerAPIResponse } from '../types'
+import { BackButton, PageLayout } from '../components'
 
 interface SeasonStats {
     seasonName: string
@@ -122,11 +125,8 @@ export function PlayerPage() {
 
 
     return (
-        <div className="min-h-screen px-4 py-6">
-            <div className="max-w-6xl mx-auto space-y-6">
-                <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-text-muted hover:text-text-primary transition-colors text-sm mb-2">
-                    <ArrowLeft className="w-4 h-4" /> Takaisin
-                </button>
+        <PageLayout>
+            <BackButton className="mb-2" />
 
                 <div className="bg-surface-1 border border-border-hairline rounded-2xl p-6 relative overflow-hidden">
                     <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-bmw-cyan via-bmw-magenta to-bmw-amber" />
@@ -287,14 +287,14 @@ export function PlayerPage() {
                                                         const myScore = isA ? parseInt(m.fs_A || '0', 10) : parseInt(m.fs_B || '0', 10)
                                                         const oppScore = isA ? parseInt(m.fs_B || '0', 10) : parseInt(m.fs_A || '0', 10)
                                                         const wld = myScore > oppScore ? 'V' : myScore < oppScore ? 'H' : 'T'
-                                                        const wldColor = wld === 'V' ? 'text-semantic-green' : wld === 'H' ? 'text-semantic-red' : 'text-accent'
+                                                        const wldColor = WLD_CONFIG[wld as keyof typeof WLD_CONFIG]?.color || 'text-accent'
                                                         return (
                                                             <div
                                                                 key={m.match_id}
                                                                 onClick={() => navigate(`/match/${m.match_id}`)}
                                                                 className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-surface-2 border border-transparent hover:border-border-hairline cursor-pointer transition-all active:scale-[0.99] min-h-[40px] text-xs"
                                                             >
-                                                                <span className="text-text-muted w-10 shrink-0">{m.date?.slice(5)}</span>
+                                                                <span className="text-text-muted w-10 shrink-0">{formatDate(m.date, 'short')}</span>
                                                                 <span className="text-text-primary truncate text-right flex-1 pr-2">{oppName}</span>
                                                                 <span className="font-mono font-bold shrink-0 flex items-center gap-1">
                                                                     {m.fs_A ? `${myScore}–${oppScore}` : '–'}
@@ -341,7 +341,7 @@ export function PlayerPage() {
                                             const oppScoreVal = parseInt(oppScore || '0', 10)
                                             return myScoreVal > oppScoreVal ? 'V' : myScoreVal < oppScoreVal ? 'H' : 'T'
                                         })()
-                                        const wldBg = wld === 'V' ? 'bg-semantic-green' : wld === 'H' ? 'bg-semantic-red' : 'bg-accent'
+                                        const wldBg = WLD_CONFIG[wld as keyof typeof WLD_CONFIG]?.dot || 'bg-accent'
 
                                         return (
                                             <div
@@ -351,7 +351,7 @@ export function PlayerPage() {
                                                 style={{ minHeight: '44px' }}
                                             >
                                                 <span className={cn('w-2 h-2 rounded-full shrink-0', wldBg)} />
-                                                <span className="text-text-muted text-xs shrink-0 w-10">{m.date?.slice(5)}</span>
+                                                <span className="text-text-muted text-xs shrink-0 w-10">{formatDate(m.date, 'short')}</span>
                                                 <div className="flex-1 min-w-0 flex items-center gap-1.5 text-xs sm:text-sm">
                                                     <span className="text-text-primary font-semibold truncate shrink-0 max-w-[100px] sm:max-w-[150px]">
                                                         {myTeamName}
@@ -395,7 +395,7 @@ export function PlayerPage() {
                                                 style={{ minHeight: '44px' }}
                                             >
                                                 <span className="w-2 h-2 rounded-full bg-text-muted shrink-0" />
-                                                <span className="text-text-muted text-xs shrink-0 w-10">{m.date?.slice(5)}</span>
+                                                <span className="text-text-muted text-xs shrink-0 w-10">{formatDate(m.date, 'short')}</span>
                                                 <div className="flex-1 min-w-0 flex items-center gap-1.5 text-xs sm:text-sm">
                                                     <span className="text-text-primary font-semibold truncate shrink-0 max-w-[100px] sm:max-w-[150px]">
                                                         {m.team_name}
@@ -416,7 +416,6 @@ export function PlayerPage() {
                         )}
                     </div>
                 </div>
-            </div>
-        </div>
+        </PageLayout>
     )
 }

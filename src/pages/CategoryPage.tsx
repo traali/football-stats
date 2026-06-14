@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, ListTree } from 'lucide-react'
+import { ListTree } from 'lucide-react'
 import { getGroups } from '../services/api'
-import type { GroupDetails } from '../types/api'
+import type { GroupDetails } from '../types'
+import { BackButton, PageLayout } from '../components'
 
 export function CategoryPage() {
     const { compId, catId } = useParams()
@@ -23,11 +24,8 @@ export function CategoryPage() {
     if (error) return <div className="min-h-screen px-4 py-8 text-center text-semantic-red">{error}</div>
 
     return (
-        <div className="min-h-screen px-4 py-6">
-            <div className="max-w-6xl mx-auto space-y-6">
-                <button onClick={() => navigate(`/competition/${compId}`)} className="flex items-center gap-1.5 text-text-muted hover:text-text-primary transition-colors text-sm mb-2">
-                    <ArrowLeft className="w-4 h-4" /> Takaisin
-                </button>
+        <PageLayout>
+            <BackButton to={`/competition/${compId}`} className="mb-2" />
 
                 {groups.length > 0 && (
                     <div>
@@ -52,7 +50,6 @@ export function CategoryPage() {
                         </div>
                     ))}
                 </div>
-            </div>
-        </div>
+        </PageLayout>
     )
 }

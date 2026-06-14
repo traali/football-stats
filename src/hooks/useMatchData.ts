@@ -1,9 +1,8 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { getMatchDetails, getGroupDetails, getPlayerData, getTeamProfile, batchFetch } from '../services/api';
 import { processPlayerMatchHistory } from '../utils/dataProcessors';
-import { APP_CONFIG } from '../types/config';
-import { PlayerLineupInfo } from '../types/api';
-import type { MatchDetails, GroupDetails, PlayerStats, TeamResponse } from '../types/api';
+import { APP_CONFIG } from '../config';
+import type { MatchDetails, GroupDetails, PlayerStats, TeamResponse, PlayerLineupInfo } from '../types';
 
 export function useMatchData() {
     const [loading, setLoading] = useState(false);

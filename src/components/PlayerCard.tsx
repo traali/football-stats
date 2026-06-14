@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { motion, type Variants } from 'framer-motion'
-import { PlayerStats } from '../types/api'
+import { PlayerStats } from '../types'
 import { User, Shield, AlertTriangle, Target, Activity, Calendar } from 'lucide-react'
 import { cn } from '../utils/cn'
+import { formatDate } from '../utils/dates'
 import { StatBadge } from './StatBadge'
 
 const cardVariants: Variants = {
@@ -83,13 +84,13 @@ export function PlayerCard({ stats }: { stats: PlayerStats }) {
             )}
 
             {/* Last Matches */}
-            {hasHistory && (
-                <div className="space-y-3 pt-4 border-t border-border-hairline">
-                    <h4 className="text-xs font-bold text-text-muted uppercase tracking-widest flex items-center">
-                        <Activity className="w-3 h-3 mr-2" /> Viimeisimmät ottelut
-                    </h4>
-                    <div className="space-y-1.5">
-                        {stats.pastMatchesDetails.slice(0, 8).map((m, i) => (
+                    {hasHistory && stats.pastMatchesDetails && (
+                        <div className="space-y-3 pt-4 border-t border-border-hairline">
+                            <h4 className="text-xs font-bold text-text-muted uppercase tracking-widest flex items-center">
+                                <Activity className="w-3 h-3 mr-2" /> Viimeisimmät ottelut
+                            </h4>
+                            <div className="space-y-1.5">
+                                {stats.pastMatchesDetails.slice(0, 8).map((m, i) => (
                             <div key={i} className="flex items-center gap-2 text-sm">
                                 <span className={cn(
                                     "w-2 h-2 rounded-full shrink-0",
@@ -97,7 +98,7 @@ export function PlayerCard({ stats }: { stats: PlayerStats }) {
                                         m.resultIndicator === 'loss' ? "bg-semantic-red" :
                                             m.resultIndicator === 'fixture' ? "bg-semantic-gray" : "bg-semantic-amber"
                                 )} />
-                                <span className="text-text-muted text-xs shrink-0">{m.date?.slice(5)}</span>
+                                <span className="text-text-muted text-xs shrink-0">{formatDate(m.date, 'short')}</span>
                                 <span className="text-text-primary font-medium truncate">{m.playerTeamNameInPastMatch}</span>
                                 <span className="text-text-secondary shrink-0">vs</span>
                                 <span className="text-text-secondary truncate">{m.opponentName}</span>

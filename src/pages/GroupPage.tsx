@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, TrendingUp, Calendar } from 'lucide-react'
+import { TrendingUp, Calendar } from 'lucide-react'
 import { cn } from '../utils/cn'
+import { formatDate } from '../utils/dates'
+import { WLD_CONFIG } from '../utils/wld'
 import { getGroupFull } from '../services/api'
-import { StandingsTable } from '../components/StandingsTable'
-import type { GroupResponse, PlayerStatsEntry } from '../types/api'
+import { StandingsTable, BackButton, PageLayout } from '../components'
+import type { GroupResponse, PlayerStatsEntry } from '../types'
 
 export function GroupPage() {
     const { compId, catId, groupId } = useParams()
@@ -35,11 +37,8 @@ export function GroupPage() {
     const upcomingMatches = matches.filter(m => m.status === 'Fixture').slice(0, 5)
 
     return (
-        <div className="min-h-screen px-4 py-6">
-            <div className="max-w-6xl mx-auto space-y-6">
-                <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-text-muted hover:text-text-primary transition-colors text-sm mb-2">
-                    <ArrowLeft className="w-4 h-4" /> Takaisin
-                </button>
+        <PageLayout>
+            <BackButton className="mb-2" />
 
                 <div>
                     <h1 className="text-2xl font-bold text-text-primary">{group.group_name || 'Ryhmä'}</h1>
@@ -92,18 +91,17 @@ export function GroupPage() {
                                 const wld = m.winner_id && m.winner_id !== '0' && m.winner_id !== '-'
                                     ? (m.winner_id === m.team_A_id ? 'V' : m.winner_id === m.team_B_id ? 'H' : null)
                                     : (m.fs_A && m.fs_B ? 'T' : null)
-                                const wldColor = wld === 'V' ? 'text-semantic-green' : wld === 'H' ? 'text-semantic-red' : 'text-accent'
                                 return (
                                     <div
                                         key={m.match_id}
                                         onClick={() => navigate(`/match/${m.match_id}`)}
                                         className="flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-surface-2 border border-transparent hover:border-border-hairline cursor-pointer transition-all active:scale-[0.99] text-sm min-h-[44px]"
                                     >
-                                        <span className="text-text-muted text-xs w-12 shrink-0">{m.date?.slice(5)}</span>
+                                        <span className="text-text-muted text-xs w-12 shrink-0">{formatDate(m.date, 'short')}</span>
                                         <span className="text-text-primary truncate text-right min-w-0 flex-1">{m.team_A_name}</span>
                                         <span className="font-mono font-bold text-text-primary mx-2 shrink-0 flex items-center gap-1">
                                             {m.fs_A}–{m.fs_B}
-                                            {wld && <span className={cn('text-xs font-bold', wldColor)}>{wld}</span>}
+                                            {wld && <span className={cn('text-xs font-bold', WLD_CONFIG[wld as keyof typeof WLD_CONFIG]?.color || 'text-accent')}>{wld}</span>}
                                         </span>
                                         <span className="text-text-primary truncate min-w-0 flex-1">{m.team_B_name}</span>
                                     </div>
@@ -134,7 +132,6 @@ export function GroupPage() {
                         </div>
                     </div>
                 )}
-            </div>
-        </div>
+        </PageLayout>
     )
 }

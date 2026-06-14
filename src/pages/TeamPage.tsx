@@ -1,12 +1,14 @@
 import { useEffect, useState, useMemo, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Heart, Users, Calendar, Shield, CalendarDays, User, TrendingUp } from 'lucide-react'
+import { Heart, Users, Calendar, Shield, CalendarDays, User, TrendingUp } from 'lucide-react'
 import { cn } from '../utils/cn'
+import { formatDate } from '../utils/dates'
+import { WLD_CONFIG } from '../utils/wld'
 import { getTeamProfile, getTeamMatches, getGroupFull, batchFetch } from '../services/api'
 import { useFavorites } from '../hooks/useFavorites'
-import type { TeamResponse, DiscoveryMatch } from '../types/api'
-import { APP_CONFIG } from '../types/config'
-import { StatBadge } from '../components/StatBadge'
+import type { TeamResponse, DiscoveryMatch } from '../types'
+import { APP_CONFIG } from '../config'
+import { StatBadge, BackButton, PageLayout } from '../components'
 
 export function TeamPage() {
     const { teamId } = useParams()
@@ -719,7 +721,7 @@ export function TeamPage() {
                                 onClick={() => navigate(`/match/${m.match_id}`)}
                                 className="flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-surface-2 border border-transparent hover:border-border-hairline cursor-pointer transition-all active:scale-[0.99] text-sm min-h-[44px]"
                             >
-                                <span className="text-text-muted w-16 shrink-0">{m.date?.slice(5)}</span>
+                                <span className="text-text-muted w-16 shrink-0">{formatDate(m.date, 'short')}</span>
                                 <span className="text-text-primary truncate text-right flex-1 pr-2">{m.team_A_name}</span>
                                 <span className="text-text-muted mx-2 shrink-0 font-mono text-xs">vs</span>
                                 <span className="text-text-primary truncate flex-1 pl-2">{m.team_B_name}</span>
@@ -746,7 +748,7 @@ export function TeamPage() {
                                     onClick={() => navigate(`/match/${m.match_id}`)}
                                     className="flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-surface-2 border border-transparent hover:border-border-hairline cursor-pointer transition-all active:scale-[0.99] text-sm min-h-[44px]"
                                 >
-                                    <span className="text-text-muted w-12 shrink-0 text-xs">{m.date?.slice(5)}</span>
+                                    <span className="text-text-muted w-12 shrink-0 text-xs">{formatDate(m.date, 'short')}</span>
                                     <span className="text-text-primary truncate flex-1 text-right pr-2">
                                         {isA ? m.team_B_name : m.team_A_name}
                                     </span>
@@ -755,10 +757,8 @@ export function TeamPage() {
                                         {wld && (
                                             <span className={cn(
                                                 'text-[10px] font-bold px-1 py-0.5 rounded leading-none',
-                                                wld === 'V' ? 'bg-semantic-green/10 text-semantic-green border border-semantic-green/20' : 
-                                                wld === 'H' ? 'bg-semantic-red/10 text-semantic-red border border-semantic-red/20' : 
-                                                'bg-accent/10 text-accent border border-accent/20'
-                                            )}>
+                                                WLD_CONFIG[wld as keyof typeof WLD_CONFIG]?.bg?.replace('/10', '/10') + ' ' + WLD_CONFIG[wld as keyof typeof WLD_CONFIG]?.color + ' border border-' + WLD_CONFIG[wld as keyof typeof WLD_CONFIG]?.dot?.replace('bg-', '') + '/20'
+                                            ) || 'bg-accent/10 text-accent border border-accent/20'}>
                                                 {wld}
                                             </span>
                                         )}
@@ -777,11 +777,8 @@ export function TeamPage() {
     )
 
     return (
-        <div className="min-h-screen px-4 py-6">
-            <div className="max-w-6xl mx-auto space-y-6">
-                <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-text-muted hover:text-text-primary transition-colors text-sm mb-2">
-                    <ArrowLeft className="w-4 h-4" /> Takaisin
-                </button>
+        <PageLayout>
+            <BackButton className="mb-2" />
 
                 {/* Team Info Header Card */}
                 <div className="bg-surface-1 border border-border-hairline rounded-2xl p-6 relative overflow-hidden space-y-6">
@@ -1067,7 +1064,6 @@ export function TeamPage() {
                         {matchesContent}
                     </div>
                 </div>
-            </div>
-        </div>
+        </PageLayout>
     )
 }

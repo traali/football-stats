@@ -1,4 +1,4 @@
-import { APP_CONFIG } from '../types/config'
+import { APP_CONFIG } from '../config'
 import { withCache } from './cache'
 import type {
     Category,
@@ -13,7 +13,7 @@ import type {
     TeamBasic,
     TeamResponse,
     GroupResponse,
-} from '../types/api'
+} from '../types'
 
 // ---------------------------------------------------------------------------
 // Typed error classes

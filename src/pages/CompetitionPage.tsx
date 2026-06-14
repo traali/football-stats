@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Layers } from 'lucide-react'
+import { Layers } from 'lucide-react'
 import { getCategories, getSeasons } from '../services/api'
-import type { Category, Season } from '../types/api'
+import type { Category, Season } from '../types'
+import { BackButton, PageLayout } from '../components'
 
 export function CompetitionPage() {
     const { compId } = useParams()
@@ -24,11 +25,8 @@ export function CompetitionPage() {
     if (error) return <div className="min-h-screen px-4 py-8 text-center text-semantic-red">{error}</div>
 
     return (
-        <div className="min-h-screen px-4 py-6">
-            <div className="max-w-6xl mx-auto space-y-6">
-                <button onClick={() => navigate('/')} className="flex items-center gap-1.5 text-text-muted hover:text-text-primary transition-colors text-sm mb-2">
-                    <ArrowLeft className="w-4 h-4" /> Etusivu
-                </button>
+        <PageLayout>
+            <BackButton to="/" label="Etusivu" className="mb-2" />
 
                 <h1 className="text-2xl font-bold text-text-primary capitalize">{compId}</h1>
 
@@ -55,7 +53,6 @@ export function CompetitionPage() {
                         </div>
                     ))}
                 </div>
-            </div>
-        </div>
+        </PageLayout>
     )
 }

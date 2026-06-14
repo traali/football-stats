@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Shield, ChevronDown, ChevronUp, Users, Goal, Calendar, AlertTriangle, Loader2 } from 'lucide-react'
 import { cn } from '../utils/cn'
+import { WLD_CONFIG } from '../utils/wld'
 import { getMatchDetails } from '../services/api'
-import type { MatchDetails, GroupDetails, MatchSummary, PlayerLineupInfo } from '../types/api'
+import type { MatchDetails, GroupDetails, MatchSummary, PlayerLineupInfo } from '../types'
 
 interface CommonOpponentData {
     opponentId: string;
@@ -147,19 +148,10 @@ export function CommonOpponents({ teamAId, teamBId, teamAName, teamBId: _, teamA
         const scoreA = Number(myScore)
         const scoreB = Number(oppScore)
         
-        let outcome: 'win' | 'loss' | 'draw' = 'draw'
-        let badgeClass = 'bg-accent/10 border border-accent/20 text-accent'
-        let outcomeLabel = 'T'
-
-        if (scoreA > scoreB) {
-            outcome = 'win'
-            badgeClass = 'bg-semantic-green/10 border border-semantic-green/20 text-semantic-green'
-            outcomeLabel = 'V'
-        } else if (scoreA < scoreB) {
-            outcome = 'loss'
-            badgeClass = 'bg-semantic-red/10 border border-semantic-red/20 text-semantic-red'
-            outcomeLabel = 'H'
-        }
+        const outcome = scoreA > scoreB ? 'V' : scoreA < scoreB ? 'H' : 'T'
+        const config = WLD_CONFIG[outcome as keyof typeof WLD_CONFIG] || WLD_CONFIG.T
+        const badgeClass = config.bg.replace('/10', '/10') + ' border border-' + config.dot.replace('bg-', '') + '/20 ' + config.color
+        const outcomeLabel = config.label
 
         return {
             text: `${myScore}–${oppScore} vs ${oppName}`,

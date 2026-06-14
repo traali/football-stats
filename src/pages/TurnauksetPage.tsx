@@ -1,9 +1,11 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Trophy, Users, Shield, Calendar, MapPin, ChevronDown, ChevronRight, User, TrendingUp } from 'lucide-react'
+import { Trophy, Users, Shield, Calendar, MapPin, ChevronDown, ChevronRight, User, TrendingUp } from 'lucide-react'
 import { cn } from '../utils/cn'
+import { formatDate, formatTime } from '../utils/dates'
 import { getGroups, getGroupFull, getTeamProfile, batchFetch } from '../services/api'
-import type { StandingTeam, TeamRosterPlayer, PlayerStatsEntry, GroupDetails } from '../types/api'
+import type { StandingTeam, TeamRosterPlayer, PlayerStatsEntry, GroupDetails } from '../types'
+import { BackButton, PageLayout } from '../components'
 
 interface MatchWithVenue {
     match_id: string
@@ -28,17 +30,6 @@ interface PlayoffInfo {
     name: string
     label: string
     matches: MatchWithVenue[]
-}
-
-const days = ['Su', 'Ma', 'Ti', 'Ke', 'To', 'Pe', 'La']
-
-function formatDate(dateStr: string) {
-    const d = new Date(dateStr + 'T12:00:00')
-    return `${days[d.getDay()]} ${parseInt(dateStr.slice(8, 10))}.${parseInt(dateStr.slice(5, 7))}.`
-}
-
-function formatTime(time: string) {
-    return time?.slice(0, 5) || ''
 }
 
 export function TurnauksetPage() {
@@ -221,11 +212,8 @@ export function TurnauksetPage() {
     )
 
     return (
-        <div className="min-h-screen px-4 py-6">
-            <div className="max-w-6xl mx-auto space-y-6">
-                <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-text-muted hover:text-text-primary transition-colors text-sm">
-                    <ArrowLeft className="w-4 h-4" /> Takaisin
-                </button>
+        <PageLayout>
+            <BackButton />
 
                 <div className="bg-surface-1 border border-border-hairline rounded-2xl p-6 relative overflow-hidden">
                     <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-accent to-accent/50" />
@@ -573,7 +561,6 @@ export function TurnauksetPage() {
                         </div>
                     )}
                 </div>
-            </div>
-        </div>
+        </PageLayout>
     )
 }

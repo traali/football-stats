@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Search, Trophy, Heart, Shield, Activity, ChevronRight } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { Button } from '../components/Button'
+import { Button } from '../components'
 import { getCompetitions } from '../services/api'
 import { useFavorites } from '../hooks/useFavorites'
-import type { Competition } from '../types/api'
+import type { Competition } from '../types'
+import { PageLayout } from '../components'
 
 const SPL_IDS = ['spl', 'spf', 'b_jun', 'c_jun', 'd_jun']
 
@@ -33,9 +34,8 @@ export function Home() {
     const otherComps = comps.filter(c => !SPL_IDS.includes(c.competition_id))
 
     return (
-        <div className="min-h-screen px-4 py-6">
-            <div className="max-w-6xl mx-auto space-y-6">
-                <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center space-y-3">
+        <PageLayout>
+            <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center space-y-3">
                     <div className="flex items-center justify-center gap-3">
                         <div className="p-3 bg-accent/10 rounded-lg border border-accent/20">
                             <Trophy className="w-8 h-8 text-accent" />
@@ -171,7 +171,6 @@ export function Home() {
                 <footer className="pt-6 border-t border-border-hairline text-center text-text-muted text-sm">
                     <p>&copy; 2026 Pelaajatilastot. Data provided by Suomen Palloliitto.</p>
                 </footer>
-            </div>
-        </div>
+        </PageLayout>
     )
 }

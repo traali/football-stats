@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../utils/cn'
-import type { StandingTeam, MatchSummary } from '../types/api'
+import { WLD_CONFIG, type WLDKey } from '../utils/wld'
+import type { StandingTeam, MatchSummary } from '../types'
 
 export function StandingsTable({ teams, matches = [], teamAId, teamBId, selectedTeam, onSelectTeam, compact }: {
     teams: StandingTeam[]
@@ -50,9 +51,9 @@ export function StandingsTable({ teams, matches = [], teamAId, teamBId, selected
     }, [activeTeamId, matches])
 
     const resultConfig = {
-        win: { color: 'text-semantic-green', bg: 'bg-semantic-green/8', dot: 'bg-semantic-green', label: 'V' },
-        draw: { color: 'text-accent', bg: 'bg-accent/8', dot: 'bg-accent', label: 'T' },
-        loss: { color: 'text-semantic-red', bg: 'bg-semantic-red/8', dot: 'bg-semantic-red', label: 'H' },
+        win: WLD_CONFIG.V,
+        draw: WLD_CONFIG.T,
+        loss: WLD_CONFIG.H,
         upcoming: { color: 'text-text-muted', bg: 'bg-surface-2', dot: 'bg-text-muted', label: '?' },
     }
 

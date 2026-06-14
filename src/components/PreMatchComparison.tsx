@@ -1,7 +1,8 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../utils/cn'
-import type { MatchSummary } from '../types/api'
+import { WLD_CONFIG } from '../utils/wld'
+import type { MatchSummary } from '../types'
 
 export function PreMatchComparison({ teamAId, teamBId, teamAName, teamBName, matches }: {
     teamAId: string
@@ -79,10 +80,10 @@ export function PreMatchComparison({ teamAId, teamBId, teamAName, teamBName, mat
         return { w, d, l }
     }, [common])
 
-    const rc: Record<string, { c: string; bg: string; l: string }> = {
-        win: { c: 'text-semantic-green', bg: 'bg-semantic-green/15', l: 'V' },
-        draw: { c: 'text-accent', bg: 'bg-accent/15', l: 'T' },
-        loss: { c: 'text-semantic-red', bg: 'bg-semantic-red/15', l: 'H' },
+    const rc = {
+        win: { c: WLD_CONFIG.V.color, bg: WLD_CONFIG.V.bg.replace('/10', '/15'), l: WLD_CONFIG.V.label },
+        draw: { c: WLD_CONFIG.T.color, bg: WLD_CONFIG.T.bg.replace('/10', '/15'), l: WLD_CONFIG.T.label },
+        loss: { c: WLD_CONFIG.H.color, bg: WLD_CONFIG.H.bg.replace('/10', '/15'), l: WLD_CONFIG.H.label },
     }
 
     if (common.length === 0) return null
