@@ -492,32 +492,34 @@ export function TurnauksetPage() {
                                     <div
                                         key={pid}
                                         onClick={() => pid && navigate(`/player/${pid}`)}
-                                        className="bg-surface-2 border border-border-hairline hover:border-accent/30 rounded-xl p-3.5 hover:bg-surface-3 transition-all active:scale-[0.98] cursor-pointer"
+                                        className="bg-surface-2 border border-border-hairline hover:border-accent/30 rounded-xl p-4 hover:bg-surface-3 transition-all active:scale-[0.98] cursor-pointer space-y-3"
                                     >
-                                        <div className="flex items-start justify-between gap-3">
-                                            <div className="flex items-center gap-3 min-w-0">
-                                                <div className="w-10 h-10 rounded-full bg-surface-3 flex items-center justify-center shrink-0 border border-border-hairline">
-                                                    {p.img_url ? (
-                                                        <img src={p.img_url} alt="" className="w-full h-full rounded-full object-cover" />
-                                                    ) : (
-                                                        <User className="w-4 h-4 text-text-muted" />
-                                                    )}
-                                                </div>
-                                                <div className="min-w-0">
-                                                    <p className="text-text-primary font-semibold text-sm truncate">{p.first_name} {p.last_name}</p>
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-12 h-12 rounded-full bg-surface-3 flex items-center justify-center shrink-0 border border-border-hairline">
+                                                {p.img_url ? (
+                                                    <img src={p.img_url} alt="" className="w-full h-full rounded-full object-cover" />
+                                                ) : (
+                                                    <User className="w-5 h-5 text-text-muted" />
+                                                )}
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                                <p className="text-text-primary font-bold text-sm truncate">
+                                                    {p.first_name} {p.last_name}
+                                                </p>
+                                                <div className="flex items-center gap-2 mt-0.5">
                                                     {p.birthyear && (
-                                                        <p className="text-text-muted text-xs font-mono mt-0.5">{p.birthyear}</p>
+                                                        <span className="text-text-muted text-xs font-mono">{p.birthyear}</span>
+                                                    )}
+                                                    {p.shirt_number && (
+                                                        <span className="bg-accent/10 border border-accent/20 text-accent font-mono font-bold text-[10px] px-1.5 py-0.5 rounded">
+                                                            #{p.shirt_number}
+                                                        </span>
                                                     )}
                                                 </div>
                                             </div>
-                                            {p.shirt_number && (
-                                                <span className="bg-accent/10 border border-accent/20 text-accent font-mono font-bold text-xs px-2 py-0.5 rounded shrink-0 mt-0.5">
-                                                    #{p.shirt_number}
-                                                </span>
-                                            )}
                                         </div>
                                         {pStats && pStats.length > 0 && (
-                                            <div className="mt-3 pt-3 border-t border-border-hairline space-y-1.5">
+                                            <div className="pt-3 border-t border-border-hairline space-y-1.5">
                                                 {pStats.map((s, i) => (
                                                     <div key={i} className="flex items-center justify-between text-xs">
                                                         <span className="text-text-secondary font-medium truncate mr-2">
