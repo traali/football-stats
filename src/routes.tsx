@@ -2,6 +2,7 @@ import { createHashRouter, Outlet } from 'react-router-dom'
 import { Home } from './pages/Home'
 import { MatchPage } from './pages/MatchPage'
 import { NotFound } from './pages/NotFound'
+import { ErrorBoundaryPage } from './components/ErrorBoundaryPage'
 import { GroupPage } from './pages/GroupPage'
 import { TeamPage } from './pages/TeamPage'
 import { PlayerPage } from './pages/PlayerPage'
@@ -23,7 +24,7 @@ function Layout() {
 export const router = createHashRouter([
     {
         element: <Layout />,
-        errorElement: <NotFound />,
+        errorElement: <ErrorBoundaryPage />,
         children: [
             { path: '/', element: <Home /> },
             { path: '/match', element: <MatchPage /> },

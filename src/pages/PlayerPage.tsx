@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, User, TrendingDown, Calendar, ExternalLink } from 'lucide-react'
 import { cn } from '../utils/cn'
@@ -47,16 +47,24 @@ export function PlayerPage() {
     const [expanded, setExpanded] = useState<{ season: string; stat: string } | null>(null)
     const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null)
 
+    const abortRef = useRef<AbortController | null>(null)
+
     useEffect(() => {
         if (!playerId) {
             setError('Pelaajan tunnus puuttuu')
             setLoading(false)
             return
         }
+        // Cancel any in-flight request from a previous playerId
+        abortRef.current?.abort()
+        const controller = new AbortController()
+        abortRef.current = controller
+
         setLoading(true)
         setError(null)
-        getPlayerData(playerId)
+        getPlayerData(playerId, controller.signal)
             .then(p => {
+                if (controller.signal.aborted) return
                 if (!p) {
                     setError('Pelaajaa ei löytynyt')
                 } else {
@@ -64,7 +72,13 @@ export function PlayerPage() {
                 }
                 setLoading(false)
             })
-            .catch(e => { setError(e.message); setLoading(false) })
+            .catch(e => {
+                if (controller.signal.aborted) return
+                setError(e.message)
+                setLoading(false)
+            })
+
+        return () => { controller.abort() }
     }, [playerId])
 
     const safeMatches = player?.matches ?? []

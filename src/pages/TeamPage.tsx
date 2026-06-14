@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Heart, Users, Calendar, Shield, CalendarDays, User, TrendingUp } from 'lucide-react'
 import { cn } from '../utils/cn'
@@ -22,19 +22,35 @@ export function TeamPage() {
     // Historical players state
     const [historicalPlayersByYear, setHistoricalPlayersByYear] = useState<Record<string, { player_id: string; first_name: string; last_name: string; img_url?: string }[]>>({})
     const [loadingPlayers, setLoadingPlayers] = useState(false)
+    const [historyError, setHistoryError] = useState<string | null>(null)
     const [teamTopScorers, setTeamTopScorers] = useState<Record<string, { player_id: string; first_name: string; last_name: string; goals: number; assists: number; img_url?: string }[]>>({})
 
     const fav = teamId ? isFavorite(teamId) : false
 
+    // AbortController for the primary team + matches fetch
+    const abortRef = useRef<AbortController | null>(null)
+
     useEffect(() => {
         if (!teamId) return
+        abortRef.current?.abort()
+        const controller = new AbortController()
+        abortRef.current = controller
+
         setLoading(true)
         Promise.all([
-            getTeamProfile(teamId),
-            getTeamMatches(teamId),
+            getTeamProfile(teamId, controller.signal),
+            getTeamMatches(teamId, controller.signal),
         ])
-            .then(([t, m]) => { setTeam(t); setMatches(m); setLoading(false) })
-            .catch(e => { setError(e.message); setLoading(false) })
+            .then(([t, m]) => {
+                if (controller.signal.aborted) return
+                setTeam(t); setMatches(m); setLoading(false)
+            })
+            .catch(e => {
+                if (controller.signal.aborted) return
+                setError(e.message); setLoading(false)
+            })
+
+        return () => { controller.abort() }
     }, [teamId])
 
     const players = team?.players || []
@@ -74,11 +90,18 @@ export function TeamPage() {
         })
     }, [team?.groups, allowedYears])
 
+    // AbortController for the historical groups/players fetch (secondary)
+    const historyAbortRef = useRef<AbortController | null>(null)
+
     // Fetch players for all historical groups to compute roster transitions
     useEffect(() => {
         if (!teamId || relevantGroups.length === 0) return
-        let active = true
+        historyAbortRef.current?.abort()
+        const controller = new AbortController()
+        historyAbortRef.current = controller
+
         setLoadingPlayers(true)
+        setHistoryError(null)
 
         const fetchPlayers = async () => {
             try {
@@ -90,10 +113,11 @@ export function TeamPage() {
                         const [compId, catId, groupId] = key.split(':')
                         return getGroupFull(compId, catId, groupId, signal)
                     },
-                    5
+                    5,
+                    controller.signal,
                 )
 
-                if (!active) return
+                if (controller.signal.aborted) return
 
                 const playersBySeason: Record<string, Record<string, { player_id: string; first_name: string; last_name: string; img_url?: string }>> = {}
                 const statsBySeason: Record<string, Record<string, { player_id: string; first_name: string; last_name: string; goals: number; assists: number; img_url?: string }>> = {}
@@ -170,17 +194,19 @@ export function TeamPage() {
                 setHistoricalPlayersByYear(finalPlayers)
                 setTeamTopScorers(finalScorers)
             } catch (err) {
+                if (controller.signal.aborted) return
+                // Surface secondary fetch errors in UI instead of silently swallowing them
+                const msg = err instanceof Error ? err.message : 'Virhe ladattaessa historiatietoja'
+                setHistoryError(msg)
                 console.error('Failed to fetch historical player data:', err)
             } finally {
-                if (active) setLoadingPlayers(false)
+                if (!controller.signal.aborted) setLoadingPlayers(false)
             }
         }
 
         fetchPlayers()
 
-        return () => {
-            active = false
-        }
+        return () => { controller.abort() }
     }, [relevantGroups, teamId, team?.players, allowedYears])
 
     // Calculate dynamic team statistics grouped by year/season
@@ -498,6 +524,11 @@ export function TeamPage() {
                     <span className="w-3.5 h-3.5 border-2 border-accent border-t-transparent rounded-full animate-spin shrink-0" />
                 )}
             </h3>
+            {historyError && (
+                <p className="text-xs text-semantic-red/80 bg-semantic-red/10 border border-semantic-red/20 rounded-lg px-3 py-2 mb-2">
+                    Historiatietoja ei voitu ladata: {historyError}
+                </p>
+            )}
             {rosterPlayers.length === 0 ? (
                 <p className="text-text-muted text-sm text-center py-8 bg-surface-1 border border-border-hairline rounded-xl">Ei pelaajatietoja</p>
             ) : (

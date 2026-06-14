@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { getMatchDetails, getGroupDetails, getPlayerData, getTeamData, batchFetch } from '../services/api';
+import { getMatchDetails, getGroupDetails, getPlayerData, getTeamProfile, batchFetch } from '../services/api';
 import { processPlayerMatchHistory } from '../utils/dataProcessors';
 import { APP_CONFIG } from '../types/config';
 import { PlayerLineupInfo } from '../types/api';
@@ -43,8 +43,8 @@ export function useMatchData() {
 
             const [group, teamA, teamB] = await Promise.all([
                 getGroupDetails(match.competition_id, match.category_id, match.group_id, controller.signal),
-                getTeamData(match.team_A_id, controller.signal),
-                getTeamData(match.team_B_id, controller.signal),
+                getTeamProfile(match.team_A_id, controller.signal),
+                getTeamProfile(match.team_B_id, controller.signal),
             ]);
             if (controller.signal.aborted || !mountedRef.current) return;
 
