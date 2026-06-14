@@ -23,7 +23,6 @@ export const APP_CONFIG: APIConfig = {
             getCompetitions: 10,
             getCategories: 10,
             getMatches: 20,
-            getScore: 10,
             getSeasons: 10,
         },
         THROTTLE_DELAY: 100,

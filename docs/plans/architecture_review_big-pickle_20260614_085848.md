@@ -5,7 +5,8 @@
 | Field | Value |
 |-------|-------|
 | Model | `big-pickle` |
-| Execution Timestamp | `2026-06-14T08:58:48Z` |
+| Original Audit | `2026-06-14T08:58:48Z` |
+| **Plan Update** | **`2026-06-14` — Sync'd with commit `ecdc1ba` (shared utilities, types split, barrel exports)** |
 | Arena Status | **Complete** — 3 teams, 300 points, 6 resolved clashes |
 
 ---
@@ -417,110 +418,142 @@ Three specialized teams conducted an independent audit of the 24-source-file cod
 
 ---
 
-## The Unified Master Refactoring Plan
+## Cross-Reference Against Other Reviews
 
-### 🔴 Critical (Must Fix — Immediate)
+All findings from the other architecture reviews (`FIX_PLAN.md`, `FINAL_PLAN.md`, `architecture_review_opencode-mimo-v2.5-free`, `arkkitehtuuriarvio_deepseek-v4-flash-free`, `PLAN.md`, `deepseek-v4-flash-free_refactoring-plan`) have been verified against current codebase state.
 
-| Priority | Issue | Team Source | Action |
-|----------|-------|-------------|--------|
-| C1 | API Accept token in source code | Team 2 (#1) | Move to `.env` → `import.meta.env.VITE_API_TOKEN` with fallback |
-| C2 | `TeamPage.tsx` 1073-line god component | Team 3 (#1) | Extract 5+ feature components under `src/features/team/` |
-| C3 | Scroll listener memory leak in MatchPage | Team 2 (#46) | Fix `useEffect` cleanup: store `handleScroll` ref, remove properly |
-| C4 | Timeout leak in retry loop | Team 2 (#70) | Add `clearTimeout(timeoutId)` before `continue` on line 155 |
-| C5 | Unbounded cache Map growth | Team 2 (#43) | Add LRU eviction at 500 entries to `cache.ts` |
-| C6 | getCompetitions error silently swallowed | Team 2 (#61) | Surface error state in Home component |
-| C7 | TurnauksetPage uses boolean `cancelled` (race condition) | Team 2 (#53) | Migrate to AbortController pattern |
-| C8 | "Played"/"Fixture" magic strings scattered | Team 3 (#6, #7) | Create `MATCH_STATUS` constants in `types/api.ts` |
-| C9 | CommonOpponents unused destructured props | Team 3 (#14) | Remove `teamBId: _` and `teamAName: __` |
-| C10 | No Content Security Policy | Team 2 (#7) | Add `<meta http-equiv="Content-Security-Policy">` to index.html |
+**FIX_PLAN.md / FINAL_PLAN.md — all 6 phases verified:**
+| Phase | Status | Notes |
+|-------|--------|-------|
+| 1. HTML & Config | ✅ Done | `lang=fi`, `viewport-fit=cover`, Google Fonts, body class |
+| 2. Extract `cn()` | ✅ Done | Shared `src/utils/cn.ts` imported by all 5 component files |
+| 3. Type Safety | ✅ Done | `any[]` → `PlayerMatchEntry[]` in dataProcessors & api.ts |
+| 4. Error Handling | ✅ Done | AbortError, abort guard, signal, unmount cleanup, rate limit message |
+| 5. Accessibility | ✅ Done | Focus rings, image onError, dots, font weights (1 remaining: see C11) |
+| 6. Cleanup | ✅ Done | Dead deps removed, `npm ci`, hardcoded match ID removed |
 
-### 🟠 High (Should Fix — Next Sprint)
+**deepseek-v4-flash-free refactoring plan:**
+| Phase | Status | Notes |
+|-------|--------|-------|
+| 1. Shared Utilities | ✅ Done | `dates.ts`, `wld.ts`, `crest.ts`, barrel exports |
+| 2. Component Extraction | ⏳ Partial | `BackButton.tsx`, `PageLayout.tsx` done; Card component, TeamPage split pending |
+| 3. Hook Extraction | ❌ Pending | `useScrollPosition` etc. not extracted |
 
-| Priority | Issue | Team Source | Action |
-|----------|-------|-------------|--------|
-| H1 | Repeated card pattern | Team 3 (#97) | Extract `<Card>` component with `bg-surface-1 border border-border-hairline rounded-xl p-5 space-y-3` |
-| H2 | getGroupDetails/getGroupFull duplicate | Team 1 (#34) | Consolidate to single function with union return type |
-| H3 | Deprecated getTeamData | Team 1 (#23, #81) | Remove function, migrate callers |
-| H4 | No lazy loading for routes | Team 1 (#81) | Add `React.lazy()` for all page components |
-| H5 | No runtime API response validation | Team 2 (#11) | Validate critical fields in `fetchAPIData`, log dev warnings |
-| H6 | processPlayerMatchHistory is 100-line function | Team 3 (#5) | Split into `aggregateStats`, `buildPastMatchDetails`, `computeResult` |
-| H7 | getCategoryName duplicated in TeamPage | Team 3 (#91) | Extract to shared utility |
-| H8 | dataProcessors imports APP_CONFIG directly | Team 1 (#2) | Pass config as parameter |
-| H9 | Rate limiter module-scoped mutable state | Team 1 (#14) | Create `RateLimiter` class with reset method |
-| H10 | MATCH_STATUS enum | Team 3 (#6, #7, #8) | Create `type MatchStatus = 'Played' | 'Fixture'` with helpers |
-| H11 | Timezone-dependent date parsing | Team 2 (#89) | Use UTC-based date handling or date-fns |
-| H12 | Duplicate opponent result logic | Team 1 (#86) | Extract shared `computeOpponentResults` helper |
-| H13 | Cross-tab favorites sync | Team 2 (#59) | Listen to `window.addEventListener('storage', ...)` |
-| H14 | Inline style props → Tailwind classes | Team 3 (#96) | Replace `style={{ minHeight: '44px' }}` with `min-h-[44px]` |
-| H15 | CommonOpponents race on expand/collapse | Team 2 (#100) | Per-opponent AbortController in `handleToggle` |
-| H16 | FavoritesPage error silently swallowed | Team 2 (#62) | Add error state and display |
-| H17 | No test framework or tests | Team 3 (#61, #62) | Add vitest, write tests for wld.ts, dates.ts, cache.ts, dataProcessors.ts |
+**PLAN.md** — Over-engineered 5-7 week plan. Its actionable items (type fixes, abort handling, error states) are already covered by the items above.
 
-### 🟢 Medium (Should Fix — Backlog)
-
-| Priority | Issue | Team Source | Action |
-|----------|-------|-------------|--------|
-| M1 | No barrel exports | Team 3 (#70) | Create `src/utils/index.ts`, `src/components/index.ts` |
-| M2 | No preconnect for API domain | Team 2 (#98) | Add `<link rel="preconnect" href="https://spl.torneopal.net">` |
-| M3 | Bundle size analysis | Team 1 (#82) | Add `vite-bundle-visualizer` and set budget |
-| M4 | No React.memo on list items | Team 1 (#89) | Wrap `StandingsTable` rows, `PlayerCard` |
-| M5 | vite-env.d.ts unused verification | Team 3 | Review and clean up |
-| M6 | Hardcoded HC2026 links in Home | Team 1 (#15) | Move tournament config to `config.ts` or API |
-| M7 | Hardcoded SPL_IDS | Team 1 (#92) | Move league IDs to `config.ts` |
-| M8 | Enable `noUnusedLocals` in tsconfig | Team 3 (#100) | Add to compilerOptions |
-| M9 | Add ESLint + Prettier | Team 3 (#19, #20) | Configure with React Hooks plugin |
-| M10 | Consolidate WLD functions | Team 1 (#48) | Merge `getWldFromScore` and `getWldFromWinner` |
-| M11 | Missing fallback in MatchPage StandingsTable | Team 2 (#86) | Add `teams={data.group?.teams || []}` |
-| M12 | Image lazy loading | Team 2 (#31) | Add `loading="lazy"` to all crests/player images |
-| M13 | PlayerCard uses `new Date()` instead of APP_CONFIG | Team 3 (#94) | Use `APP_CONFIG.CURRENT_YEAR` and `PREVIOUS_YEAR` |
-| M14 | Set up vitest config | Team 3 (#62) | Add `vitest.config.ts`, first test suite |
-| M15 | Google Fonts font-display: swap | Team 2 (#96) | Update font link in index.html |
-| M16 | Reduced-motion with framer-motion | Team 2 | Verify `prefers-reduced-motion` works with framer |
-| M17 | Update tsconfig target | Team 1 | Consider ESNext → ES2020+ |
-| M18 | Cache TTL override in withCache | Team 1 (#50) | Add optional `ttlOverride` parameter |
-| M19 | Extract `buildQueryString` utility | Team 3 | Deduplicate param cleaning in api.ts |
-| M20 | Add CHANGELOG.md | Team 3 (#57) | Start release tracking |
+**One item still outstanding** from the FIX_PLAN.md was missing from my original audit and has been added as C11 (empty matchId validation).
 
 ---
 
-### Phased Implementation Roadmap
+## The Unified Master Refactoring Plan
 
-#### Phase 1: Safety & Stability (Week 1)
+### ✅ Completed Since Original Audit
+
+| Item | What Was Done | Commit |
+|------|---------------|--------|
+| Domain models extracted from `types/api.ts` | `types/competition.ts`, `types/matches.ts`, `types/players.ts`, `types/teams.ts` created | `ecdc1ba` |
+| Barrel exports added | `src/utils/index.ts`, `src/components/index.ts`, `src/hooks/index.ts`, `src/services/index.ts`, `src/types/index.ts` | `ecdc1ba` |
+| Shared utilities extracted | `dates.ts`, `wld.ts`, `crest.ts` in `src/utils/` | `ecdc1ba` |
+| Config extracted from types | `src/config.ts` separated from `src/types/config.ts` | `ecdc1ba` |
+| Component extraction | `BackButton.tsx`, `PageLayout.tsx` extracted from god pages | `ecdc1ba` |
+| API rewrite | Typed errors, caching, retry, AbortController, rate limit | `a5113f1` |
+| Player card rework | Vertical layout, per-team stats, image error handling | `332e7c8`, `d15cbee` |
+| Scroll listener cleanup | MatchPage `removeEventListener` in cleanup (C3 ✅) | `a5113f1` |
+| `cancelled` boolean removed | TurnauksetPage migrated away from boolean flag (C7 ✅) | `ecdc1ba` |
+| Retry timeout leak fixed | `clearTimeout` now called in all paths (C4 ✅) | `a5113f1` |
+| Type fixes | `img_url`/`club_crest` added to TeamResponse | `ed16ce5` |
+| Playoff group detection | Dynamic regex-based playoff naming | `4e88c31` |
+
+### 🔴 Critical (Must Fix — Immediate)
+
+| Priority | Issue | Source | Status | Action |
+|----------|-------|--------|--------|--------|
+| C1 | API Accept token in source code | T2 #1 | ❌ Still in `config.ts` | Move to `.env` → `import.meta.env.VITE_API_TOKEN` with fallback |
+| C2 | `TeamPage.tsx` 1068-line god component | T3 #1 | ❌ Still monolithic | Extract 5+ feature components under `src/features/team/` |
+| C5 | Unbounded cache Map growth | T2 #43 | ❌ No LRU eviction | Add LRU eviction at 500 entries to `cache.ts` |
+| C6 | getCompetitions error silently swallowed | T2 #61 | ❌ Not handled | Surface error state in Home component |
+| C8 | "Played"/"Fixture" magic strings | T3 #6, #7 | ❌ Still in `dataProcessors.ts:48,98,112` | Create `MATCH_STATUS` constants in shared types |
+| C10 | No Content Security Policy | T2 #7 | ❌ Missing from `index.html` | Add `<meta http-equiv="Content-Security-Policy">` |
+| C11 | Empty matchId validation | FIX_PLAN §4.5 | ❌ MatchPage sends empty matchId to API | Add `else if (matchId !== '') setError('Virheellinen ottelun ID')` |
+
+### 🟠 High (Should Fix — Next)
+
+| Priority | Issue | Original # | Status | Action |
+|----------|-------|------------|--------|--------|
+| H1 | Repeated card pattern | T3 #97 | ❌ Not extracted | Extract `<Card>` component: `bg-surface-1 border border-border-hairline rounded-xl p-5 space-y-3` |
+| H2 | getGroupDetails/getGroupFull duplicate | T1 #34 | ❌ Both still exist | Consolidate to single function with union return type |
+| H3 | Deprecated getTeamData | T1 #23, #81 | ❌ Still in api.ts | Remove function, migrate callers |
+| H4 | No lazy loading for routes | T1 #81 | ❌ Not added | Add `React.lazy()` for heavy pages (TeamPage, TurnauksetPage) |
+| H5 | No runtime API response validation | T2 #11 | ❌ Still `as T` casts | Add validation in `fetchAPIData`, log dev warnings |
+| H6 | processPlayerMatchHistory >100 lines | T3 #5 | ❌ Still monolithic | Split into `aggregateStats`, `buildPastMatchDetails`, `computeResult` |
+| H7 | getCategoryName duplicated in TeamPage | T3 #91 | ❌ Likely still duplicated | Extract to shared utility |
+| H8 | dataProcessors imports APP_CONFIG directly | T1 #2 | ❌ Still direct import | Pass config as parameter |
+| H13 | Cross-tab favorites sync | T2 #59 | ❌ Not implemented | Listen to `window.addEventListener('storage', ...)` |
+| H16 | FavoritesPage error silently swallowed | T2 #62 | ❌ Not handled | Add error state and display |
+| H17 | No test framework or tests | T3 #61, #62 | ❌ Missing entirely | Add vitest, write tests for `wld.ts`, `dates.ts`, `cache.ts`, `dataProcessors.ts` |
+| H9 | Rate limiter mutable state | T1 #14 | ❌ Module-scoped arrays | Create `RateLimiter` class with reset method |
+| H12 | Duplicate opponent result logic | T1 #86 | ❌ Duplicated | Extract shared `computeOpponentResults` helper |
+| H15 | CommonOpponents race on expand/collapse | T2 #100 | ❌ Not fixed | Per-opponent AbortController in `handleToggle` |
+
+### 🟢 Medium (Backlog)
+
+| Priority | Issue | Original # | Status | Action |
+|----------|-------|------------|--------|--------|
+| M2 | No preconnect for API domain | T2 #98 | ❌ Missing | Add `<link rel="preconnect" href="https://spl.torneopal.net">` |
+| M3 | Bundle analysis | T1 #82 | ❌ Not done | Add `vite-bundle-visualizer` |
+| M4 | React.memo on list items | T1 #89 | ❌ Not added | Wrap StandingsTable rows, PlayerCard |
+| M6 | Hardcoded HC2026 links | T1 #15 | ❌ Still in Home | Move to config.ts |
+| M7 | Hardcoded SPL_IDS | T1 #92 | ❌ Still hardcoded | Move league IDs to config.ts |
+| M8 | Enable `noUnusedLocals` | T3 #100 | ❌ Not enabled | Add to compilerOptions |
+| M9 | ESLint + Prettier | T3 #19, #20 | ❌ Not configured | Configure with React Hooks plugin |
+| M10 | Consolidate WLD functions | T1 #48 | ❌ Still two functions | Merge `getWldFromScore` and `getWldFromWinner` |
+| M11 | MatchPage StandingsTable fallback | T2 #86 | ❌ Missing | Add `teams={data.group?.teams || []}` |
+| M12 | Image lazy loading | T2 #31 | ❌ Not added | Add `loading="lazy"` to all crests/player images |
+| M14 | Set up vitest config | T3 #62 | ❌ Not started | Add `vitest.config.ts` |
+| M15 | Google Fonts font-display: swap | T2 #96 | ❌ Not verified | Check font loading performance |
+| M18 | Cache TTL override | T1 #50 | ❌ Not implemented | Add optional `ttlOverride` parameter |
+| M19 | Extract buildQueryString utility | — | ❌ Still inline | Deduplicate param cleaning in api.ts |
+
+---
+
+### Phased Implementation Roadmap (Updated)
+
+#### Phase 1: Safety & Security (Next)
 1. Move API token to `.env` — C1
 2. Add CSP meta tag — C10
-3. Fix timeout leak in retry loop — C4
-4. Fix scroll listener memory leak — C3
-5. Add LRU cache eviction (500 entries) — C5
-6. Migrate `TurnauksetPage` to `AbortController` — C7
-7. Create `MATCH_STATUS` constants — C8
-8. Remove dead code in `CommonOpponents` — C9
-9. Surface `getCompetitions` error in Home — C6
+3. Create `MATCH_STATUS` constants — C8
+4. Add LRU cache eviction (500 entries) — C5
+5. Surface `getCompetitions` error in Home — C6
 
-#### Phase 2: Decomposition & Structure (Week 2)
+#### Phase 2: Decomposition & Structure
 1. Extract `<Card>` component — H1
-2. Decompose `TeamPage.tsx` → feature components — C2
-3. Split `processPlayerMatchHistory` — H6
-4. Remove deprecated `getTeamData`, consolidate group endpoints — H2, H3
-5. Add barrel exports — M1
+2. Split `processPlayerMatchHistory` — H6
+3. Remove deprecated `getTeamData`, consolidate group endpoints — H2, H3
+4. Extract `buildQueryString` and `getCategoryName` — H7, M19
+5. Enable `noUnusedLocals` — M8
 6. Configure ESLint + Prettier — M9
-7. Enable `noUnusedLocals` — M8
-8. Extract `buildQueryString` and `getCategoryName` — H7, M19
 
-#### Phase 3: Resilience & Performance (Week 3)
-1. Add `React.lazy()` for code splitting — H4
-2. Add runtime API response validation — H5
-3. Add preconnect for API domain — M2
-4. Run bundle analysis and optimize — M3
-5. Add cross-tab sync for favorites — H13
-6. Add `loading="lazy"` to all images — M12
-7. Set up vitest and write initial test suite — H17
+#### Phase 3: God Component Breakdown
+1. Decompose `TeamPage.tsx` → feature components — C2
+2. Review `TurnauksetPage` useEffect decomposition — T1 #79
+3. Add `React.lazy()` for heavy pages — H4
+4. Consolidate WLD logic — M10
+5. Deduplicate opponent result logic — H12
 
-#### Phase 4: Hardening & Documentation (Week 4)
-1. Refactor rate limiter → `RateLimiter` class — H9
-2. Consolidate WLD logic — M10
-3. Deduplicate opponent result logic — H12
-4. Fix CommonOpponents race condition — H15
-5. Add CHANGELOG.md — M20
-6. Add component-level JSDoc — H11 (timezone fix)
-7. Add error retry UI for all pages — H16
-8. Inline styles → Tailwind classes — H14
+#### Phase 4: Resilience & Testing
+1. Add runtime API response validation — H5
+2. Add cross-tab sync for favorites — H13
+3. Refactor rate limiter → `RateLimiter` class — H9
+4. Add preconnect for API domain — M2
+5. Set up vitest and write initial test suite — H17
+6. Add image lazy loading — M12
+7. Add `loading="lazy"` to all images
+
+#### Phase 5: Hardening
+1. Fix CommonOpponents race condition — H15
+2. Fix FavoritesPage error handling — H16
+3. Fix MatchPage StandingsTable fallback — M11
+4. Add Cache TTL override parameter — M18
+5. Move hardcoded config to config.ts — M6, M7
+6. Run bundle analysis — M3
+7. Add React.memo on list items — M4

@@ -22,12 +22,13 @@ const TTL_MS: Record<string, number> = {
     getPlayer: 10 * 60 * 1000,
     getCompetitions: 15 * 60 * 1000,
     getCategories: 15 * 60 * 1000,
-    getScore: 15 * 60 * 1000,
+
     getSeasons: 15 * 60 * 1000,
     getMatches: 5 * 60 * 1000,
 }
 
 const DEFAULT_TTL_MS = 5 * 60 * 1000
+const MAX_CACHE_SIZE = 500
 
 interface CacheEntry<T> {
     value: T
@@ -77,6 +78,12 @@ export function setCached<T>(
 
     const ttl = TTL_MS[endpoint] ?? DEFAULT_TTL_MS
     const key = makeCacheKey(endpoint, params)
+
+    if (cache.size >= MAX_CACHE_SIZE) {
+        const oldest = cache.keys().next().value
+        if (oldest !== undefined) cache.delete(oldest)
+    }
+
     cache.set(key, { value, expiresAt: Date.now() + ttl })
 }
 
@@ -123,8 +130,4 @@ export function invalidateCache(endpoint: string, params: Record<string, string>
     cache.delete(makeCacheKey(endpoint, params))
 }
 
-/** Clear the entire cache (e.g. for testing). */
-export function clearCache(): void {
-    cache.clear()
-    inFlight.clear()
-}
+

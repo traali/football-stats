@@ -130,8 +130,8 @@ export function MatchPage() {
 
             <div className="max-w-6xl mx-auto space-y-12">
                 <header className="text-center space-y-4">
-                    <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-text-primary">Match View</h1>
-                    <p className="text-text-secondary">Current single-match experience, now on its own route.</p>
+                    <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-text-primary">Ottelunäkymä</h1>
+                    <p className="text-text-secondary">Yhden ottelun tiedot omalla sivullaan.</p>
                 </header>
 
                 <section className="max-w-xl mx-auto">

@@ -169,7 +169,7 @@ export function Home() {
                 </section>
 
                 <footer className="pt-6 border-t border-border-hairline text-center text-text-muted text-sm">
-                    <p>&copy; 2026 Pelaajatilastot. Data provided by Suomen Palloliitto.</p>
+                    <p>&copy; 2026 Pelaajatilastot. Data: Suomen Palloliitto.</p>
                 </footer>
         </PageLayout>
     )

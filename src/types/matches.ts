@@ -85,18 +85,6 @@ export interface DiscoveryMatch {
     [key: string]: unknown
 }
 
-export interface ScoreEntry {
-    match_id?: string
-    competition_id?: string
-    category_id?: string
-    team_A_name?: string
-    team_B_name?: string
-    fs_A?: string
-    fs_B?: string
-    status?: string
-    [key: string]: unknown
-}
-
 export interface GetMatchesParams {
     competition_id?: string
     category_id?: string

@@ -1,5 +1,5 @@
 import { APP_CONFIG } from '../config'
-import { withCache } from './cache'
+import { withCache, setCached } from './cache'
 import type {
     Category,
     Competition,
@@ -8,7 +8,6 @@ import type {
     GroupDetails,
     MatchDetails,
     PlayerAPIResponse,
-    ScoreEntry,
     Season,
     TeamBasic,
     TeamResponse,
@@ -235,17 +234,9 @@ export async function getMatchDetails(matchId: string, signal?: AbortSignal): Pr
     return withCache('getMatch', params, async () => {
         const data = await fetchAPIData<{ match: MatchDetails }>('getMatch', params, signal)
         if (!data.match) throw new APINotFoundError(`Ottelua ei löydy (ID: ${matchId})`)
+        setCached('getMatch', params, data.match, data.match.status)
         return data.match
-    }, undefined) // matchStatus resolved inside cache.ts via the setCached call below
-        .then(match => {
-            // Re-cache with status so the cache layer can apply the played-only rule.
-            // withCache already stored it without matchStatus — overwrite with correct status.
-            // (This is a no-op if the match was already cached with the right status.)
-            import('./cache').then(({ setCached }) => {
-                setCached('getMatch', { match_id: matchId }, match, match.status)
-            })
-            return match
-        })
+    })
 }
 
 export async function getGroupDetails(
@@ -256,12 +247,6 @@ export async function getGroupDetails(
         const data = await fetchAPIData<{ group: GroupDetails }>('getGroup', { ...params, matches: 1 }, signal)
         return data.group || null
     })
-}
-
-/** @deprecated Use getTeamProfile instead — same endpoint, richer return type */
-export async function getTeamData(teamId: string, signal?: AbortSignal): Promise<TeamResponse | null> {
-    if (!teamId) return null
-    return getTeamProfile(teamId, signal)
 }
 
 export async function getTeamProfile(teamId: string, signal?: AbortSignal): Promise<TeamResponse | null> {
@@ -305,20 +290,6 @@ export async function getMatches(params: GetMatchesParams = {}): Promise<Discove
     return withCache('getMatches', strParams, async () => {
         const data = await fetchAPIData<{ matches?: DiscoveryMatch[] }>('getMatches', p)
         return data.matches || []
-    })
-}
-
-export async function getScore(
-    params: Pick<GetMatchesParams, 'competition_id' | 'category_id'> = {}
-): Promise<ScoreEntry[]> {
-    const p = params as Record<string, string | undefined>
-    const strParams: Record<string, string> = {}
-    for (const [k, v] of Object.entries(p)) {
-        if (v !== undefined && v !== '') strParams[k] = v
-    }
-    return withCache('getScore', strParams, async () => {
-        const data = await fetchAPIData<{ score?: ScoreEntry[] }>('getScore', p)
-        return data.score || []
     })
 }
 
