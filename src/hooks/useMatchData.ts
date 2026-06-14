@@ -3,7 +3,7 @@ import { getMatchDetails, getGroupDetails, getPlayerData, getTeamProfile, batchF
 import { processPlayerMatchHistory } from '../utils/dataProcessors';
 import { APP_CONFIG } from '../types/config';
 import { PlayerLineupInfo } from '../types/api';
-import type { MatchDetails, GroupDetails, PlayerStats, TeamBasic } from '../types/api';
+import type { MatchDetails, GroupDetails, PlayerStats, TeamResponse } from '../types/api';
 
 export function useMatchData() {
     const [loading, setLoading] = useState(false);
@@ -12,8 +12,8 @@ export function useMatchData() {
         match: MatchDetails;
         group: GroupDetails | null;
         players: PlayerStats[];
-        teamA?: TeamBasic | null;
-        teamB?: TeamBasic | null;
+        teamA?: TeamResponse | null;
+        teamB?: TeamResponse | null;
     } | null>(null);
     const abortRef = useRef<AbortController | null>(null);
     const mountedRef = useRef(true);

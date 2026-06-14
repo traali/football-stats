@@ -259,7 +259,7 @@ export async function getGroupDetails(
 }
 
 /** @deprecated Use getTeamProfile instead — same endpoint, richer return type */
-export async function getTeamData(teamId: string, signal?: AbortSignal): Promise<TeamBasic | null> {
+export async function getTeamData(teamId: string, signal?: AbortSignal): Promise<TeamResponse | null> {
     if (!teamId) return null
     return getTeamProfile(teamId, signal)
 }
