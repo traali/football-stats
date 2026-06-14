@@ -8,6 +8,7 @@ import { PlayerPage } from './pages/PlayerPage'
 import { CompetitionPage } from './pages/CompetitionPage'
 import { CategoryPage } from './pages/CategoryPage'
 import { FavoritesPage } from './pages/FavoritesPage'
+import { TurnauksetPage } from './pages/TurnauksetPage'
 import { BottomNav } from './components/BottomNav'
 
 function Layout() {
@@ -31,6 +32,7 @@ export const router = createHashRouter([
             { path: '/competition/:compId/category/:catId', element: <CategoryPage /> },
             { path: '/group/:compId/:catId/:groupId', element: <GroupPage /> },
             { path: '/team/:teamId', element: <TeamPage /> },
+            { path: '/turnaukset/:turnaus/:sarja/:teamId', element: <TurnauksetPage /> },
             { path: '/player/:playerId', element: <PlayerPage /> },
             { path: '/favorites', element: <FavoritesPage /> },
             { path: '*', element: <NotFound /> },
