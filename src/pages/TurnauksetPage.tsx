@@ -153,6 +153,17 @@ export function TurnauksetPage() {
             .slice(0, 20)
     }, [playerStats, teamId])
 
+    const playerStatsMap = useMemo(() => {
+        const map = new Map<string, PlayerStatsEntry[]>()
+        for (const s of playerStats) {
+            if (!s.player_id) continue
+            const pid = String(s.player_id)
+            if (!map.has(pid)) map.set(pid, [])
+            map.get(pid)!.push(s)
+        }
+        return map
+    }, [playerStats])
+
     if (!turnaus || !sarja || !teamId) return (
         <div className="min-h-screen px-4 py-8 text-center text-semantic-red">
             Virheellinen osoite
@@ -474,32 +485,61 @@ export function TurnauksetPage() {
                         <p className="text-text-muted text-sm text-center py-4">Ei pelaajatietoja</p>
                     ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-3">
-                            {players.map(p => (
-                                <div
-                                    key={p.player_id}
-                                    onClick={() => p.player_id && navigate(`/player/${p.player_id}`)}
-                                    className="bg-surface-2 border border-border-hairline hover:border-accent/30 rounded-xl p-3.5 flex items-center justify-between hover:bg-surface-3 transition-all active:scale-[0.98] min-h-[56px] cursor-pointer"
-                                >
-                                    <div className="flex items-center gap-3 min-w-0">
-                                        <div className="w-9 h-9 rounded-full bg-surface-3 flex items-center justify-center shrink-0 border border-border-hairline">
-                                            {p.img_url ? (
-                                                <img src={p.img_url} alt="" className="w-full h-full rounded-full object-cover" />
-                                            ) : (
-                                                <User className="w-4 h-4 text-text-muted" />
+                            {players.map(p => {
+                                const pid = p.player_id || ''
+                                const pStats = playerStatsMap.get(pid)
+                                return (
+                                    <div
+                                        key={pid}
+                                        onClick={() => pid && navigate(`/player/${pid}`)}
+                                        className="bg-surface-2 border border-border-hairline hover:border-accent/30 rounded-xl p-3.5 hover:bg-surface-3 transition-all active:scale-[0.98] cursor-pointer"
+                                    >
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <div className="w-10 h-10 rounded-full bg-surface-3 flex items-center justify-center shrink-0 border border-border-hairline">
+                                                    {p.img_url ? (
+                                                        <img src={p.img_url} alt="" className="w-full h-full rounded-full object-cover" />
+                                                    ) : (
+                                                        <User className="w-4 h-4 text-text-muted" />
+                                                    )}
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="text-text-primary font-semibold text-sm truncate">{p.first_name} {p.last_name}</p>
+                                                    {p.birthyear && (
+                                                        <p className="text-text-muted text-xs font-mono mt-0.5">{p.birthyear}</p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            {p.shirt_number && (
+                                                <span className="bg-accent/10 border border-accent/20 text-accent font-mono font-bold text-xs px-2 py-0.5 rounded shrink-0 mt-0.5">
+                                                    #{p.shirt_number}
+                                                </span>
                                             )}
                                         </div>
-                                        <div className="min-w-0">
-                                            <p className="text-text-primary font-semibold text-sm truncate">{p.first_name} {p.last_name}</p>
-                                            {p.birthyear && <p className="text-text-muted text-xs font-mono mt-0.5">{p.birthyear}</p>}
-                                        </div>
+                                        {pStats && pStats.length > 0 && (
+                                            <div className="mt-3 pt-3 border-t border-border-hairline space-y-1.5">
+                                                {pStats.map((s, i) => (
+                                                    <div key={i} className="flex items-center justify-between text-xs">
+                                                        <span className="text-text-secondary font-medium truncate mr-2">
+                                                            {s.team_name || ''} ({catName || sarja})
+                                                        </span>
+                                                        <div className="flex items-center gap-2.5 shrink-0">
+                                                            <span className="text-text-muted font-mono">O: {s.matches || 0}</span>
+                                                            <span className="text-text-muted font-mono">M: {s.goals || 0}</span>
+                                                            {s.assists && parseInt(s.assists) > 0 && (
+                                                                <span className="text-text-muted font-mono">S: {s.assists}</span>
+                                                            )}
+                                                            {s.warnings && parseInt(s.warnings) > 0 && (
+                                                                <span className="text-accent font-mono">V: {s.warnings}</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
-                                    {p.shirt_number && (
-                                        <span className="bg-accent/10 border border-accent/20 text-accent font-mono font-bold text-xs px-2 py-0.5 rounded shrink-0">
-                                            #{p.shirt_number}
-                                        </span>
-                                    )}
-                                </div>
-                            ))}
+                                )
+                            })}
                         </div>
                     )}
                 </div>
