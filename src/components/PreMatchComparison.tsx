@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { cn } from '../utils/cn'
 import { WLD_CONFIG } from '../utils/wld'
+import { MATCH_STATUS } from '../types'
 import type { MatchSummary } from '../types'
 
 export function PreMatchComparison({ teamAId, teamBId, teamAName, teamBName, matches }: {
@@ -15,9 +16,9 @@ export function PreMatchComparison({ teamAId, teamBId, teamAName, teamBName, mat
         const bOpponents = new Map<string, { result: 'win' | 'draw' | 'loss'; matchId: string }[]>()
 
         for (const m of matches) {
-            if (m.status !== 'Played') continue
-            const myScoreA = parseInt(m.fs_A)
-            const oppScoreA = parseInt(m.fs_B)
+            if (m.status !== MATCH_STATUS.PLAYED) continue
+            const myScoreA = parseInt(String(m.fs_A ?? ''))
+            const oppScoreA = parseInt(String(m.fs_B ?? ''))
             if (isNaN(myScoreA) || isNaN(oppScoreA)) continue
 
             if (m.team_A_id === teamAId) {
@@ -95,7 +96,7 @@ export function PreMatchComparison({ teamAId, teamBId, teamAName, teamBName, mat
                 {common.map(c => {
                     const oppMatch = matches.find(m =>
                         (m.team_A_id === c.opponentId || m.team_B_id === c.opponentId) &&
-                        m.status === 'Played'
+                        m.status === MATCH_STATUS.PLAYED
                     )
                     const oppName = oppMatch
                         ? (oppMatch.team_A_id === c.opponentId ? oppMatch.team_A_name : oppMatch.team_B_name)

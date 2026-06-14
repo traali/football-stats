@@ -39,15 +39,15 @@ export interface TeamResponse {
 export interface StandingTeam {
     team_id: string
     team_name: string
-    current_standing: string
-    matches_played: string
-    matches_won: string
-    matches_tied: string
-    matches_lost: string
-    goals_for: string
-    goals_against: string
-    goals_diff: string
-    points: string
+    current_standing: string | number
+    matches_played: string | number
+    matches_won: string | number
+    matches_tied: string | number
+    matches_lost: string | number
+    goals_for: string | number
+    goals_against: string | number
+    goals_diff: string | number
+    points: string | number
 }
 
 export interface GroupDetails {

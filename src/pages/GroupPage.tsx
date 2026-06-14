@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { TrendingUp, Calendar } from 'lucide-react'
 import { getGroupFull } from '../services/api'
 import { StandingsTable, BackButton, PageLayout, Card, MatchRowSymmetric, MatchRowFixture } from '../components'
+import { MATCH_STATUS } from '../types'
 import type { GroupResponse, PlayerStatsEntry } from '../types'
 
 export function GroupPage() {
@@ -30,8 +31,8 @@ export function GroupPage() {
         .slice(0, 20)
 
     const matches = group.matches || []
-    const pastMatches = matches.filter(m => m.status === 'Played').slice(-10)
-    const upcomingMatches = matches.filter(m => m.status === 'Fixture').slice(0, 5)
+    const pastMatches = matches.filter(m => m.status === MATCH_STATUS.PLAYED).slice(-10)
+    const upcomingMatches = matches.filter(m => m.status === MATCH_STATUS.FIXTURE).slice(0, 5)
 
     return (
         <PageLayout>

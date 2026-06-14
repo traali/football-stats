@@ -5,6 +5,7 @@ import { cn } from '../utils/cn'
 import { formatDate } from '../utils/dates'
 import { WLD_CONFIG } from '../utils/wld'
 import { getPlayerData } from '../services/api'
+import { MATCH_STATUS } from '../types'
 import type { PlayerAPIResponse } from '../types'
 import { BackButton, PageLayout } from '../components'
 
@@ -20,7 +21,7 @@ interface SeasonStats {
 function buildSeasonStats(matches?: PlayerAPIResponse['matches'] | null): SeasonStats[] {
     const bySeason = new Map<string, SeasonStats>()
     for (const m of matches || []) {
-        if (m.status !== 'Played') continue
+        if (m.status !== MATCH_STATUS.PLAYED) continue
         const sid = m.season_id || 'unknown'
         let s = bySeason.get(sid)
         if (!s) {
@@ -84,7 +85,7 @@ export function PlayerPage() {
         return () => { controller.abort() }
     }, [playerId])
 
-    const safeMatches = player?.matches ?? []
+    const safeMatches = useMemo(() => player?.matches ?? [], [player?.matches])
     const seasons = useMemo(() => buildSeasonStats(safeMatches), [safeMatches])
 
     // WARNING FOR FUTURE DEVELOPERS & AI AGENTS:
@@ -95,7 +96,7 @@ export function PlayerPage() {
     // which crashes the page into the 404 errorElement. DO NOT move these below
     // the loading/error guards.
     const pastMatches = useMemo(() => {
-        const matches = safeMatches.filter(m => m.status === 'Played')
+        const matches = safeMatches.filter(m => m.status === MATCH_STATUS.PLAYED)
         const filtered = selectedTeamId ? matches.filter(m => m.team_id === selectedTeamId) : matches
         return filtered
             .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
@@ -103,7 +104,7 @@ export function PlayerPage() {
     }, [safeMatches, selectedTeamId])
 
     const upcomingMatches = useMemo(() => {
-        const matches = safeMatches.filter(m => m.status === 'Fixture')
+        const matches = safeMatches.filter(m => m.status === MATCH_STATUS.FIXTURE)
         const filtered = selectedTeamId ? matches.filter(m => m.team_id === selectedTeamId) : matches
         return filtered.slice(0, 5)
     }, [safeMatches, selectedTeamId])
@@ -227,7 +228,7 @@ export function PlayerPage() {
                                 </h2>
                                 {seasons.map(s => {
                                     const seasonMatches = (player.matches || []).filter(m =>
-                                        m.season_id === s.seasonName && m.status === 'Played'
+                                        m.season_id === s.seasonName && m.status === MATCH_STATUS.PLAYED
                                     )
                                     const statFilters: Record<string, (m: typeof seasonMatches[0]) => boolean> = {
                                         O: () => true,

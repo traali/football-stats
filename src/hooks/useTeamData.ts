@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo, useRef } from 'react'
 import { getTeamProfile, getTeamMatches, getGroupFull, batchFetch } from '../services/api'
 import { useFavorites } from './useFavorites'
+import { MATCH_STATUS } from '../types'
 import type { TeamResponse, DiscoveryMatch } from '../types'
 import { APP_CONFIG } from '../config'
 
@@ -95,12 +96,18 @@ export function useTeamData(teamId: string | undefined) {
 
     const relevantGroups = useMemo(() => {
         if (!team?.groups) return []
-        return (team.groups as any[]).filter(g => {
+        interface GroupLike {
+            competition_season?: string | number
+            competition_id?: string
+            category_id?: string
+            group_id?: string
+        }
+        return (team.groups as GroupLike[]).filter(g => {
             if (!g) return false
             const season = g.competition_season ? String(g.competition_season) : ''
             return season && allowedYears.includes(season)
         })
-    }, [team?.groups, allowedYears])
+    }, [team, allowedYears])
 
     const historyAbortRef = useRef<AbortController | null>(null)
 
@@ -213,7 +220,7 @@ export function useTeamData(teamId: string | undefined) {
         })
         map.set('all', createEmptyStat())
         filteredMatches.forEach(m => {
-            if (m.status !== 'Played' || !m.date) return
+            if (m.status !== MATCH_STATUS.PLAYED || !m.date) return
             const year = m.date.slice(0, 4)
             if (!year || isNaN(parseInt(year))) return
             let s = map.get(year)
@@ -232,7 +239,7 @@ export function useTeamData(teamId: string | undefined) {
                 else { s.draws++; allStats.draws++ }
             }
         })
-        for (const [_, s] of map.entries()) {
+        for (const s of map.values()) {
             if (s.played > 0) {
                 s.ppg = (s.wins * 3 + s.draws) / s.played
                 s.goalsScoredPerMatch = s.goalsFor / s.played
@@ -294,16 +301,21 @@ export function useTeamData(teamId: string | undefined) {
 
     const categoriesByYear = useMemo(() => {
         const map = new Map<string, string[]>()
-        const getCategoryName = (c: any): string | null => {
+        interface CategoryLike {
+            category_name?: string | { fi?: string }
+            category_name_translations?: { fi?: string }
+            competition_season?: string | number
+        }
+        const getCategoryName = (c: CategoryLike): string | null => {
             if (!c) return null
             const name = c.category_name
             if (typeof name === 'string') return name
-            if (name && typeof name.fi === 'string') return name.fi
+            if (name && typeof name === 'object' && typeof name.fi === 'string') return name.fi
             if (c.category_name_translations && typeof c.category_name_translations.fi === 'string') return c.category_name_translations.fi
             return null
         }
         if (team?.categories) {
-            ;(team.categories as any[]).forEach(c => {
+            (team.categories as CategoryLike[]).forEach(c => {
                 if (!c) return
                 const season = c.competition_season ? String(c.competition_season) : ''
                 if (!season) return
@@ -315,7 +327,7 @@ export function useTeamData(teamId: string | undefined) {
             })
         }
         if (team?.groups) {
-            ;(team.groups as any[]).forEach(g => {
+            (team.groups as CategoryLike[]).forEach(g => {
                 if (!g) return
                 const season = g.competition_season ? String(g.competition_season) : ''
                 if (!season) return
@@ -327,7 +339,7 @@ export function useTeamData(teamId: string | undefined) {
             })
         }
         return map
-    }, [team?.categories, team?.groups])
+    }, [team])
 
     const pastMatches = useMemo(() => {
         let filtered = filteredMatches.filter(m => m.date && new Date(m.date + 'T' + (m.time || '00:00:00')) < new Date())
@@ -336,16 +348,16 @@ export function useTeamData(teamId: string | undefined) {
     }, [filteredMatches, selectedYear])
 
     const upcoming = useMemo(() => {
-        let filtered = filteredMatches.filter(m => m.status === 'Fixture')
+        let filtered = filteredMatches.filter(m => m.status === MATCH_STATUS.FIXTURE)
         if (selectedYear !== 'all') filtered = filtered.filter(m => m.date && m.date.startsWith(selectedYear))
-        return filtered.sort((a, b) => (a.date || '').localeCompare(a.date || '')).slice(0, 10)
+        return filtered.sort((a, b) => (a.date || '').localeCompare(b.date || '')).slice(0, 10)
     }, [filteredMatches, selectedYear])
 
     const homeAwayStats = useMemo(() => {
         const home = { played: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0 }
         const away = { played: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0 }
         filteredMatches.forEach(m => {
-            if (m.status !== 'Played' || !m.date) return
+            if (m.status !== MATCH_STATUS.PLAYED || !m.date) return
             const isA = m.team_A_id === teamId
             const myScore = parseInt(isA ? m.fs_A || '0' : m.fs_B || '0', 10)
             const oppScore = parseInt(isA ? m.fs_B || '0' : m.fs_A || '0', 10)

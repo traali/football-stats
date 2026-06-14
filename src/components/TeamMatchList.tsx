@@ -2,11 +2,10 @@ import { Calendar } from 'lucide-react'
 import type { DiscoveryMatch } from '../types'
 import { Card, MatchRowPast, MatchRowFixture } from '.'
 
-export function TeamMatchList({ upcoming, pastMatches, teamId, teamName }: {
+export function TeamMatchList({ upcoming, pastMatches, teamId }: {
     upcoming: DiscoveryMatch[]
     pastMatches: DiscoveryMatch[]
     teamId: string
-    teamName: string
 }) {
     return (
         <div className="space-y-6">
@@ -47,7 +46,6 @@ export function TeamMatchList({ upcoming, pastMatches, teamId, teamName }: {
                                     key={m.match_id}
                                     matchId={m.match_id}
                                     date={m.date}
-                                    teamName={teamName}
                                     opponentName={isA ? m.team_B_name : m.team_A_name}
                                     myScore={myScore}
                                     oppScore={oppScore}

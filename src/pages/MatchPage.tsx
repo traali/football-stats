@@ -12,6 +12,7 @@ import { PreMatchComparison } from '../components/PreMatchComparison'
 import { CommonOpponents } from '../components/CommonOpponents'
 import { MatchHeaderSkeleton, PlayerCardSkeleton, StandingsTableSkeleton } from '../components/Skeleton'
 import { resolveCrest } from '../utils/crest'
+import { MATCH_STATUS } from '../types'
 
 export function MatchPage() {
     const { matchId = '' } = useParams()
@@ -52,8 +53,8 @@ export function MatchPage() {
 
     const teamAStanding = data?.group?.teams?.find(t => t.team_id === data?.match?.team_A_id)
     const teamBStanding = data?.group?.teams?.find(t => t.team_id === data?.match?.team_B_id)
-    const teamATotalGoals = teamAStanding ? parseInt(teamAStanding.goals_for || '0', 10) : 0
-    const teamBTotalGoals = teamBStanding ? parseInt(teamBStanding.goals_for || '0', 10) : 0
+    const teamATotalGoals = teamAStanding ? parseInt(String(teamAStanding.goals_for || '0'), 10) : 0
+    const teamBTotalGoals = teamBStanding ? parseInt(String(teamBStanding.goals_for || '0'), 10) : 0
 
     const teamARosterGoals = teamAPlayers.reduce((sum, p) => sum + (p.goalsForThisSpecificTeamInSeason || 0), 0)
     const teamBRosterGoals = teamBPlayers.reduce((sum, p) => sum + (p.goalsForThisSpecificTeamInSeason || 0), 0)
@@ -198,7 +199,7 @@ export function MatchPage() {
                             >
                                 <MatchHeader match={data.match} group={data.group} teamA={data.teamA} teamB={data.teamB} />
 
-                                {data.match.status !== 'Played' && data.group?.matches && (
+                                {data.match.status !== MATCH_STATUS.PLAYED && data.group?.matches && (
                                     <PreMatchComparison
                                         teamAId={data.match.team_A_id}
                                         teamBId={data.match.team_B_id}
@@ -208,7 +209,7 @@ export function MatchPage() {
                                     />
                                 )}
 
-                                {data.match.status !== 'Played' && data.group && (
+                                {data.match.status !== MATCH_STATUS.PLAYED && data.group && (
                                     <CommonOpponents
                                         teamAId={data.match.team_A_id}
                                         teamBId={data.match.team_B_id}

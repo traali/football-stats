@@ -6,6 +6,7 @@ import { StatBadge, BackButton, PageLayout, Card, PlayerAvatar, TeamHeader, Team
 
 export function TeamPage() {
     const { teamId = '' } = useParams()
+    const navigate = useNavigate()
     const data = useTeamData(teamId)
 
     if (data.loading) return (
@@ -23,7 +24,7 @@ export function TeamPage() {
         </div>
     )
 
-    const navigate = useNavigate()
+
 
     const {
         team, tab, setTab, selectedYear, setSelectedYear,
@@ -210,10 +211,6 @@ export function TeamPage() {
                 team={team}
                 teamId={teamId}
                 last5Form={last5Form}
-                categoriesByYear={categoriesByYear}
-                selectedYear={selectedYear}
-                years={years}
-                statsByYear={statsByYear}
                 fav={fav}
                 onToggleFav={() => toggle(teamId)}
             />
@@ -357,7 +354,6 @@ export function TeamPage() {
                             upcoming={upcoming}
                             pastMatches={pastMatches}
                             teamId={teamId}
-                            teamName={team?.team_name || ''}
                         />
                     ) : (
                         <div className="space-y-6">
@@ -380,7 +376,6 @@ export function TeamPage() {
                         upcoming={upcoming}
                         pastMatches={pastMatches}
                         teamId={teamId}
-                        teamName={team?.team_name || ''}
                     />
                 </div>
             </div>

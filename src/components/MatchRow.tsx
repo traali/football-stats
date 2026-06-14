@@ -9,8 +9,7 @@ interface MatchRowBase {
     className?: string
 }
 
-export function MatchRowPast({ matchId, date, teamName, opponentName, myScore, oppScore, resultIndicator, className }: MatchRowBase & {
-    teamName: string
+export function MatchRowPast({ matchId, date, opponentName, myScore, oppScore, resultIndicator, className }: MatchRowBase & {
     opponentName: string
     myScore?: string | null
     oppScore?: string | null
@@ -50,8 +49,8 @@ export function MatchRowPast({ matchId, date, teamName, opponentName, myScore, o
 export function MatchRowSymmetric({ matchId, date, teamAName, teamBName, scoreA, scoreB, winnerId, className }: MatchRowBase & {
     teamAName: string
     teamBName: string
-    scoreA?: string | null
-    scoreB?: string | null
+    scoreA?: string | number | null
+    scoreB?: string | number | null
     winnerId?: string | null
     className?: string
 }) {

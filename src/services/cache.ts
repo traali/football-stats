@@ -1,3 +1,5 @@
+import { MATCH_STATUS } from '../types/matches'
+
 /**
  * Session-scoped in-memory cache for API responses.
  *
@@ -6,7 +8,7 @@
  * - Each entry has a TTL after which it is considered stale and re-fetched.
  * - In-flight requests are stored as Promises so parallel callers for the
  *   same key get the same Promise (deduplication — no double-fetching).
- * - Match data (getMatch) is ONLY cached when match.status === 'Played'.
+ * - Match data (getMatch) is ONLY cached when match.status === MATCH_STATUS.PLAYED.
  *   Fixtures and live games are never cached so scores stay real-time.
  * - Cache is NOT persisted (resets on page reload) — we want fresh data
  *   each session but instant re-navigation within a session.
@@ -64,7 +66,7 @@ export function getCached<T>(endpoint: string, params: Record<string, string>): 
 
 /**
  * Store a value in the cache.
- * For 'getMatch', only cache when matchStatus === 'Played'.
+ * For 'getMatch', only cache when matchStatus === MATCH_STATUS.PLAYED.
  * Pass matchStatus = undefined for all other endpoints.
  */
 export function setCached<T>(
@@ -74,7 +76,7 @@ export function setCached<T>(
     matchStatus?: string,
 ): void {
     // Match cache rule: never cache fixtures or live games
-    if (endpoint === 'getMatch' && matchStatus !== 'Played') return
+    if (endpoint === 'getMatch' && matchStatus !== MATCH_STATUS.PLAYED) return
 
     const ttl = TTL_MS[endpoint] ?? DEFAULT_TTL_MS
     const key = makeCacheKey(endpoint, params)

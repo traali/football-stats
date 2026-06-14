@@ -1,4 +1,5 @@
-import { MatchDetails, GroupDetails, TeamResponse } from '../types'
+import { MATCH_STATUS } from '../types'
+import type { MatchDetails, GroupDetails, TeamResponse } from '../types'
 import { motion } from 'framer-motion'
 import { Calendar, Clock, Users, Timer } from 'lucide-react'
 import { Link } from 'react-router-dom'
@@ -59,7 +60,7 @@ export function MatchHeader({ match, group, teamA, teamB }: { match: MatchDetail
                         <div className="text-4xl md:text-6xl lg:text-7xl font-bold tabular-nums tracking-tighter text-text-primary font-mono leading-none">
                             {match.fs_A ?? '-'} <span className="text-accent opacity-80 mx-1">:</span> {match.fs_B ?? '-'}
                         </div>
-                        {match.hts_A !== undefined && match.hts_B !== undefined && match.status === 'Played' && (
+                        {match.hts_A !== undefined && match.hts_B !== undefined && match.status === MATCH_STATUS.PLAYED && (
                             <div className="flex items-center gap-1.5 text-xs text-text-muted font-mono mt-1">
                                 <Timer className="w-3 h-3" />
                                 <span>HT: {match.hts_A}–{match.hts_B}</span>
@@ -111,7 +112,7 @@ export function MatchHeader({ match, group, teamA, teamB }: { match: MatchDetail
                 {/* Kickoff */}
                 <div className="flex flex-col items-center gap-1">
                     <span className="text-xs font-bold text-text-muted uppercase tracking-widest">
-                        {match.status === 'Played' ? 'Alkamisaika' : 'Ottelu alkaa'}
+                        {match.status === MATCH_STATUS.PLAYED ? 'Alkamisaika' : 'Ottelu alkaa'}
                     </span>
                     <div className="flex items-center gap-2 text-text-primary">
                         <Calendar className="w-4 h-4 text-accent" />

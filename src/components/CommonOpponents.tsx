@@ -4,7 +4,9 @@ import { ChevronDown, ChevronUp, Users, AlertTriangle, Loader2 } from 'lucide-re
 import { cn } from '../utils/cn'
 import { WLD_CONFIG } from '../utils/wld'
 import { getMatchDetails } from '../services/api'
+import { MATCH_STATUS } from '../types'
 import type { MatchDetails, GroupDetails, MatchSummary, PlayerLineupInfo } from '../types'
+
 
 interface CommonOpponentData {
     opponentId: string;
@@ -22,7 +24,7 @@ interface CommonOpponentsProps {
     upcomingMatch: MatchDetails;
 }
 
-export function CommonOpponents({ teamAId, teamBId, teamAName, teamBId: _, teamAName: __, group, upcomingMatch }: CommonOpponentsProps) {
+export function CommonOpponents({ teamAId, teamBId, teamAName, group, upcomingMatch }: CommonOpponentsProps) {
     const [expandedOpponent, setExpandedOpponent] = useState<string | null>(null)
     const [loadingMatches, setLoadingMatches] = useState<Record<string, boolean>>({})
     const [matchDetails, setMatchDetails] = useState<Record<string, { detailsA: MatchDetails; detailsB: MatchDetails }>>({})
@@ -31,7 +33,7 @@ export function CommonOpponents({ teamAId, teamBId, teamAName, teamBId: _, teamA
     if (!group || !group.matches) return null
 
     // Extract played matches against common opponents
-    const playedMatches = group.matches.filter(m => m.status === 'Played')
+    const playedMatches = group.matches.filter(m => m.status === MATCH_STATUS.PLAYED)
     
     // Find all opponents played by Team A
     const opponentsA = new Map<string, MatchSummary>()

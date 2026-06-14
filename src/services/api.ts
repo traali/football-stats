@@ -19,7 +19,7 @@ import type {
 // IMPORTANT: Use these classes (not plain Error) when throwing from this module
 // so that pages can show the right message to the user:
 //   APINotFoundError  → "Tietoja ei löydy"      (data doesn't exist)
-//   APINetworkError   → "Yhteysvirhe"            (server/network problem, retry)
+//   APIHttpError      → "Yhteysvirhe"            (server/network problem, retry)
 //   APITimeoutError   → "Yhteys aikakatkaistiin" (slow network, retry)
 //   APIRateLimitError → "Liikaa pyyntöjä"        (too many calls, wait)
 //
@@ -30,9 +30,9 @@ export class APINotFoundError extends Error {
     readonly type = 'not_found' as const
     constructor(message: string) { super(message); this.name = 'APINotFoundError' }
 }
-export class APINetworkError extends Error {
+export class APIHttpError extends Error {
     readonly type = 'network' as const
-    constructor(message: string) { super(message); this.name = 'APINetworkError' }
+    constructor(message: string) { super(message); this.name = 'APIHttpError' }
 }
 export class APITimeoutError extends Error {
     readonly type = 'timeout' as const
@@ -111,7 +111,7 @@ export async function fetchAPIData<T>(
     }
     const url = `${APP_CONFIG.API_BASE_URL}${endpoint}?${new URLSearchParams(cleanParams)}`
 
-    let lastError: Error = new APINetworkError('Tuntematon virhe')
+    let lastError: Error = new APIHttpError('Tuntematon virhe')
 
     for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
         if (signal?.aborted) throw new APITimeoutError('Pyyntö peruutettiin')
@@ -145,12 +145,12 @@ export async function fetchAPIData<T>(
                 }
                 // 4xx (not 404) → don't retry
                 if (response.status >= 400 && response.status < 500) {
-                    throw new APINetworkError(
+                    throw new APIHttpError(
                         `API-virhe ${endpoint}: ${response.status}`
                     )
                 }
                 // 5xx → retry
-                lastError = new APINetworkError(`Palvelinvirhe ${endpoint}: ${response.status}`)
+                lastError = new APIHttpError(`Palvelinvirhe ${endpoint}: ${response.status}`)
                 continue
             }
 
@@ -189,7 +189,7 @@ export async function fetchAPIData<T>(
 
             // Network-level errors (Failed to fetch, DNS failure etc.) — retry
             if (err instanceof TypeError) {
-                lastError = new APINetworkError(
+                lastError = new APIHttpError(
                     `Verkkovirhe (${endpoint}). Tarkista verkkoyhteys.`
                 )
                 continue

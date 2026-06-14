@@ -4,6 +4,7 @@ import { Trophy, Users, Shield, Calendar, MapPin, ChevronDown, ChevronRight, Use
 import { cn } from '../utils/cn'
 import { formatDate, formatTime } from '../utils/dates'
 import { getGroups, getGroupFull, getTeamProfile, batchFetch } from '../services/api'
+import { MATCH_STATUS } from '../types'
 import type { StandingTeam, TeamRosterPlayer, PlayerStatsEntry, GroupDetails } from '../types'
 import { BackButton, PageLayout } from '../components'
 
@@ -135,7 +136,7 @@ export function TurnauksetPage() {
     }, [standings, teamId])
 
     const sortedStandings = useMemo(() => {
-        return [...standings].sort((a, b) => parseInt(a.current_standing) - parseInt(b.current_standing))
+        return [...standings].sort((a, b) => parseInt(String(a.current_standing)) - parseInt(String(b.current_standing)))
     }, [standings])
 
     const topScorers = useMemo(() => {
@@ -313,7 +314,7 @@ export function TurnauksetPage() {
                                 const opponent = isHome ? m.team_B_name : m.team_A_name
                                 const ppjScore = isHome ? m.fs_A : m.fs_B
                                 const oppScore = isHome ? m.fs_B : m.fs_A
-                                const isFixture = m.status === 'Fixture' || (!m.fs_A && !m.fs_B)
+                                const isFixture = m.status === MATCH_STATUS.FIXTURE || (!m.fs_A && !m.fs_B)
                                 return (
                                     <div
                                         key={m.match_id}

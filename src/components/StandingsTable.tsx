@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../utils/cn'
 import { WLD_CONFIG } from '../utils/wld'
+import { MATCH_STATUS } from '../types'
 import type { StandingTeam, MatchSummary } from '../types'
 
 export function StandingsTable({ teams, matches = [], teamAId, teamBId, selectedTeam, onSelectTeam, compact }: {
@@ -16,7 +17,7 @@ export function StandingsTable({ teams, matches = [], teamAId, teamBId, selected
     const navigate = useNavigate()
     const [hoveredTeam, setHoveredTeam] = useState<string | null>(null)
 
-    const sorted = [...teams].sort((a, b) => (parseInt(a.current_standing) || 999) - (parseInt(b.current_standing) || 999))
+    const sorted = [...teams].sort((a, b) => (parseInt(String(a.current_standing)) || 999) - (parseInt(String(b.current_standing)) || 999))
 
     const activeTeamId = hoveredTeam || selectedTeam
 
@@ -29,10 +30,10 @@ export function StandingsTable({ teams, matches = [], teamAId, teamBId, selected
             const isA = m.team_A_id === activeTeamId
             const opponentTeamId = isA ? m.team_B_id : m.team_A_id
             if (!opponentTeamId) continue
-            const myScore = parseInt(isA ? m.fs_A : m.fs_B)
-            const oppScore = parseInt(isA ? m.fs_B : m.fs_A)
+            const myScore = parseInt(String(isA ? m.fs_A ?? '' : m.fs_B ?? ''))
+            const oppScore = parseInt(String(isA ? m.fs_B ?? '' : m.fs_A ?? ''))
             let result: 'win' | 'draw' | 'loss' | 'upcoming'
-            if (m.status === 'Fixture') {
+            if (m.status === MATCH_STATUS.FIXTURE) {
                 result = 'upcoming'
             } else if (isNaN(myScore) || isNaN(oppScore)) {
                 continue
@@ -61,9 +62,9 @@ export function StandingsTable({ teams, matches = [], teamAId, teamBId, selected
     const teamForm = useMemo(() => {
         const map = new Map<string, string[]>()
         for (const m of matches) {
-            if (m.status !== 'Played') continue
-            const myScoreA = parseInt(m.fs_A)
-            const oppScoreA = parseInt(m.fs_B)
+            if (m.status !== MATCH_STATUS.PLAYED) continue
+            const myScoreA = parseInt(String(m.fs_A ?? ''))
+            const oppScoreA = parseInt(String(m.fs_B ?? ''))
             if (isNaN(myScoreA) || isNaN(oppScoreA)) continue
 
             const aResult = myScoreA > oppScoreA ? 'V' : myScoreA < oppScoreA ? 'H' : 'T'

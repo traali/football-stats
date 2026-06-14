@@ -1,5 +1,13 @@
 import type { PlayerLineupInfo } from './players'
 
+export const MATCH_STATUS = {
+    PLAYED: 'Played',
+    FIXTURE: 'Fixture',
+} as const;
+
+export type MatchStatus = typeof MATCH_STATUS[keyof typeof MATCH_STATUS];
+
+
 export interface MatchGoal {
     event_id?: string
     team_id?: string
@@ -55,14 +63,14 @@ export interface MatchDetails {
 export interface MatchSummary {
     match_id: string
     date: string
-    time: string
+    time?: string
     team_A_id: string
     team_B_id: string
     team_A_name: string
     team_B_name: string
-    fs_A: string
-    fs_B: string
-    winner_id: string
+    fs_A?: string | number | null
+    fs_B?: string | number | null
+    winner_id?: string | null
     status: string
     referee_1_id?: string
 }

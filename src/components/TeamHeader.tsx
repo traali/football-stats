@@ -2,29 +2,32 @@ import { Shield, Heart, CalendarDays } from 'lucide-react'
 import { cn } from '../utils/cn'
 import type { TeamResponse } from '../types'
 import { APP_CONFIG } from '../config'
-export function TeamHeader({ team, teamId, last5Form, categoriesByYear, selectedYear, years, statsByYear, fav, onToggleFav }: {
+interface CategoryLike {
+    category_name?: string | { fi?: string }
+    category_name_translations?: { fi?: string }
+    competition_season?: string | number
+    competition_id?: string | number
+}
+
+export function TeamHeader({ team, teamId, last5Form, fav, onToggleFav }: {
     team: TeamResponse | null
     teamId: string
     last5Form: ('V' | 'H' | 'T')[]
-    categoriesByYear: Map<string, string[]>
-    selectedYear: string
-    years: string[]
-    statsByYear: Map<string, { played: number; wins: number; draws: number; losses: number; goalsFor: number; goalsAgainst: number; diffStr: string; ppg: number; goalsScoredPerMatch: number; goalsConcededPerMatch: number }>
     fav: boolean
     onToggleFav: () => void
 }) {
-    const getCategoryName = (c: any): string | null => {
+    const getCategoryName = (c: CategoryLike): string | null => {
         if (!c) return null
         const name = c.category_name
         if (typeof name === 'string') return name
-        if (name && typeof name.fi === 'string') return name.fi
+        if (name && typeof name === 'object' && typeof name.fi === 'string') return name.fi
         if (c.category_name_translations && typeof c.category_name_translations.fi === 'string') return c.category_name_translations.fi
         return null
     }
 
     const categoryNames = new Set<string>()
     if (team?.categories) {
-        ;(team.categories as any[]).forEach(c => {
+        (team.categories as CategoryLike[]).forEach(c => {
             if (!c) return
             const season = c.competition_season ? String(c.competition_season) : ''
             const compId = c.competition_id ? String(c.competition_id) : ''

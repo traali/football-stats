@@ -57,9 +57,9 @@ export function processPlayerMatchHistory(
                 if (teamName === teamNameForContext) {
                     stats.goalsForThisSpecificTeamInSeason += goals;
 
-                    let opponentName = "";
-                    let playerTeamScore = "";
-                    let opponentScore = "";
+                    let opponentName: string;
+                    let playerTeamScore: string;
+                    let opponentScore: string;
                     let resultIndicator: 'win' | 'loss' | 'draw' | 'fixture' = 'draw';
 
                     if (match.team_A_name === teamNameForContext || match.team_A_id === match.team_id) {
@@ -97,7 +97,7 @@ export function processPlayerMatchHistory(
             } else if (match.status === "Fixture") {
                 if (teamName === teamNameForContext) {
                     const isTeamA = match.team_A_name === teamNameForContext || match.team_A_id === match.team_id;
-                    let opponentName = isTeamA ? match.team_B_name : match.team_A_name;
+                    const opponentName = isTeamA ? match.team_B_name : match.team_A_name;
                     stats.pastMatchesDetails.push({
                         date: match.date ?? "",
                         opponentName: opponentName || "Tuntematon",
