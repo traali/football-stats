@@ -212,7 +212,7 @@ export function TeamPage() {
                 teamId={teamId}
                 last5Form={last5Form}
                 fav={fav}
-                onToggleFav={() => toggle(teamId)}
+                onToggleFav={() => toggle(teamId, team?.team_name)}
             />
 
             <div className="space-y-4 pt-4 border-t border-border-hairline">

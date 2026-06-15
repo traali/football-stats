@@ -71,14 +71,14 @@ export function Home() {
                             <Heart className="w-5 h-5 text-semantic-red fill-semantic-red" /> Suosikkijoukkueet
                         </h2>
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                            {favorites.map(fid => (
+                            {favorites.map(fav => (
                                 <div
-                                    key={fid}
-                                    onClick={() => navigate(`/team/${fid}`)}
+                                    key={fav.id}
+                                    onClick={() => navigate(`/team/${fav.id}`)}
                                     className="bg-surface-1 border border-border-hairline rounded-xl p-3 flex items-center gap-2 cursor-pointer hover:bg-surface-2 transition-colors"
                                 >
                                     <Shield className="w-5 h-5 text-accent shrink-0" />
-                                    <span className="text-text-primary text-sm font-medium truncate">{fid}</span>
+                                    <span className="text-text-primary text-sm font-medium truncate">{fav.name}</span>
                                 </div>
                             ))}
                         </div>

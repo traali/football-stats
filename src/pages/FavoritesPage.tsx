@@ -15,7 +15,7 @@ export function FavoritesPage() {
     useEffect(() => {
         if (favorites.length === 0) { setLoading(false); return }
         let cancelled = false
-        Promise.all(favorites.map(fid => getTeamProfile(fid).then(t => ({ fid, t }))))
+        Promise.all(favorites.map(fav => getTeamProfile(fav.id).then(t => ({ fid: fav.id, t }))))
             .then(results => { if (!cancelled) { setTeams(Object.fromEntries(results.map(({ fid, t }) => [fid, t]))); setLoading(false) } })
             .catch(() => { if (!cancelled) setLoading(false) })
         return () => { cancelled = true }
@@ -46,18 +46,18 @@ export function FavoritesPage() {
                 )}
 
                 <div className="space-y-2">
-                    {favorites.map(fid => {
-                        const team = teams[fid]
+                    {favorites.map(fav => {
+                        const team = teams[fav.id]
                         return (
                             <div
-                                key={fid}
-                                onClick={() => navigate(`/team/${fid}`)}
+                                key={fav.id}
+                                onClick={() => navigate(`/team/${fav.id}`)}
                                 className="bg-surface-1 border border-border-hairline rounded-xl p-4 flex items-center gap-3 cursor-pointer hover:bg-surface-2 transition-colors"
                             >
                                 <Shield className="w-8 h-8 text-accent shrink-0" />
                                 <div className="min-w-0">
                                     <p className="text-text-primary font-medium truncate">
-                                        {team?.team_name || fid}
+                                        {team?.team_name || fav.name}
                                     </p>
                                 </div>
                             </div>
