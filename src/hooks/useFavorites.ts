@@ -46,5 +46,16 @@ export function useFavorites() {
         localStorage.removeItem('favoriteTeams')
     }, [])
 
-    return { favorites, toggle, isFavorite, clear }
+    const updateName = useCallback((teamId: string, teamName: string) => {
+        setFavorites(prev => {
+            const index = prev.findIndex(f => f.id === teamId)
+            if (index === -1 || prev[index].name === teamName) return prev
+            const next = [...prev]
+            next[index] = { ...next[index], name: teamName }
+            localStorage.setItem('favoriteTeams', JSON.stringify(next))
+            return next
+        })
+    }, [])
+
+    return { favorites, toggle, isFavorite, clear, updateName }
 }

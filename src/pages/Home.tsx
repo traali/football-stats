@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { Search, Trophy, Heart, Shield, Activity, ChevronRight } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '../components'
-import { getCompetitions } from '../services/api'
+import { getCompetitions, getTeamProfile } from '../services/api'
 import { useFavorites } from '../hooks/useFavorites'
 import type { Competition } from '../types'
 import { PageLayout } from '../components'
@@ -15,13 +15,36 @@ export function Home() {
     const [comps, setComps] = useState<Competition[]>([])
     const [loading, setLoading] = useState(true)
     const navigate = useNavigate()
-    const { favorites } = useFavorites()
+    const { favorites, updateName } = useFavorites()
 
     useEffect(() => {
         getCompetitions()
             .then(c => { setComps(c); setLoading(false) })
             .catch(() => setLoading(false))
     }, [])
+
+    useEffect(() => {
+        if (favorites.length === 0) return
+        let cancelled = false
+        const legacyFavorites = favorites.filter(f => f.name === f.id)
+        if (legacyFavorites.length === 0) return
+
+        Promise.all(
+            legacyFavorites.map(f =>
+                getTeamProfile(f.id)
+                    .then(profile => {
+                        if (profile?.team_name && !cancelled) {
+                            updateName(f.id, profile.team_name)
+                        }
+                    })
+                    .catch(() => {})
+            )
+        )
+
+        return () => {
+            cancelled = true
+        }
+    }, [favorites, updateName])
 
     const handleSubmit = (e?: React.FormEvent) => {
         if (e) e.preventDefault()
