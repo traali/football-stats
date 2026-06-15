@@ -50,9 +50,12 @@ export function processPlayerMatchHistory(
                 stats.warningsThisYear += warnings;
                 stats.suspensionsThisYear += suspensions;
 
-                stats.goalsByTeamThisYear[teamName] = (stats.goalsByTeamThisYear[teamName] || 0) + goals;
-                stats.warningsByTeamThisYear[teamName] = (stats.warningsByTeamThisYear[teamName] || 0) + warnings;
-                stats.gamesByTeamThisYear[teamName] = (stats.gamesByTeamThisYear[teamName] || 0) + 1;
+                const categorySuffix = match.category_name ? ` (${match.category_name})` : '';
+                const teamKey = `${teamName}${categorySuffix}`;
+
+                stats.goalsByTeamThisYear[teamKey] = (stats.goalsByTeamThisYear[teamKey] || 0) + goals;
+                stats.warningsByTeamThisYear[teamKey] = (stats.warningsByTeamThisYear[teamKey] || 0) + warnings;
+                stats.gamesByTeamThisYear[teamKey] = (stats.gamesByTeamThisYear[teamKey] || 0) + 1;
 
                 if (teamName === teamNameForContext) {
                     stats.goalsForThisSpecificTeamInSeason += goals;

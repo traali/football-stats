@@ -50,6 +50,8 @@ export interface PlayerMatchEntry {
     player_goals?: string
     player_warnings?: string
     player_suspensions?: string
+    category_id?: string
+    category_name?: string
 }
 
 export interface PlayerAPIResponse {
