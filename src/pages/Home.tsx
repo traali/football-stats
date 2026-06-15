@@ -5,6 +5,8 @@ import { useNavigate } from 'react-router-dom'
 import { Button } from '../components'
 import { getCompetitions, getTeamProfile } from '../services/api'
 import { useFavorites } from '../hooks/useFavorites'
+import { getTeamCategory } from '../utils/dataProcessors'
+import { APP_CONFIG } from '../config'
 import type { Competition } from '../types'
 import { PageLayout } from '../components'
 
@@ -26,15 +28,16 @@ export function Home() {
     useEffect(() => {
         if (favorites.length === 0) return
         let cancelled = false
-        const legacyFavorites = favorites.filter(f => f.name === f.id)
+        const legacyFavorites = favorites.filter(f => f.name === f.id || !f.category)
         if (legacyFavorites.length === 0) return
 
         Promise.all(
             legacyFavorites.map(f =>
                 getTeamProfile(f.id)
                     .then(profile => {
-                        if (profile?.team_name && !cancelled) {
-                            updateName(f.id, profile.team_name)
+                        if (profile && !cancelled) {
+                            const category = getTeamCategory(profile, APP_CONFIG.CURRENT_YEAR)
+                            updateName(f.id, profile.team_name || f.id, category)
                         }
                     })
                     .catch(() => {})
@@ -98,10 +101,15 @@ export function Home() {
                                 <div
                                     key={fav.id}
                                     onClick={() => navigate(`/team/${fav.id}`)}
-                                    className="bg-surface-1 border border-border-hairline rounded-xl p-3 flex items-center gap-2 cursor-pointer hover:bg-surface-2 transition-colors"
+                                    className="bg-surface-1 border border-border-hairline rounded-xl p-3 flex items-center gap-3 cursor-pointer hover:bg-surface-2 transition-colors min-h-[52px]"
                                 >
-                                    <Shield className="w-5 h-5 text-accent shrink-0" />
-                                    <span className="text-text-primary text-sm font-medium truncate">{fav.name}</span>
+                                    <Shield className="w-6 h-6 text-accent shrink-0" />
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-text-primary text-sm font-semibold truncate">{fav.name}</p>
+                                        {fav.category && (
+                                            <p className="text-text-muted text-xs truncate mt-0.5">{fav.category}</p>
+                                        )}
+                                    </div>
                                 </div>
                             ))}
                         </div>

@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { Heart, Shield } from 'lucide-react'
 import { useFavorites } from '../hooks/useFavorites'
 import { getTeamProfile } from '../services/api'
+import { getTeamCategory } from '../utils/dataProcessors'
+import { APP_CONFIG } from '../config'
 import type { TeamResponse } from '../types'
 import { PageLayout } from '../components'
 
@@ -55,10 +57,15 @@ export function FavoritesPage() {
                                 className="bg-surface-1 border border-border-hairline rounded-xl p-4 flex items-center gap-3 cursor-pointer hover:bg-surface-2 transition-colors"
                             >
                                 <Shield className="w-8 h-8 text-accent shrink-0" />
-                                <div className="min-w-0">
+                                <div className="min-w-0 flex-1">
                                     <p className="text-text-primary font-medium truncate">
                                         {team?.team_name || fav.name}
                                     </p>
+                                    {(team ? getTeamCategory(team, APP_CONFIG.CURRENT_YEAR) : fav.category) && (
+                                        <p className="text-text-muted text-xs truncate mt-0.5">
+                                            {team ? getTeamCategory(team, APP_CONFIG.CURRENT_YEAR) : fav.category}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         )

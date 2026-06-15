@@ -3,6 +3,7 @@ import { useState, useCallback } from 'react'
 export interface FavoriteTeam {
     id: string
     name: string
+    category?: string
 }
 
 function loadFavorites(): FavoriteTeam[] {
@@ -16,7 +17,7 @@ function loadFavorites(): FavoriteTeam[] {
                 return { id: item, name: item }
             }
             if (item && typeof item === 'object' && typeof item.id === 'string') {
-                return { id: item.id, name: item.name || item.id }
+                return { id: item.id, name: item.name || item.id, category: item.category }
             }
             return null
         }).filter((item): item is FavoriteTeam => item !== null)
@@ -28,12 +29,12 @@ function loadFavorites(): FavoriteTeam[] {
 export function useFavorites() {
     const [favorites, setFavorites] = useState<FavoriteTeam[]>(loadFavorites)
 
-    const toggle = useCallback((teamId: string, teamName?: string) => {
+    const toggle = useCallback((teamId: string, teamName?: string, category?: string) => {
         setFavorites(prev => {
             const exists = prev.some(f => f.id === teamId)
             const next = exists
                 ? prev.filter(f => f.id !== teamId)
-                : [...prev, { id: teamId, name: teamName || teamId }]
+                : [...prev, { id: teamId, name: teamName || teamId, category }]
             localStorage.setItem('favoriteTeams', JSON.stringify(next))
             return next
         })
@@ -46,12 +47,12 @@ export function useFavorites() {
         localStorage.removeItem('favoriteTeams')
     }, [])
 
-    const updateName = useCallback((teamId: string, teamName: string) => {
+    const updateName = useCallback((teamId: string, teamName: string, category?: string) => {
         setFavorites(prev => {
             const index = prev.findIndex(f => f.id === teamId)
-            if (index === -1 || prev[index].name === teamName) return prev
+            if (index === -1 || (prev[index].name === teamName && prev[index].category === category)) return prev
             const next = [...prev]
-            next[index] = { ...next[index], name: teamName }
+            next[index] = { ...next[index], name: teamName, category }
             localStorage.setItem('favoriteTeams', JSON.stringify(next))
             return next
         })

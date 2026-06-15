@@ -1,12 +1,14 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Trophy, Users, Shield, Calendar, MapPin, ChevronDown, ChevronRight, User, TrendingUp } from 'lucide-react'
+import { Trophy, Users, Shield, Calendar, MapPin, ChevronDown, ChevronRight, TrendingUp } from 'lucide-react'
 import { cn } from '../utils/cn'
 import { formatDate, formatTime } from '../utils/dates'
-import { getGroups, getGroupFull, getTeamProfile, batchFetch } from '../services/api'
+import { getGroups, getGroupFull, getTeamProfile, getPlayerData, batchFetch } from '../services/api'
 import { MATCH_STATUS } from '../types'
-import type { StandingTeam, TeamRosterPlayer, PlayerStatsEntry, GroupDetails } from '../types'
-import { BackButton, PageLayout } from '../components'
+import type { StandingTeam, TeamRosterPlayer, PlayerStatsEntry, GroupDetails, PlayerStats } from '../types'
+import { BackButton, PageLayout, PlayerCard, PlayerCardSkeleton } from '../components'
+import { processPlayerMatchHistory } from '../utils/dataProcessors'
+import { APP_CONFIG } from '../config'
 
 interface MatchWithVenue {
     match_id: string
@@ -50,6 +52,8 @@ export function TurnauksetPage() {
     const [teamName, setTeamName] = useState('')
     const [teamCrest, setTeamCrest] = useState('')
     const [players, setPlayers] = useState<TeamRosterPlayer[]>([])
+    const [processedPlayers, setProcessedPlayers] = useState<PlayerStats[]>([])
+    const [loadingPlayers, setLoadingPlayers] = useState(false)
 
     const [playerStats, setPlayerStats] = useState<PlayerStatsEntry[]>([])
 
@@ -60,6 +64,7 @@ export function TurnauksetPage() {
     useEffect(() => {
         if (!turnaus || !sarja || !teamId) return
         let cancelled = false
+        const controller = new AbortController()
 
         const fetchData = async () => {
             try {
@@ -77,8 +82,8 @@ export function TurnauksetPage() {
                 setStandings(found.teams || [])
 
                 const [groupData, teamData] = await Promise.all([
-                    getGroupFull(turnaus, sarja, found.group_id),
-                    getTeamProfile(teamId),
+                    getGroupFull(turnaus, sarja, found.group_id, controller.signal),
+                    getTeamProfile(teamId, controller.signal),
                 ])
 
                 if (cancelled) return
@@ -106,6 +111,7 @@ export function TurnauksetPage() {
                         playoffLabels.map(p => p.id),
                         (id, signal) => getGroupFull(turnaus!, sarja!, id, signal),
                         3,
+                        controller.signal
                     )
                     if (cancelled) return
                     const parsedPlayoffs = playoffLabels.map((p, i) => ({
@@ -114,15 +120,57 @@ export function TurnauksetPage() {
                     }))
                     setPlayoffs(parsedPlayoffs)
                 }
+
+                // Page load completes first
+                setLoading(false)
+
+                // Background batch-fetch detailed player profiles
+                if (teamData?.players && teamData.players.length > 0) {
+                    setLoadingPlayers(true)
+                    const playerIds = teamData.players.map(p => p.player_id).filter((id): id is string => !!id)
+                    const playerDataList = await batchFetch(playerIds, getPlayerData, 5, controller.signal)
+                    
+                    if (cancelled) return
+
+                    const processed: PlayerStats[] = []
+                    for (let idx = 0; idx < teamData.players.length; idx++) {
+                        const rosterPlayer = teamData.players[idx]
+                        const pData = playerDataList[idx]
+                        if (!pData) continue
+
+                        const processedHistory = processPlayerMatchHistory(
+                            pData.matches,
+                            APP_CONFIG.CURRENT_YEAR,
+                            APP_CONFIG.PREVIOUS_YEAR,
+                            teamData.team_name || ''
+                        )
+
+                        processed.push({
+                            name: `${rosterPlayer.first_name || ''} ${rosterPlayer.last_name || ''}`.trim(),
+                            shirtNumber: rosterPlayer.shirt_number || 'N/A',
+                            birthYear: rosterPlayer.birthyear || pData.birthyear || '',
+                            img_url: rosterPlayer.img_url || pData.img_url,
+                            ...processedHistory,
+                            isCaptainInMatch: false,
+                            teamIdInMatch: teamId,
+                        })
+                    }
+                    setProcessedPlayers(processed)
+                    setLoadingPlayers(false)
+                }
             } catch (err) {
-                if (!cancelled) setError((err as Error).message)
-            } finally {
-                if (!cancelled) setLoading(false)
+                if (!cancelled) {
+                    setError((err as Error).message)
+                    setLoading(false)
+                }
             }
         }
 
         fetchData()
-        return () => { cancelled = true }
+        return () => {
+            cancelled = true
+            controller.abort()
+        }
     }, [turnaus, sarja, teamId])
 
     const teamMatches = useMemo(() => {
@@ -146,16 +194,6 @@ export function TurnauksetPage() {
             .slice(0, 20)
     }, [playerStats, teamId])
 
-    const playerStatsMap = useMemo(() => {
-        const map = new Map<string, PlayerStatsEntry[]>()
-        for (const s of playerStats) {
-            if (!s.player_id) continue
-            const pid = String(s.player_id)
-            if (!map.has(pid)) map.set(pid, [])
-            map.get(pid)!.push(s)
-        }
-        return map
-    }, [playerStats])
 
     const groupLinkMap = useMemo(() => {
         const map = new Map<string, { teamId: string; teamName: string }>()
@@ -497,68 +535,19 @@ export function TurnauksetPage() {
                         Kokoonpano ({players.length})
                     </h3>
 
-                    {players.length === 0 ? (
+                    {loadingPlayers ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            {Array.from({ length: players.length || 6 }).map((_, i) => (
+                                <PlayerCardSkeleton key={i} />
+                            ))}
+                        </div>
+                    ) : processedPlayers.length === 0 ? (
                         <p className="text-text-muted text-sm text-center py-4">Ei pelaajatietoja</p>
                     ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-3">
-                            {players.map(p => {
-                                const pid = p.player_id || ''
-                                const pStats = playerStatsMap.get(pid)
-                                return (
-                                    <div
-                                        key={pid}
-                                        onClick={() => pid && navigate(`/player/${pid}`)}
-                                        className="relative bg-surface-2 border border-border-hairline hover:border-accent/30 rounded-xl p-4 hover:bg-surface-3 transition-all active:scale-[0.98] cursor-pointer space-y-3 overflow-hidden"
-                                    >
-                                        <div className="absolute left-0 top-3 bottom-3 w-0.5 bg-accent/30 rounded-full" />
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-12 h-12 rounded-full bg-surface-3 flex items-center justify-center shrink-0 border border-border-hairline">
-                                                {p.img_url ? (
-                                                    <img src={p.img_url} alt="" className="w-full h-full rounded-full object-cover" />
-                                                ) : (
-                                                    <User className="w-5 h-5 text-text-muted" />
-                                                )}
-                                            </div>
-                                            <div className="min-w-0 flex-1">
-                                                <p className="text-text-primary font-bold text-sm truncate">
-                                                    {p.first_name} {p.last_name}
-                                                </p>
-                                                <div className="flex items-center gap-2 mt-0.5">
-                                                    {p.birthyear && (
-                                                        <span className="text-text-muted text-xs font-mono">{p.birthyear}</span>
-                                                    )}
-                                                    {p.shirt_number && (
-                                                        <span className="bg-accent/10 border border-accent/20 text-accent font-mono font-bold text-[10px] px-1.5 py-0.5 rounded">
-                                                            #{p.shirt_number}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                        {pStats && pStats.length > 0 && (
-                                            <div className="pt-3 border-t border-border-hairline space-y-1.5">
-                                                {pStats.map((s, i) => (
-                                                    <div key={i} className="flex items-center justify-between text-xs">
-                                                        <span className="text-text-secondary font-medium truncate mr-2">
-                                                            {s.team_name || ''} ({catName || sarja})
-                                                        </span>
-                                                        <div className="flex items-center gap-2.5 shrink-0">
-                                                            <span className="text-text-muted font-mono">O: {s.matches || 0}</span>
-                                                            <span className="text-text-muted font-mono">M: {s.goals || 0}</span>
-                                                            {s.assists && parseInt(s.assists) > 0 && (
-                                                                <span className="text-text-muted font-mono">S: {s.assists}</span>
-                                                            )}
-                                                            {s.warnings && parseInt(s.warnings) > 0 && (
-                                                                <span className="text-accent font-mono">V: {s.warnings}</span>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                )
-                            })}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            {processedPlayers.map(player => (
+                                <PlayerCard key={player.name + player.shirtNumber} stats={player} />
+                            ))}
                         </div>
                     )}
                 </div>

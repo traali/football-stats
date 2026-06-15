@@ -121,3 +121,26 @@ export function processPlayerMatchHistory(
 }
 
 export type { ProcessedStats };
+
+export function getTeamCategory(team: any, currentYear: string): string | undefined {
+    if (!team || !team.categories) return undefined
+    const categoryNames = new Set<string>()
+    for (const c of team.categories) {
+        if (!c) continue
+        const season = c.competition_season ? String(c.competition_season) : ''
+        const compId = c.competition_id ? String(c.competition_id) : ''
+        const isCurrent = season === currentYear ||
+            (compId && compId.includes(currentYear)) ||
+            (compId && compId.includes(currentYear.slice(2)))
+        if (isCurrent) {
+            const name = c.category_name
+            let nameStr: string | null = null
+            if (typeof name === 'string') nameStr = name
+            else if (name && typeof name === 'object' && typeof name.fi === 'string') nameStr = name.fi
+            else if (c.category_name_translations && typeof c.category_name_translations.fi === 'string') nameStr = c.category_name_translations.fi
+            
+            if (nameStr) categoryNames.add(nameStr)
+        }
+    }
+    return Array.from(categoryNames)[0]
+}

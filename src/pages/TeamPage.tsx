@@ -2,6 +2,8 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { Users, Calendar, TrendingUp } from 'lucide-react'
 import { cn } from '../utils/cn'
 import { useTeamData } from '../hooks/useTeamData'
+import { getTeamCategory } from '../utils/dataProcessors'
+import { APP_CONFIG } from '../config'
 import { StatBadge, BackButton, PageLayout, Card, PlayerAvatar, TeamHeader, TeamMatchList } from '../components'
 
 export function TeamPage() {
@@ -212,7 +214,7 @@ export function TeamPage() {
                 teamId={teamId}
                 last5Form={last5Form}
                 fav={fav}
-                onToggleFav={() => toggle(teamId, team?.team_name)}
+                onToggleFav={() => toggle(teamId, team?.team_name, team ? getTeamCategory(team, APP_CONFIG.CURRENT_YEAR) : undefined)}
             />
 
             <div className="space-y-4 pt-4 border-t border-border-hairline">
