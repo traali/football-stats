@@ -4,6 +4,7 @@ import { Search, Trophy, Heart, Shield, ChevronRight, Calendar, MapPin } from 'l
 import { useNavigate } from 'react-router-dom'
 import { Button } from '../components'
 import { getTeamMatches, getTeamProfile } from '../services/api'
+import { listViewedMatches, type ViewedMatch } from '../services/viewedCache'
 import { useFavorites } from '../hooks/useFavorites'
 import { getTeamCategory } from '../utils/dataProcessors'
 import { APP_CONFIG, APP_NAME, FEATURED } from '../config'
@@ -16,11 +17,13 @@ import { isMatchLive, pickHeroMatch } from '../utils/matchLive'
 export function Home() {
     const [matchId, setMatchId] = useState('')
     const [hero, setHero] = useState<DiscoveryMatch | null>(null)
+    const [viewed, setViewed] = useState<ViewedMatch[]>([])
     const [loadingNext, setLoadingNext] = useState(true)
     const navigate = useNavigate()
     const { favorites, updateName } = useFavorites()
 
     useEffect(() => {
+        setViewed(listViewedMatches().slice(0, 8))
         const ctrl = new AbortController()
         getTeamMatches(FEATURED.teamId, ctrl.signal)
             .then(matches => {
@@ -87,16 +90,9 @@ export function Home() {
                                 <Calendar className="w-3.5 h-3.5" />
                                 {formatDate(hero.date, 'with-year')} {live && String(hero.time || '').includes("'") ? hero.time : formatTime(hero.time)}
                             </span>
-                            {venue && (
-                                <span className="flex items-center gap-1">
-                                    <MapPin className="w-3.5 h-3.5" />{venue}
-                                </span>
-                            )}
+                            {venue && <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{venue}</span>}
                         </p>
                     </button>
-                )}
-                {!loadingNext && !hero && (
-                    <p className="text-text-muted text-sm">Ei merkittyä ottelua.</p>
                 )}
             </section>
 
@@ -113,6 +109,20 @@ export function Home() {
                     <ChevronRight className="w-5 h-5 text-text-muted shrink-0" />
                 </button>
             </section>
+
+            {viewed.length > 0 && (
+                <section className="space-y-2">
+                    <h2 className="text-sm font-bold text-text-primary uppercase tracking-wider">Avatut ottelut</h2>
+                    {viewed.map(({ match }) => (
+                        <button key={match.match_id} type="button" onClick={() => navigate(`/match/${match.match_id}`)}
+                            className="w-full text-left bg-surface-1 border border-border-hairline rounded-xl px-3 py-2.5 flex items-center justify-between hover:bg-surface-2">
+                            <span className="text-xs text-text-muted w-20 shrink-0">{formatDate(match.date, 'with-year')}</span>
+                            <span className="text-sm text-text-primary truncate flex-1 px-2">{match.team_A_name} – {match.team_B_name}</span>
+                            <span className="font-mono text-xs shrink-0">{match.fs_A}–{match.fs_B}</span>
+                        </button>
+                    ))}
+                </section>
+            )}
 
             {favorites.length > 0 && (
                 <section className="space-y-3">
@@ -144,14 +154,6 @@ export function Home() {
                         <div>
                             <p className="text-text-primary font-medium">Helsinki Cup 2026</p>
                             <p className="text-text-muted text-sm">PPJ · B13 8v8 · Lohko M</p>
-                        </div>
-                        <ChevronRight className="w-5 h-5 text-text-muted" />
-                    </div>
-                    <div onClick={() => navigate('/turnaukset/hc2026/B13H/185086')}
-                        className="bg-surface-1 border border-border-hairline rounded-xl p-4 flex items-center justify-between cursor-pointer hover:bg-surface-2">
-                        <div>
-                            <p className="text-text-primary font-medium">Helsinki Cup 2026</p>
-                            <p className="text-text-muted text-sm">PPJ/Laru oran · B13 Harjoitus · Lohko E</p>
                         </div>
                         <ChevronRight className="w-5 h-5 text-text-muted" />
                     </div>
