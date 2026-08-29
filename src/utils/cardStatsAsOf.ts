@@ -11,6 +11,8 @@ export interface CardSeriesRow {
     wins: number
     draws: number
     losses: number
+    gf: number
+    ga: number
 }
 
 export interface CardSeasonStats {
@@ -35,12 +37,12 @@ function halfOf(date?: string): 'kevät' | 'syksy' | '' {
     return month <= 6 ? 'kevät' : 'syksy'
 }
 
-function wld(m: PlayerMatchEntry): 'V' | 'T' | 'H' | null {
+function scorePair(m: PlayerMatchEntry): { my: number; opp: number } | null {
     const isA = m.team_id === m.team_A_id
     const my = parseInt((isA ? m.fs_A : m.fs_B) || '', 10)
     const opp = parseInt((isA ? m.fs_B : m.fs_A) || '', 10)
     if (Number.isNaN(my) || Number.isNaN(opp)) return null
-    return my > opp ? 'V' : my < opp ? 'H' : 'T'
+    return { my, opp }
 }
 
 export function cardStatsAsOf(
@@ -72,15 +74,19 @@ export function cardStatsAsOf(
             const teamName = m.team_name || (m.team_id === m.team_A_id ? m.team_A_name : m.team_B_name) || ''
             const key = `${category}|${half}|${teamName}`
             const row = byKey.get(key) || {
-                category, half, teamName, matches: 0, goals: 0, warnings: 0, wins: 0, draws: 0, losses: 0,
+                category, half, teamName, matches: 0, goals: 0, warnings: 0, wins: 0, draws: 0, losses: 0, gf: 0, ga: 0,
             }
             row.matches++
             row.goals += goals
             row.warnings += warnings
-            const r = wld(m)
-            if (r === 'V') row.wins++
-            else if (r === 'H') row.losses++
-            else if (r === 'T') row.draws++
+            const pair = scorePair(m)
+            if (pair) {
+                row.gf += pair.my
+                row.ga += pair.opp
+                if (pair.my > pair.opp) row.wins++
+                else if (pair.my < pair.opp) row.losses++
+                else row.draws++
+            }
             byKey.set(key, row)
         } else if (y === prev) {
             out.gamesPlayedLastSeason++
