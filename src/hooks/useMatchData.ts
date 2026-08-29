@@ -1,8 +1,31 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { getMatchDetails, getGroupDetails, getPlayerData, getTeamProfile, batchFetch } from '../services/api';
-import { processPlayerMatchHistory } from '../utils/dataProcessors';
-import { APP_CONFIG } from '../config';
+import { getMatchDetails, getGroupDetails, getTeamProfile } from '../services/api';
 import type { MatchDetails, GroupDetails, PlayerStats, TeamResponse, PlayerLineupInfo } from '../types';
+
+function lineupToStats(lineupInfo: PlayerLineupInfo): PlayerStats {
+    return {
+        name: lineupInfo.player_name,
+        shirtNumber: lineupInfo.shirt_number,
+        birthYear: '',
+        img_url: undefined,
+        teamIdInMatch: lineupInfo.team_id,
+        gamesPlayedThisYear: 0,
+        goalsThisYear: 0,
+        warningsThisYear: 0,
+        suspensionsThisYear: 0,
+        goalsByTeamThisYear: {},
+        warningsByTeamThisYear: {},
+        gamesByTeamThisYear: {},
+        goalsForThisSpecificTeamInSeason: 0,
+        gamesPlayedLastSeason: 0,
+        goalsScoredLastSeason: 0,
+        teamsThisYear: '',
+        isCaptainInMatch: lineupInfo.captain === '1',
+        position_fi: lineupInfo.position_fi,
+        height: lineupInfo.height,
+        weight: lineupInfo.weight,
+    }
+}
 
 export function useMatchData() {
     const [loading, setLoading] = useState(false);
@@ -31,7 +54,7 @@ export function useMatchData() {
         setError(null);
 
         if (!/^\d+$/.test(matchId)) {
-            setError('Virheellinen ottelun ID');
+            setError('Virheellinen ottelun tunnus');
             setLoading(false);
             return;
         }
@@ -47,40 +70,11 @@ export function useMatchData() {
             ]);
             if (controller.signal.aborted || !mountedRef.current) return;
 
-            const playersInMatch: PlayerLineupInfo[] = match.lineups || [];
-            const playerIds = playersInMatch.map(p => p.player_id);
-            const playerDataList = await batchFetch(playerIds, getPlayerData, 5, controller.signal);
-            if (controller.signal.aborted || !mountedRef.current) return;
-
-            const processedPlayers: PlayerStats[] = []
-            for (let idx = 0; idx < playersInMatch.length; idx++) {
-                const lineupInfo = playersInMatch[idx];
-                const playerData = playerDataList[idx];
-                if (!playerData) continue;
-                const processedHistory = processPlayerMatchHistory(
-                    playerData.matches,
-                    APP_CONFIG.CURRENT_YEAR,
-                    APP_CONFIG.PREVIOUS_YEAR,
-                    lineupInfo.team_name || (lineupInfo.team_id === match.team_A_id ? match.team_A_name : match.team_B_name)
-                );
-                processedPlayers.push({
-                    name: lineupInfo.player_name,
-                    shirtNumber: lineupInfo.shirt_number,
-                    birthYear: playerData.birthyear,
-                    img_url: playerData.img_url,
-                    teamIdInMatch: lineupInfo.team_id,
-                    ...processedHistory,
-                    isCaptainInMatch: lineupInfo.captain === "1",
-                    position_fi: lineupInfo.position_fi,
-                    height: lineupInfo.height,
-                    weight: lineupInfo.weight,
-                });
-            }
-
+            const processedPlayers = (match.lineups || []).map(lineupToStats);
             setData({ match, group, players: processedPlayers, teamA, teamB });
         } catch (err: unknown) {
             if (controller.signal.aborted || !mountedRef.current) return;
-            setError(err instanceof Error ? err.message : 'Virhe ladattaessa tietoja');
+            setError(err instanceof Error ? err.message : 'Ottelua ei voitu ladata. Yritä uudelleen.');
             setData(null);
         } finally {
             setLoading(false);
