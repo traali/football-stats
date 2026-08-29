@@ -5,11 +5,9 @@ import { MATCH_STATUS } from '../types'
 import type { TeamResponse, DiscoveryMatch } from '../types'
 import { APP_CONFIG } from '../config'
 import { parsePlayerName } from '../utils/names'
+import { mergeRoster, type RosterPlayer } from './rosterMerge'
 
-interface PlayerEntry {
-    player_id: string; first_name: string; last_name: string; img_url?: string; birthyear?: string; shirt_number?: string
-    position_fi?: string; matches?: number; goals?: number; assists?: number; warnings?: number
-}
+type PlayerEntry = RosterPlayer
 
 interface ScorerEntry {
     player_id: string; first_name: string; last_name: string; goals: number; assists: number; img_url?: string
@@ -72,90 +70,64 @@ export function useTeamData(teamId: string | undefined) {
     }, [teamId])
 
     const players = team?.players || []
-
     const allowedYears = useMemo(() => {
         const currentYear = new Date().getFullYear()
         return [currentYear, currentYear - 1, currentYear - 2, currentYear - 3].map(String)
     }, [])
 
-    const filteredMatches = useMemo(() => {
-        return matches.filter(m => {
-            if (!m.date) return false
-            const y = m.date.slice(0, 4)
-            return allowedYears.includes(y)
-        })
-    }, [matches, allowedYears])
+    const filteredMatches = useMemo(() => matches.filter(m => {
+        if (!m.date) return false
+        return allowedYears.includes(m.date.slice(0, 4))
+    }), [matches, allowedYears])
 
     const years = useMemo(() => {
         const yearsSet = new Set<string>()
-        filteredMatches.forEach(m => {
-            if (m.date) {
-                const y = m.date.slice(0, 4)
-                if (y && !isNaN(parseInt(y))) yearsSet.add(y)
-            }
-        })
+        filteredMatches.forEach(m => { if (m.date) yearsSet.add(m.date.slice(0, 4)) })
         return [...yearsSet].sort((a, b) => b.localeCompare(a))
     }, [filteredMatches])
 
     const relevantGroups = useMemo(() => {
         if (!team?.groups) return []
-        interface GroupLike {
-            competition_season?: string | number
-            competition_id?: string
-            category_id?: string
-            group_id?: string
-        }
-        return (team.groups as GroupLike[]).filter(g => {
-            if (!g) return false
+        return (team.groups as Array<{ competition_season?: string | number; competition_id?: string; category_id?: string; group_id?: string }>).filter(g => {
             const season = g.competition_season ? String(g.competition_season) : ''
-            return season && allowedYears.includes(season)
+            return !!season && allowedYears.includes(season)
         })
     }, [team, allowedYears])
 
-    const historyAbortRef = useRef<AbortController | null>(null)
-
     useEffect(() => {
         if (!teamId || relevantGroups.length === 0) return
-        historyAbortRef.current?.abort()
         const controller = new AbortController()
-        historyAbortRef.current = controller
         setLoadingPlayers(true)
         setHistoryError(null)
-
-        const fetchPlayers = async () => {
+        const run = async () => {
             try {
                 const groupKeys = relevantGroups.map(g => `${g.competition_id}:${g.category_id}:${g.group_id}`)
                 const results = await batchFetch(groupKeys, async (key, signal) => {
                     const [compId, catId, groupId] = key.split(':')
                     return getGroupFull(compId, catId, groupId, signal)
                 }, 5, controller.signal)
-
                 if (controller.signal.aborted) return
-
                 const playersBySeason: Record<string, Record<string, PlayerEntry>> = {}
                 const statsBySeason: Record<string, Record<string, ScorerEntry>> = {}
                 allowedYears.forEach(yr => { playersBySeason[yr] = {}; statsBySeason[yr] = {} })
-
                 results.forEach((groupData, idx) => {
                     if (!groupData) return
                     const groupMeta = relevantGroups[idx]
                     if (!groupMeta) return
                     const season = groupMeta.competition_season ? String(groupMeta.competition_season) : ''
                     if (!season || !playersBySeason[season]) return
-                    const stats = groupData.player_statistics || []
-                    stats.forEach(p => {
-                        if (String(p.team_id) !== String(teamId) || !p.player_id) return
+                    for (const p of groupData.player_statistics || []) {
+                        if (String(p.team_id) !== String(teamId) || !p.player_id) continue
                         const pid = String(p.player_id)
                         const parsed = parsePlayerName(p as { first_name?: string; last_name?: string; player_name?: string })
                         const g = parseInt(String(p.goals || '0'), 10) || 0
                         const a = parseInt(String(p.assists || '0'), 10) || 0
                         const w = parseInt(String(p.warnings || '0'), 10) || 0
-                        const mcount = parseInt(String((p as { matches?: string; matches_played?: string }).matches || (p as { matches_played?: string }).matches_played || '0'), 10) || 0
+                        const extra = p as { matches?: string; matches_played?: string }
+                        const mcount = parseInt(String(extra.matches || extra.matches_played || '0'), 10) || 0
                         const prevP = playersBySeason[season][pid]
                         playersBySeason[season][pid] = {
-                            player_id: pid,
-                            first_name: parsed.first_name,
-                            last_name: parsed.last_name,
+                            player_id: pid, first_name: parsed.first_name, last_name: parsed.last_name,
                             img_url: p.img_url || prevP?.img_url,
                             matches: (prevP?.matches || 0) + mcount,
                             goals: (prevP?.goals || 0) + g,
@@ -164,8 +136,7 @@ export function useTeamData(teamId: string | undefined) {
                         }
                         const existing = statsBySeason[season][pid]
                         if (existing) {
-                            existing.goals += g
-                            existing.assists += a
+                            existing.goals += g; existing.assists += a
                             existing.matches = (existing.matches || 0) + mcount
                             existing.warnings = (existing.warnings || 0) + w
                         } else {
@@ -174,25 +145,8 @@ export function useTeamData(teamId: string | undefined) {
                                 goals: g, assists: a, img_url: p.img_url, matches: mcount, warnings: w,
                             }
                         }
-                    })
-                })
-
-                if (team?.players) {
-                    const curYrBucket = playersBySeason[APP_CONFIG.CURRENT_YEAR]
-                    if (curYrBucket && Object.keys(curYrBucket).length === 0) {
-                        team.players.forEach(p => {
-                            if (p.player_id) {
-                                curYrBucket[String(p.player_id)] = {
-                                    player_id: String(p.player_id),
-                                    first_name: p.first_name || '',
-                                    last_name: p.last_name || '',
-                                    img_url: p.img_url,
-                                }
-                            }
-                        })
                     }
-                }
-
+                })
                 const finalPlayers: Record<string, PlayerEntry[]> = {}
                 Object.entries(playersBySeason).forEach(([yr, map]) => { finalPlayers[yr] = Object.values(map) })
                 const finalScorers: Record<string, ScorerEntry[]> = {}
@@ -202,15 +156,14 @@ export function useTeamData(teamId: string | undefined) {
                 setHistoricalPlayersByYear(finalPlayers)
                 setTeamTopScorers(finalScorers)
             } catch (err) {
-                if (controller.signal.aborted) return
-                setHistoryError(err instanceof Error ? err.message : 'Virhe ladattaessa historiatietoja')
+                if (!controller.signal.aborted) setHistoryError(err instanceof Error ? err.message : 'Virhe')
             } finally {
                 if (!controller.signal.aborted) setLoadingPlayers(false)
             }
         }
-        fetchPlayers()
+        run()
         return () => { controller.abort() }
-    }, [relevantGroups, teamId, team?.players, allowedYears])
+    }, [relevantGroups, teamId, allowedYears])
 
     const statsByYear = useMemo(() => {
         const map = new Map<string, YearStats>()
@@ -219,22 +172,19 @@ export function useTeamData(teamId: string | undefined) {
         filteredMatches.forEach(m => {
             if (m.status !== MATCH_STATUS.PLAYED || !m.date) return
             const year = m.date.slice(0, 4)
-            if (!year || isNaN(parseInt(year))) return
             let s = map.get(year)
             if (!s) { s = empty(); map.set(year, s) }
-            s.played++
-            const allStats = map.get('all')!
-            allStats.played++
+            s.played++; map.get('all')!.played++
             const isA = m.team_A_id === teamId
             const myScore = parseInt(isA ? m.fs_A || '0' : m.fs_B || '0', 10)
             const oppScore = parseInt(isA ? m.fs_B || '0' : m.fs_A || '0', 10)
-            if (!isNaN(myScore) && !isNaN(oppScore)) {
-                s.goalsFor += myScore; s.goalsAgainst += oppScore
-                allStats.goalsFor += myScore; allStats.goalsAgainst += oppScore
-                if (myScore > oppScore) { s.wins++; allStats.wins++ }
-                else if (myScore < oppScore) { s.losses++; allStats.losses++ }
-                else { s.draws++; allStats.draws++ }
-            }
+            if (isNaN(myScore) || isNaN(oppScore)) return
+            s.goalsFor += myScore; s.goalsAgainst += oppScore
+            const all = map.get('all')!
+            all.goalsFor += myScore; all.goalsAgainst += oppScore
+            if (myScore > oppScore) { s.wins++; all.wins++ }
+            else if (myScore < oppScore) { s.losses++; all.losses++ }
+            else { s.draws++; all.draws++ }
         })
         for (const s of map.values()) {
             if (s.played > 0) {
@@ -295,7 +245,7 @@ export function useTeamData(teamId: string | undefined) {
         const nameOf = (c: { category_name?: string | { fi?: string }; category_name_translations?: { fi?: string } }) => {
             const name = c.category_name
             if (typeof name === 'string') return name
-            if (name && typeof name === 'object' && typeof name.fi === 'string') return name.fi
+            if (name && typeof name === 'object' && name.fi) return name.fi
             return c.category_name_translations?.fi || null
         }
         const add = (season: string, name: string | null) => {
@@ -358,34 +308,7 @@ export function useTeamData(teamId: string | undefined) {
     }, [teamTopScorers, selectedYear, years])
 
     const rosterYear = selectedYear === 'all' ? (years[0] || APP_CONFIG.CURRENT_YEAR) : selectedYear
-    const rosterPlayers: PlayerEntry[] = (() => {
-        const base = historicalPlayersByYear[rosterYear]?.length
-            ? historicalPlayersByYear[rosterYear]
-            : players.filter(p => !!p.player_id).map(p => ({
-                player_id: p.player_id!,
-                first_name: p.first_name || '',
-                last_name: p.last_name || '',
-                img_url: p.img_url,
-                birthyear: p.birthyear,
-                shirt_number: p.shirt_number,
-            }))
-        const byId = Object.fromEntries(players.filter(p => p.player_id).map(p => [String(p.player_id), p]))
-        const scorers = Object.fromEntries((teamTopScorers[rosterYear] || []).map(s => [s.player_id, s]))
-        return base.map(p => {
-            const tp = byId[p.player_id]
-            const sc = scorers[p.player_id]
-            return {
-                ...p,
-                birthyear: p.birthyear || tp?.birthyear,
-                shirt_number: p.shirt_number || tp?.shirt_number,
-                img_url: p.img_url || tp?.img_url,
-                matches: p.matches ?? sc?.matches,
-                goals: p.goals ?? sc?.goals,
-                assists: p.assists ?? sc?.assists,
-                warnings: p.warnings ?? sc?.warnings,
-            }
-        }).sort((a, b) => (b.goals || 0) - (a.goals || 0) || (b.matches || 0) - (a.matches || 0))
-    })()
+    const rosterPlayers = mergeRoster(historicalPlayersByYear[rosterYear] || [], players, teamTopScorers[rosterYear] || [])
 
     return {
         team, matches, loading, error, tab, setTab, selectedYear, setSelectedYear,
