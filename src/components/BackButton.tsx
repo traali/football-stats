@@ -3,17 +3,23 @@ import { ArrowLeft } from 'lucide-react'
 
 interface BackButtonProps {
     to?: string
+    fallbackTo?: string
     label?: string
     className?: string
 }
 
-export function BackButton({ to = '-1', label = 'Takaisin', className = '' }: BackButtonProps) {
+export function BackButton({ to = '-1', fallbackTo = '/', label = 'Takaisin', className = '' }: BackButtonProps) {
     const navigate = useNavigate()
     const handleClick = () => {
-        if (to === '-1') {
+        if (to !== '-1') {
+            navigate(to)
+            return
+        }
+        const idx = (window.history.state as { idx?: number } | null)?.idx
+        if (typeof idx === 'number' ? idx > 0 : window.history.length > 1) {
             navigate(-1)
         } else {
-            navigate(to)
+            navigate(fallbackTo)
         }
     }
 

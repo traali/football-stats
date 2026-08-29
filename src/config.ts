@@ -1,9 +1,5 @@
 import type { APIConfig } from './types/config'
 
-// =============================================================================
-// APP CONFIGURATION — Runtime constant
-// =============================================================================
-
 export const APP_CONFIG: APIConfig = {
     API_BASE_URL: "https://spl.torneopal.net/taso/rest/",
     API_HEADERS: {
@@ -27,4 +23,15 @@ export const APP_CONFIG: APIConfig = {
         },
         THROTTLE_DELAY: 100,
     },
+}
+
+export const APP_NAME = 'Pelaajatilastot'
+
+export const FEATURED = {
+    teamId: '185085',
+    teamName: 'PPJ/Laru sin',
+    competitionId: 'etejp26',
+    categoryId: 'P133',
+    groupId: '4',
+    calendarNote: 'Vierumäki 4.–6.9.2026',
 }
