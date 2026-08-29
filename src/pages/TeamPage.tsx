@@ -1,10 +1,13 @@
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { Users, Calendar, TrendingUp } from 'lucide-react'
 import { cn } from '../utils/cn'
 import { useTeamData } from '../hooks/useTeamData'
+import { usePlayerCardStats } from '../hooks/usePlayerCardStats'
 import { getTeamCategory } from '../utils/dataProcessors'
 import { APP_CONFIG } from '../config'
 import { StatBadge, BackButton, PageLayout, Card, PlayerAvatar, TeamHeader, TeamMatchList } from '../components'
+import { TeamRoster } from '../components/TeamRoster'
+import { useNavigate } from 'react-router-dom'
 
 export function TeamPage() {
     const { teamId = '' } = useParams()
@@ -26,61 +29,75 @@ export function TeamPage() {
         </div>
     )
 
-
-
     const {
         team, tab, setTab, selectedYear, setSelectedYear,
         displayStats, performanceComparison, statsByYear, years,
         playerTransitions, categoriesByYear, rosterPlayers,
-        rosterYear, loadingPlayers, historyError,
+        rosterYear, loadingPlayers, historyError, historicalPlayersByYear,
         currentScorers, pastMatches, upcoming, last5Form,
         fav, toggle,
     } = data
 
+    return (
+        <TeamPageReady
+            teamId={teamId}
+            navigate={navigate}
+            team={team}
+            tab={tab}
+            setTab={setTab}
+            selectedYear={selectedYear}
+            setSelectedYear={setSelectedYear}
+            displayStats={displayStats}
+            performanceComparison={performanceComparison}
+            statsByYear={statsByYear}
+            years={years}
+            playerTransitions={playerTransitions}
+            categoriesByYear={categoriesByYear}
+            rosterPlayers={rosterPlayers}
+            rosterYear={rosterYear}
+            loadingPlayers={loadingPlayers}
+            historyError={historyError}
+            historicalPlayersByYear={historicalPlayersByYear}
+            currentScorers={currentScorers}
+            pastMatches={pastMatches}
+            upcoming={upcoming}
+            last5Form={last5Form}
+            fav={fav}
+            toggle={toggle}
+        />
+    )
+}
+
+function TeamPageReady(props: ReturnType<typeof collect> extends never ? any : any) {
+    return <TeamPageBody {...props} />
+}
+
+function collect() { return null }
+
+function TeamPageBody({
+    teamId, navigate, team, tab, setTab, selectedYear, setSelectedYear,
+    displayStats, performanceComparison, statsByYear, years,
+    playerTransitions, categoriesByYear, rosterPlayers, rosterYear,
+    loadingPlayers, historyError, historicalPlayersByYear,
+    currentScorers, pastMatches, upcoming, last5Form, fav, toggle,
+}: any) {
+    const cardStats = usePlayerCardStats(rosterPlayers.map((p: { player_id: string }) => p.player_id), rosterYear)
+    const prevYear = String(parseInt(rosterYear, 10) - 1)
+    const lastSeasonById = Object.fromEntries(
+        (historicalPlayersByYear[prevYear] || []).map((p: { player_id: string; matches?: number; goals?: number }) => [p.player_id, { matches: p.matches, goals: p.goals }]),
+    )
+
     const rosterContent = (
-        <div className="space-y-4">
-            <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center justify-between gap-2">
-                <span className="flex items-center gap-2">
-                    <Users className="w-4 h-4 text-accent" />
-                    {selectedYear === 'all' ? 'Nykyinen kokoonpano' : `Kokoonpano ${rosterYear}`}
-                    <span className="text-text-muted font-normal text-xs">({rosterPlayers.length})</span>
-                </span>
-                {loadingPlayers && (
-                    <span className="w-3.5 h-3.5 border-2 border-accent border-t-transparent rounded-full animate-spin shrink-0" />
-                )}
-            </h3>
-            {historyError && (
-                <p className="text-xs text-semantic-red/80 bg-semantic-red/10 border border-semantic-red/20 rounded-lg px-3 py-2 mb-2">
-                    Historiatietoja ei voitu ladata: {historyError}
-                </p>
-            )}
-            {rosterPlayers.length === 0 ? (
-                <p className="text-text-muted text-sm text-center py-8 bg-surface-1 border border-border-hairline rounded-xl">Ei pelaajatietoja</p>
-            ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-3">
-                    {rosterPlayers.map(p => (
-                        <div
-                            key={p.player_id}
-                            onClick={() => p.player_id && navigate(`/player/${p.player_id}`)}
-                            className={`bg-surface-1 border border-border-hairline hover:border-accent/30 rounded-xl p-3.5 flex items-center justify-between hover:bg-surface-2 transition-all active:scale-[0.98] min-h-[56px] ${p.player_id ? 'cursor-pointer' : 'cursor-default opacity-60'}`}
-                        >
-                            <div className="flex items-center gap-3 min-w-0">
-                                <PlayerAvatar src={p.img_url} size="md" />
-                                <div className="min-w-0">
-                                    <p className="text-text-primary font-semibold text-sm truncate">{p.first_name} {p.last_name}</p>
-                                    {p.birthyear && <p className="text-text-muted text-xs font-mono mt-0.5">{p.birthyear}</p>}
-                                </div>
-                            </div>
-                            {p.shirt_number && (
-                                <span className="bg-accent/10 border border-accent/20 text-accent font-mono font-bold text-xs px-2 py-0.5 rounded shrink-0">
-                                    #{p.shirt_number}
-                                </span>
-                            )}
-                        </div>
-                    ))}
-                </div>
-            )}
-        </div>
+        <TeamRoster
+            players={rosterPlayers}
+            teamName={team?.team_name}
+            level={team ? getTeamCategory(team, rosterYear) || '' : ''}
+            rosterYear={rosterYear}
+            loading={loadingPlayers}
+            error={historyError}
+            lastSeasonById={lastSeasonById}
+            cardStats={cardStats}
+        />
     )
 
     const transitionsContent = (
@@ -108,7 +125,7 @@ export function TeamPage() {
                     </p>
                 ) : (
                     <div className="grid grid-cols-1 gap-2">
-                        {playerTransitions.newPlayers.map(p => (
+                        {playerTransitions.newPlayers.map((p: { player_id: string; img_url?: string; first_name: string; last_name: string }) => (
                             <div
                                 key={p.player_id}
                                 onClick={() => navigate(`/player/${p.player_id}`)}
@@ -156,7 +173,7 @@ export function TeamPage() {
                     </p>
                 ) : (
                     <div className="grid grid-cols-1 gap-2">
-                        {playerTransitions.gonePlayers.map(p => (
+                        {playerTransitions.gonePlayers.map((p: { player_id: string; img_url?: string; first_name: string; last_name: string }) => (
                             <div
                                 key={p.player_id}
                                 onClick={() => navigate(`/player/${p.player_id}`)}
@@ -185,7 +202,7 @@ export function TeamPage() {
                 <TrendingUp className="w-4 h-4 text-accent" /> Parhaat maalintekijät
             </h3>
             <div className="space-y-1">
-                {currentScorers.map((p, i) => (
+                {currentScorers.map((p: { player_id: string; first_name: string; last_name: string; goals: number; assists: number }, i: number) => (
                     <div
                         key={p.player_id}
                         onClick={() => navigate(`/player/${p.player_id}`)}
@@ -235,7 +252,7 @@ export function TeamPage() {
                             >
                                 Yhteensä
                             </button>
-                            {years.map(y => (
+                            {years.map((y: string) => (
                                 <button
                                     key={y}
                                     onClick={() => setSelectedYear(y)}
@@ -286,7 +303,7 @@ export function TeamPage() {
                             )}
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                            {years.map(yr => {
+                            {years.map((yr: string) => {
                                 const yrStats = statsByYear.get(yr)
                                 if (!yrStats || yrStats.played === 0) return null
                                 const isActive = selectedYear === yr
@@ -352,11 +369,7 @@ export function TeamPage() {
                 </div>
                 <div>
                     {tab === 'matches' ? (
-                        <TeamMatchList
-                            upcoming={upcoming}
-                            pastMatches={pastMatches}
-                            teamId={teamId}
-                        />
+                        <TeamMatchList upcoming={upcoming} pastMatches={pastMatches} teamId={teamId} />
                     ) : (
                         <div className="space-y-6">
                             {rosterContent}
@@ -374,11 +387,7 @@ export function TeamPage() {
                     {transitionsContent}
                 </div>
                 <div className="col-span-2 space-y-6">
-                    <TeamMatchList
-                        upcoming={upcoming}
-                        pastMatches={pastMatches}
-                        teamId={teamId}
-                    />
+                    <TeamMatchList upcoming={upcoming} pastMatches={pastMatches} teamId={teamId} />
                 </div>
             </div>
         </PageLayout>
