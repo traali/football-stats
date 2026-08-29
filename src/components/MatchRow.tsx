@@ -9,11 +9,17 @@ interface MatchRowBase {
     className?: string
 }
 
-export function MatchRowPast({ matchId, date, opponentName, myScore, oppScore, resultIndicator, className }: MatchRowBase & {
+function Pos({ n }: { n?: string | number }) {
+    if (n === undefined || n === null || n === '') return null
+    return <span className="text-text-muted font-mono text-[10px] shrink-0">#{n}</span>
+}
+
+export function MatchRowPast({ matchId, date, opponentName, myScore, oppScore, resultIndicator, opponentStanding, className }: MatchRowBase & {
     opponentName: string
     myScore?: string | null
     oppScore?: string | null
     resultIndicator?: 'V' | 'H' | 'T'
+    opponentStanding?: string | number
     className?: string
 }) {
     const navigate = useNavigate()
@@ -28,7 +34,10 @@ export function MatchRowPast({ matchId, date, opponentName, myScore, oppScore, r
             )}
         >
             <span className="text-text-muted w-16 shrink-0 text-xs">{formatDate(date, 'with-year')}</span>
-            <span className="text-text-primary truncate flex-1 text-right pr-2">{opponentName}</span>
+            <span className="text-text-primary truncate flex-1 text-right pr-2 flex items-center justify-end gap-1.5 min-w-0">
+                <span className="truncate">{opponentName}</span>
+                <Pos n={opponentStanding} />
+            </span>
             <span className="font-mono font-bold mx-2 shrink-0 flex items-center gap-1.5">
                 <span className="text-text-primary">
                     {myScore !== undefined && oppScore !== undefined ? `${myScore}–${oppScore}` : '–'}
@@ -80,9 +89,11 @@ export function MatchRowSymmetric({ matchId, date, teamAName, teamBName, scoreA,
     )
 }
 
-export function MatchRowFixture({ matchId, date, teamAName, teamBName, className }: MatchRowBase & {
+export function MatchRowFixture({ matchId, date, teamAName, teamBName, standingA, standingB, className }: MatchRowBase & {
     teamAName: string
     teamBName: string
+    standingA?: string | number
+    standingB?: string | number
     className?: string
 }) {
     const navigate = useNavigate()
@@ -96,9 +107,15 @@ export function MatchRowFixture({ matchId, date, teamAName, teamBName, className
             )}
         >
             <span className="text-text-muted w-16 shrink-0 text-xs">{formatDate(date, 'with-year')}</span>
-            <span className="text-text-primary truncate text-right flex-1 pr-2">{teamAName}</span>
-            <span className="text-text-muted mx-2 shrink-0 font-mono text-xs">vs</span>
-            <span className="text-text-primary truncate flex-1 pl-2">{teamBName}</span>
+            <span className="text-text-primary truncate text-right flex-1 pr-2 flex items-center justify-end gap-1 min-w-0">
+                <span className="truncate">{teamAName}</span>
+                <Pos n={standingA} />
+            </span>
+            <span className="text-text-muted mx-1 shrink-0 font-mono text-xs">vs</span>
+            <span className="text-text-primary truncate flex-1 pl-2 flex items-center gap-1 min-w-0">
+                <Pos n={standingB} />
+                <span className="truncate">{teamBName}</span>
+            </span>
         </div>
     )
 }
