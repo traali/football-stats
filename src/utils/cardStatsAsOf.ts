@@ -4,9 +4,13 @@ import type { PlayerMatchEntry } from '../types'
 export interface CardSeriesRow {
     category: string
     half: 'kevät' | 'syksy' | ''
+    teamName: string
     matches: number
     goals: number
     warnings: number
+    wins: number
+    draws: number
+    losses: number
 }
 
 export interface CardSeasonStats {
@@ -29,6 +33,14 @@ function halfOf(date?: string): 'kevät' | 'syksy' | '' {
     const month = parseInt(date.slice(5, 7), 10)
     if (!month) return ''
     return month <= 6 ? 'kevät' : 'syksy'
+}
+
+function wld(m: PlayerMatchEntry): 'V' | 'T' | 'H' | null {
+    const isA = m.team_id === m.team_A_id
+    const my = parseInt((isA ? m.fs_A : m.fs_B) || '', 10)
+    const opp = parseInt((isA ? m.fs_B : m.fs_A) || '', 10)
+    if (Number.isNaN(my) || Number.isNaN(opp)) return null
+    return my > opp ? 'V' : my < opp ? 'H' : 'T'
 }
 
 export function cardStatsAsOf(
@@ -57,11 +69,18 @@ export function cardStatsAsOf(
             out.warningsThisYear += warnings
             const half = halfOf(m.date)
             const category = m.category_name || 'Sarja'
-            const key = `${category}|${half}`
-            const row = byKey.get(key) || { category, half, matches: 0, goals: 0, warnings: 0 }
+            const teamName = m.team_name || (m.team_id === m.team_A_id ? m.team_A_name : m.team_B_name) || ''
+            const key = `${category}|${half}|${teamName}`
+            const row = byKey.get(key) || {
+                category, half, teamName, matches: 0, goals: 0, warnings: 0, wins: 0, draws: 0, losses: 0,
+            }
             row.matches++
             row.goals += goals
             row.warnings += warnings
+            const r = wld(m)
+            if (r === 'V') row.wins++
+            else if (r === 'H') row.losses++
+            else if (r === 'T') row.draws++
             byKey.set(key, row)
         } else if (y === prev) {
             out.gamesPlayedLastSeason++
