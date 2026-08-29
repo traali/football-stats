@@ -1,48 +1,47 @@
 import { MATCH_STATUS } from '../types/matches'
 
-/**
- * Session-scoped in-memory cache for API responses.
- *
- * Rules:
- * - Cache is keyed by endpoint + sorted params string.
- * - Each entry has a TTL after which it is considered stale and re-fetched.
- * - In-flight requests are stored as Promises so parallel callers for the
- *   same key get the same Promise (deduplication — no double-fetching).
- * - Match data (getMatch) is ONLY cached when match.status === MATCH_STATUS.PLAYED.
- *   Fixtures and live games are never cached so scores stay real-time.
- * - Cache is NOT persisted (resets on page reload) — we want fresh data
- *   each session but instant re-navigation within a session.
- *
- * DO NOT add localStorage persistence here: API data changes during the day.
- */
-
-const TTL_MS: Record<string, number> = {
-    getMatch: 10 * 60 * 1000,       // 10 min — but only for finished matches
-    getGroup: 5 * 60 * 1000,        // 5 min — standings change during match days
-    getGroups: 5 * 60 * 1000,
-    getTeam: 10 * 60 * 1000,        // 10 min — rosters rarely change
-    getPlayer: 10 * 60 * 1000,
-    getCompetitions: 15 * 60 * 1000,
-    getCategories: 15 * 60 * 1000,
-
-    getSeasons: 15 * 60 * 1000,
-    getMatches: 5 * 60 * 1000,
+const MEMORY_TTL_MS: Record<string, number> = {
+    getMatch: 30 * 60 * 1000,
+    getGroup: 15 * 60 * 1000,
+    getGroups: 15 * 60 * 1000,
+    getTeam: 30 * 60 * 1000,
+    getPlayer: 30 * 60 * 1000,
+    getCompetitions: 60 * 60 * 1000,
+    getCategories: 60 * 60 * 1000,
+    getSeasons: 60 * 60 * 1000,
+    getMatches: 10 * 60 * 1000,
 }
 
-const DEFAULT_TTL_MS = 5 * 60 * 1000
-const MAX_CACHE_SIZE = 500
+const PERSIST_TTL_MS: Record<string, number> = {
+    getMatch: 7 * 24 * 60 * 60 * 1000,
+    getGroup: 30 * 60 * 1000,
+    getGroups: 30 * 60 * 1000,
+    getTeam: 12 * 60 * 60 * 1000,
+    getPlayer: 12 * 60 * 60 * 1000,
+    getCompetitions: 24 * 60 * 60 * 1000,
+    getCategories: 24 * 60 * 60 * 1000,
+    getSeasons: 24 * 60 * 60 * 1000,
+    getMatches: 15 * 60 * 1000,
+}
+
+const DEFAULT_TTL_MS = 10 * 60 * 1000
+const MAX_MEMORY = 500
+const MAX_PERSIST = 80
+const PERSIST_KEY = 'fs.apiPersist.v1'
 
 interface CacheEntry<T> {
     value: T
     expiresAt: number
 }
 
-// Stores resolved values
+interface PersistFile {
+    [key: string]: { value: unknown; expiresAt: number; savedAt: number }
+}
+
 const cache = new Map<string, CacheEntry<unknown>>()
-// Stores in-flight promises to deduplicate concurrent requests
 const inFlight = new Map<string, Promise<unknown>>()
 
-function makeCacheKey(endpoint: string, params: Record<string, string>): string {
+export function makeCacheKey(endpoint: string, params: Record<string, string>): string {
     const sorted = Object.entries(params)
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([k, v]) => `${k}=${v}`)
@@ -50,9 +49,56 @@ function makeCacheKey(endpoint: string, params: Record<string, string>): string 
     return `${endpoint}?${sorted}`
 }
 
-/**
- * Try to get a cached value. Returns undefined if missing or stale.
- */
+function matchStatusOf(value: unknown): string | undefined {
+    if (value && typeof value === 'object' && 'status' in value) {
+        return String((value as { status?: string }).status || '')
+    }
+    return undefined
+}
+
+function allowPersist(endpoint: string, value: unknown, matchStatus?: string): boolean {
+    if (endpoint === 'getMatch') {
+        const st = matchStatus || matchStatusOf(value)
+        return st === MATCH_STATUS.PLAYED
+    }
+    return true
+}
+
+function readPersist(): PersistFile {
+    if (typeof localStorage === 'undefined') return {}
+    try {
+        const raw = localStorage.getItem(PERSIST_KEY)
+        return raw ? JSON.parse(raw) as PersistFile : {}
+    } catch {
+        return {}
+    }
+}
+
+function writePersist(file: PersistFile) {
+    if (typeof localStorage === 'undefined') return
+    const entries = Object.entries(file).sort((a, b) => b[1].savedAt - a[1].savedAt).slice(0, MAX_PERSIST)
+    try {
+        localStorage.setItem(PERSIST_KEY, JSON.stringify(Object.fromEntries(entries)))
+    } catch {
+        try {
+            localStorage.setItem(PERSIST_KEY, JSON.stringify(Object.fromEntries(entries.slice(0, 20))))
+        } catch { /* quota */ }
+    }
+}
+
+function getPersisted<T>(key: string): CacheEntry<T> | undefined {
+    const row = readPersist()[key]
+    if (!row) return undefined
+    return { value: row.value as T, expiresAt: row.expiresAt }
+}
+
+function setPersisted<T>(key: string, endpoint: string, value: T) {
+    const ttl = PERSIST_TTL_MS[endpoint] ?? DEFAULT_TTL_MS
+    const file = readPersist()
+    file[key] = { value, expiresAt: Date.now() + ttl, savedAt: Date.now() }
+    writePersist(file)
+}
+
 export function getCached<T>(endpoint: string, params: Record<string, string>): T | undefined {
     const key = makeCacheKey(endpoint, params)
     const entry = cache.get(key) as CacheEntry<T> | undefined
@@ -64,38 +110,24 @@ export function getCached<T>(endpoint: string, params: Record<string, string>): 
     return entry.value
 }
 
-/**
- * Store a value in the cache.
- * For 'getMatch', only cache when matchStatus === MATCH_STATUS.PLAYED.
- * Pass matchStatus = undefined for all other endpoints.
- */
 export function setCached<T>(
     endpoint: string,
     params: Record<string, string>,
     value: T,
     matchStatus?: string,
 ): void {
-    // Match cache rule: never cache fixtures or live games
-    if (endpoint === 'getMatch' && matchStatus !== MATCH_STATUS.PLAYED) return
+    if (!allowPersist(endpoint, value, matchStatus) && endpoint === 'getMatch') return
 
-    const ttl = TTL_MS[endpoint] ?? DEFAULT_TTL_MS
+    const ttl = MEMORY_TTL_MS[endpoint] ?? DEFAULT_TTL_MS
     const key = makeCacheKey(endpoint, params)
-
-    if (cache.size >= MAX_CACHE_SIZE) {
+    if (cache.size >= MAX_MEMORY) {
         const oldest = cache.keys().next().value
         if (oldest !== undefined) cache.delete(oldest)
     }
-
     cache.set(key, { value, expiresAt: Date.now() + ttl })
+    if (allowPersist(endpoint, value, matchStatus)) setPersisted(key, endpoint, value)
 }
 
-/**
- * Wrap a fetch function with cache + in-flight deduplication.
- * The fetchFn receives the cache key and should return a fresh value.
- *
- * Usage:
- *   const data = await withCache('getTeam', { team_id: '123' }, () => actualFetch())
- */
 export async function withCache<T>(
     endpoint: string,
     params: Record<string, string>,
@@ -104,32 +136,44 @@ export async function withCache<T>(
 ): Promise<T> {
     const key = makeCacheKey(endpoint, params)
 
-    // 1. Serve from cache if fresh
-    const cached = getCached<T>(endpoint, params)
-    if (cached !== undefined) return cached
+    const mem = getCached<T>(endpoint, params)
+    if (mem !== undefined) return mem
 
-    // 2. Deduplicate: if same request is already in-flight, wait for it
-    if (inFlight.has(key)) {
-        return inFlight.get(key) as Promise<T>
+    const disk = getPersisted<T>(key)
+    if (disk) {
+        cache.set(key, { value: disk.value, expiresAt: Date.now() + (MEMORY_TTL_MS[endpoint] ?? DEFAULT_TTL_MS) })
+        if (Date.now() < disk.expiresAt) return disk.value
+        if (inFlight.has(key)) return disk.value
+        const bg = fetchFn().then(value => {
+            setCached(endpoint, params, value, matchStatus || matchStatusOf(value))
+            inFlight.delete(key)
+            return value
+        }).catch(() => {
+            inFlight.delete(key)
+            return disk.value
+        })
+        inFlight.set(key, bg)
+        return disk.value
     }
 
-    // 3. Kick off real fetch, store in inFlight map
+    if (inFlight.has(key)) return inFlight.get(key) as Promise<T>
+
     const promise = fetchFn().then(value => {
-        setCached(endpoint, params, value, matchStatus)
+        setCached(endpoint, params, value, matchStatus || matchStatusOf(value))
         inFlight.delete(key)
         return value
     }).catch(err => {
         inFlight.delete(key)
         throw err
     })
-
     inFlight.set(key, promise)
-    return promise
+    return promise as Promise<T>
 }
 
-/** Manually invalidate a specific cache entry (e.g. after a user action). */
 export function invalidateCache(endpoint: string, params: Record<string, string>): void {
-    cache.delete(makeCacheKey(endpoint, params))
+    const key = makeCacheKey(endpoint, params)
+    cache.delete(key)
+    const file = readPersist()
+    delete file[key]
+    writePersist(file)
 }
-
-
