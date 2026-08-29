@@ -22,6 +22,29 @@ const LEVEL_FI: Record<string, string> = {
     harraste: 'Harraste',
 }
 
+function WdlDots({ wins = 0, draws = 0, losses = 0 }: { wins?: number; draws?: number; losses?: number }) {
+    const dots: Array<'V' | 'T' | 'H'> = [
+        ...Array.from({ length: wins }, () => 'V' as const),
+        ...Array.from({ length: draws }, () => 'T' as const),
+        ...Array.from({ length: losses }, () => 'H' as const),
+    ]
+    if (!dots.length) return null
+    return (
+        <span className="inline-flex items-center gap-0.5 shrink-0" aria-label={`${wins}V ${draws}T ${losses}H`}>
+            {dots.map((d, i) => (
+                <span
+                    key={`${d}-${i}`}
+                    className={
+                        d === 'V' ? 'w-1.5 h-1.5 rounded-full bg-semantic-green' :
+                        d === 'H' ? 'w-1.5 h-1.5 rounded-full bg-semantic-red' :
+                        'w-1.5 h-1.5 rounded-full bg-text-muted'
+                    }
+                />
+            ))}
+        </span>
+    )
+}
+
 export function PlayerCard({ stats, eligibility }: { stats: PlayerStats; eligibility?: PlayerEligibilityResult }) {
     const [imgError, setImgError] = useState(false)
     const series = stats.seriesThisYear || []
@@ -72,15 +95,24 @@ export function PlayerCard({ stats, eligibility }: { stats: PlayerStats; eligibi
             )}
 
             {series.length > 0 && (
-                <div className="space-y-1">
+                <div className="space-y-1.5">
                     {series.map(row => (
-                        <div key={`${row.category}-${row.half}`} className="flex items-baseline justify-between gap-2 text-xs">
-                            <span className="text-text-primary truncate">
-                                {row.category}{row.half ? ` · ${row.half}` : ''}
-                            </span>
-                            <span className="text-text-muted shrink-0 font-mono">
-                                {row.matches} ott · {row.goals} m{row.warnings ? ` · ${row.warnings} var` : ''}
-                            </span>
+                        <div key={`${row.category}-${row.half}-${row.teamName || ''}`} className="space-y-0.5">
+                            <div className="flex items-baseline justify-between gap-2 text-xs">
+                                <span className="text-text-primary truncate">
+                                    {row.category}{row.half ? ` · ${row.half}` : ''}
+                                    {row.teamName && row.teamName !== stats.currentTeamName ? ` · ${row.teamName}` : ''}
+                                </span>
+                                <span className="text-text-muted shrink-0 font-mono">
+                                    {row.goals} m · {row.warnings ?? 0} var
+                                </span>
+                            </div>
+                            <div className="flex items-center justify-between gap-2">
+                                <WdlDots wins={row.wins} draws={row.draws} losses={row.losses} />
+                                <span className="text-[10px] text-text-muted font-mono">
+                                    {row.wins ?? 0}V {row.draws ?? 0}T {row.losses ?? 0}H · {row.matches} ott
+                                </span>
+                            </div>
                         </div>
                     ))}
                 </div>
