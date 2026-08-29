@@ -1,5 +1,6 @@
 import { APP_CONFIG } from '../config'
 import { withCache, setCached } from './cache'
+import { getViewedMatch, rememberViewedMatch } from './viewedCache'
 import type {
     Category,
     Competition,
@@ -66,7 +67,6 @@ async function waitForRateLimit(endpoint?: string, signal?: AbortSignal): Promis
 const FETCH_TIMEOUT_MS = 10000
 const RETRY_DELAYS_MS = [500, 1000, 2000]
 
-/** Taso getPlayer sometimes prepends PHP HTML. Take the first JSON object. */
 export function parseTasoPayload(raw: string): unknown {
     const start = raw.indexOf('{')
     if (start < 0) throw new APIHttpError('Palvelin palautti virheellisen vastauksen')
@@ -163,12 +163,20 @@ export async function batchFetch<T>(
 
 export async function getMatchDetails(matchId: string, signal?: AbortSignal): Promise<MatchDetails> {
     const params = { match_id: matchId }
-    return withCache('getMatch', params, async () => {
-        const data = await fetchAPIData<{ match: MatchDetails }>('getMatch', params, signal)
-        if (!data.match) throw new APINotFoundError(`Ottelua ei löydy (ID: ${matchId})`)
-        setCached('getMatch', params, data.match, data.match.status)
-        return data.match
-    })
+    try {
+        const match = await withCache('getMatch', params, async () => {
+            const data = await fetchAPIData<{ match: MatchDetails }>('getMatch', params, signal)
+            if (!data.match) throw new APINotFoundError(`Ottelua ei löydy (ID: ${matchId})`)
+            setCached('getMatch', params, data.match, data.match.status)
+            return data.match
+        })
+        rememberViewedMatch(match)
+        return match
+    } catch (err) {
+        const local = getViewedMatch(matchId)
+        if (local) return local
+        throw err
+    }
 }
 
 export async function getGroupDetails(competitionId: string, categoryId: string, groupId: string, signal?: AbortSignal): Promise<GroupDetails | null> {
