@@ -104,6 +104,7 @@ export interface SquadEligibilityResult {
     region: RegionId
     downQuotaUsed: number
     downQuotaMax: number
+    exceptionUsed?: number
     players: PlayerEligibilityResult[]
     squadVerdict: Verdict
 }
