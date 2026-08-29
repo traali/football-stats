@@ -1,8 +1,11 @@
+import { useEffect, useState } from 'react'
 import { Calendar } from 'lucide-react'
 import type { DiscoveryMatch, TeamResponse } from '../types'
 import { Card, MatchRowPast, MatchRowFixture } from '.'
 import { isUpcomingDate } from '../utils/dates'
 import { TeamStandingsBlock } from './TeamStandingsBlock'
+import { getTeamProfile } from '../services/api'
+import { APP_CONFIG } from '../config'
 
 export function TeamMatchList({ upcoming, pastMatches, teamId, team, year }: {
     upcoming: DiscoveryMatch[]
@@ -11,10 +14,19 @@ export function TeamMatchList({ upcoming, pastMatches, teamId, team, year }: {
     team?: TeamResponse | null
     year?: string
 }) {
+    const [resolved, setResolved] = useState<TeamResponse | null>(team || null)
+    useEffect(() => {
+        if (team) { setResolved(team); return }
+        let cancelled = false
+        getTeamProfile(teamId).then(t => { if (!cancelled) setResolved(t) }).catch(() => {})
+        return () => { cancelled = true }
+    }, [team, teamId])
+
     const future = upcoming.filter(m => isUpcomingDate(m.date))
+    const tableYear = year || APP_CONFIG.CURRENT_YEAR
     return (
         <div className="space-y-6">
-            {team && year && <TeamStandingsBlock team={team} teamId={teamId} year={year} />}
+            <TeamStandingsBlock team={resolved} teamId={teamId} year={tableYear} />
 
             {future.length > 0 && (
                 <Card className="space-y-3">
