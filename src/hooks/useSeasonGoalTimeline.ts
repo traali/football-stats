@@ -13,13 +13,24 @@ export interface GoalMoment {
     score: string
 }
 
+export interface PlayedLineup {
+    date: string
+    matchId: string
+    opponent: string
+    score: string
+    won: boolean | null
+    names: string[]
+}
+
 export function useSeasonGoalTimeline(teamId: string | undefined, matches: MatchSummary[] | undefined) {
     const [moments, setMoments] = useState<GoalMoment[]>([])
+    const [lineups, setLineups] = useState<PlayedLineup[]>([])
     const [loading, setLoading] = useState(false)
 
     useEffect(() => {
         if (!teamId || !matches?.length) {
             setMoments([])
+            setLineups([])
             return
         }
         const played = matches.filter(m =>
@@ -29,6 +40,7 @@ export function useSeasonGoalTimeline(teamId: string | undefined, matches: Match
         )
         if (!played.length) {
             setMoments([])
+            setLineups([])
             return
         }
         let cancelled = false
@@ -37,10 +49,30 @@ export function useSeasonGoalTimeline(teamId: string | undefined, matches: Match
             .then(details => {
                 if (cancelled) return
                 const out: GoalMoment[] = []
+                const lus: PlayedLineup[] = []
                 details.forEach((d, i) => {
                     if (!d) return
                     const summary = played[i]
-                    const opp = summary.team_A_id === teamId ? summary.team_B_name : summary.team_A_name
+                    const isA = summary.team_A_id === teamId
+                    const opp = isA ? summary.team_B_name : summary.team_A_name
+                    const my = Number(isA ? d.fs_A ?? summary.fs_A : d.fs_B ?? summary.fs_B)
+                    const their = Number(isA ? d.fs_B ?? summary.fs_B : d.fs_A ?? summary.fs_A)
+                    const won = Number.isNaN(my) || Number.isNaN(their) ? null : my > their
+                    const names = (d.lineups || [])
+                        .filter((p: { team_id?: string }) => String(p.team_id) === String(teamId))
+                        .map((p: { first_name?: string; last_name?: string; shirt_number?: string }) => {
+                            const n = `${p.first_name || ''} ${p.last_name || ''}`.trim()
+                            return p.shirt_number ? `#${p.shirt_number} ${n}` : n
+                        })
+                        .filter(Boolean)
+                    lus.push({
+                        date: d.date || summary.date,
+                        matchId: d.match_id || summary.match_id,
+                        opponent: opp,
+                        score: `${my}–${their}`,
+                        won,
+                        names,
+                    })
                     for (const g of d.goals || []) {
                         const scored = g.team_id === teamId
                         out.push({
@@ -55,12 +87,14 @@ export function useSeasonGoalTimeline(teamId: string | undefined, matches: Match
                     }
                 })
                 out.sort((a, b) => (a.date + a.minute).localeCompare(b.date + b.minute))
+                lus.sort((a, b) => a.date.localeCompare(b.date))
                 setMoments(out)
+                setLineups(lus)
             })
-            .catch(() => { if (!cancelled) setMoments([]) })
+            .catch(() => { if (!cancelled) { setMoments([]); setLineups([]) } })
             .finally(() => { if (!cancelled) setLoading(false) })
         return () => { cancelled = true }
     }, [teamId, matches])
 
-    return { moments, loading }
+    return { moments, lineups, loading }
 }
