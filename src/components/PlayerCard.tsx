@@ -12,9 +12,20 @@ const cardVariants: Variants = {
     visible: { opacity: 1, y: 0 },
 }
 
+const LEVEL_FI: Record<string, string> = {
+    liiga: 'Liiga',
+    ykkonen: 'Ykkönen',
+    kakkonen: 'Kakkonen',
+    kolmonen: 'Kolmonen',
+    nelonen: 'Nelonen',
+    vitonen: 'Vitonen',
+    harraste: 'Harraste',
+}
+
 export function PlayerCard({ stats, eligibility }: { stats: PlayerStats; eligibility?: PlayerEligibilityResult }) {
     const [imgError, setImgError] = useState(false)
     const showGrid = stats.gamesPlayedThisYear > 0 || stats.goalsThisYear > 0 || (stats.goalsInMatch || 0) > 0 || stats.warningsThisYear > 0
+    const lastHigher = eligibility?.lastOfficialHigher
 
     const inner = (
         <motion.div variants={cardVariants} className="bg-surface-1 border border-border-hairline rounded-xl p-5 space-y-5 hover:border-accent/30">
@@ -45,10 +56,10 @@ export function PlayerCard({ stats, eligibility }: { stats: PlayerStats; eligibi
                                 {stats.currentTeamName}{stats.currentTeamName && stats.teamsThisYear ? ' · ' : ''}{stats.teamsThisYear}
                             </p>
                         )}
-                        <p className="text-text-secondary text-sm">{[stats.birthYear, stats.position_fi || 'Pelaaja', stats.overage ? 'Y' : ''].filter(Boolean).join(' · ')}</p>
-                        {eligibility?.countsTowardDownQuota && eligibility.lastOfficialHigher && (
-                            <p className="text-[11px] text-text-muted mt-1">
-                                Viimeisin ylempi: {eligibility.lastOfficialHigher.level} {eligibility.lastOfficialHigher.date}
+                        <p className="text-text-secondary text-sm">{[stats.birthYear, stats.position_fi || 'Pelaaja'].filter(Boolean).join(' · ')}</p>
+                        {lastHigher && (
+                            <p className="text-[11px] text-semantic-amber font-semibold mt-1.5">
+                                Edellinen peli ylempänä: {LEVEL_FI[lastHigher.level] || lastHigher.level} {lastHigher.date}
                             </p>
                         )}
                     </div>

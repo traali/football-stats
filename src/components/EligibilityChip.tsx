@@ -8,18 +8,11 @@ const STYLES = {
 } as const
 
 export function EligibilityChip({ result }: { result?: PlayerEligibilityResult }) {
-    if (!result) return null
-    const label = result.verdict === 'block'
-        ? 'Estetty'
-        : result.countsTowardDownQuota
-            ? 'Ylhäältä'
-            : result.verdict === 'warn'
-                ? 'Tarkista'
-                : 'OK'
-    const hint = result.reasons[0]?.messageFi
+    if (!result || result.verdict === 'ok') return null
+    const label = result.verdict === 'block' ? 'Estetty' : 'Tarkista'
     return (
         <span
-            title={hint}
+            title={result.reasons[0]?.messageFi}
             className={cn(
                 'inline-flex items-center text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded border',
                 STYLES[result.verdict],
@@ -30,21 +23,28 @@ export function EligibilityChip({ result }: { result?: PlayerEligibilityResult }
     )
 }
 
-export function SquadQuotaBar({ used, max, name }: { used: number; max: number; name?: string }) {
+export function SquadQuotaBar({
+    used, max, exceptions, name,
+}: {
+    used: number
+    max: number
+    exceptions?: number
+    name?: string
+}) {
     const over = used > max
     return (
-        <div className="flex flex-col items-end gap-0.5 shrink-0" title="KM 2026 §15 ylhäältä alas">
-            <span className={cn(
-                'text-[10px] font-bold uppercase tracking-wider',
-                over ? 'text-semantic-red' : 'text-text-muted',
-            )}>
-                {name ? `${name} · ` : ''}Ylhäältä alas {used}/{max}
+        <div className="flex flex-col items-end gap-0.5 shrink-0 text-right" title="KM 2026 §15 ylhäältä alas">
+            {name && <span className="text-[10px] text-text-muted truncate max-w-[160px]">{name}</span>}
+            <span className={cn('text-[11px] font-bold', over ? 'text-semantic-red' : 'text-text-primary')}>
+                Ylhäältä {used}/{max}
             </span>
+            {typeof exceptions === 'number' && exceptions > 0 && (
+                <span className="text-[11px] font-semibold text-semantic-amber">
+                    Poikkeuslupa {exceptions}
+                </span>
+            )}
             <div className="w-24 h-1 rounded-full bg-surface-3 overflow-hidden">
-                <div
-                    className={cn('h-full', over ? 'bg-semantic-red' : 'bg-accent')}
-                    style={{ width: `${Math.min(100, max === 0 ? 0 : (used / max) * 100)}%` }}
-                />
+                <div className={cn('h-full', over ? 'bg-semantic-red' : 'bg-accent')} style={{ width: `${Math.min(100, max === 0 ? 0 : (used / max) * 100)}%` }} />
             </div>
         </div>
     )

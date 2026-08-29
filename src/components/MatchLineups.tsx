@@ -17,6 +17,7 @@ function TeamLineup({
     squad?: SquadEligibilityResult
     byPlayer: Record<string, PlayerEligibilityResult>
 }) {
+    const exceptions = players.filter(p => p.overage).length
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between gap-3">
@@ -24,7 +25,13 @@ function TeamLineup({
                     <div className="w-1 h-8 mr-4 rounded-full bg-accent shrink-0" />
                     <h2 className="text-2xl font-bold text-text-primary truncate">{name}</h2>
                 </div>
-                {squad && <SquadQuotaBar used={squad.downQuotaUsed} max={squad.downQuotaMax} />}
+                {squad && (
+                    <SquadQuotaBar
+                        used={squad.downQuotaUsed}
+                        max={squad.downQuotaMax}
+                        exceptions={exceptions + (squad.exceptionUsed || 0)}
+                    />
+                )}
             </div>
             <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-5" variants={stagger} initial="hidden" animate="visible">
                 {players.map(player => (
