@@ -1,16 +1,21 @@
 import { Calendar } from 'lucide-react'
-import type { DiscoveryMatch } from '../types'
+import type { DiscoveryMatch, TeamResponse } from '../types'
 import { Card, MatchRowPast, MatchRowFixture } from '.'
 import { isUpcomingDate } from '../utils/dates'
+import { TeamStandingsBlock } from './TeamStandingsBlock'
 
-export function TeamMatchList({ upcoming, pastMatches, teamId }: {
+export function TeamMatchList({ upcoming, pastMatches, teamId, team, year }: {
     upcoming: DiscoveryMatch[]
     pastMatches: DiscoveryMatch[]
     teamId: string
+    team?: TeamResponse | null
+    year?: string
 }) {
     const future = upcoming.filter(m => isUpcomingDate(m.date))
     return (
         <div className="space-y-6">
+            {team && year && <TeamStandingsBlock team={team} teamId={teamId} year={year} />}
+
             {future.length > 0 && (
                 <Card className="space-y-3">
                     <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
