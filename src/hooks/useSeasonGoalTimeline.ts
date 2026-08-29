@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { batchFetch, getMatchDetails } from '../services/api'
 import { MATCH_STATUS } from '../types'
-import type { MatchDetails, MatchSummary } from '../types'
+import type { MatchSummary } from '../types'
 
 export interface GoalMoment {
     date: string
