@@ -23,3 +23,15 @@ export function formatDayName(dateStr: string): string {
     const d = new Date(dateStr + 'T12:00:00')
     return days[d.getDay()]
 }
+
+export function todayISO(now = new Date()): string {
+    const y = now.getFullYear()
+    const m = String(now.getMonth() + 1).padStart(2, '0')
+    const d = String(now.getDate()).padStart(2, '0')
+    return `${y}-${m}-${d}`
+}
+
+/** Taso sometimes leaves old games as Fixture. Upcoming lists must drop those. */
+export function isUpcomingDate(date?: string, now = new Date()): boolean {
+    return !!date && date >= todayISO(now)
+}
