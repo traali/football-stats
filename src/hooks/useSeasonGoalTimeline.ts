@@ -22,15 +22,18 @@ export interface PlayedLineup {
     names: string[]
 }
 
-export function useSeasonGoalTimeline(teamId: string | undefined, matches: MatchSummary[] | undefined) {
+export function useSeasonGoalTimeline(teamId: string | undefined, matches: MatchSummary[] | undefined, enabled = true) {
     const [moments, setMoments] = useState<GoalMoment[]>([])
     const [lineups, setLineups] = useState<PlayedLineup[]>([])
     const [loading, setLoading] = useState(false)
 
     useEffect(() => {
-        if (!teamId || !matches?.length) {
-            setMoments([])
-            setLineups([])
+        if (!enabled || !teamId || !matches?.length) {
+            if (!enabled) {
+                setMoments([])
+                setLineups([])
+                setLoading(false)
+            }
             return
         }
         const played = matches.filter(m =>
@@ -94,7 +97,7 @@ export function useSeasonGoalTimeline(teamId: string | undefined, matches: Match
             .catch(() => { if (!cancelled) { setMoments([]); setLineups([]) } })
             .finally(() => { if (!cancelled) setLoading(false) })
         return () => { cancelled = true }
-    }, [teamId, matches])
+    }, [teamId, matches, enabled])
 
     return { moments, lineups, loading }
 }
