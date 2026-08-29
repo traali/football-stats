@@ -76,6 +76,14 @@ export interface PlayerAPIResponse {
 
 import type { PastMatchDetail } from './matches'
 
+export interface PlayerSeriesSlice {
+    category: string
+    half: 'kevät' | 'syksy' | ''
+    matches: number
+    goals: number
+    warnings: number
+}
+
 export interface PlayerStats {
     playerId?: string
     name: string
@@ -98,6 +106,7 @@ export interface PlayerStats {
     gamesPlayedLastSeason: number
     goalsScoredLastSeason: number
     teamsThisYear: string
+    seriesThisYear?: PlayerSeriesSlice[]
     isCaptainInMatch?: boolean
     teamIdInMatch?: string
     height?: string
