@@ -57,10 +57,12 @@ export interface PlayerMatchEntry {
     fs_B?: string
     winner_id?: string
     player_goals?: string
+    player_assists?: string
     player_warnings?: string
     player_suspensions?: string
     category_id?: string
     category_name?: string
+    competition_name?: string
 }
 
 export interface PlayerAPIResponse {
