@@ -11,6 +11,7 @@ import { StandingsTable } from '../components/StandingsTable'
 import { Button } from '../components/Button'
 import { DualStatBar } from '../components/DualStatBar'
 import { CommonOpponents } from '../components/CommonOpponents'
+import { MatchPreviewExport } from '../components/MatchPreviewExport'
 import { MatchHeaderSkeleton, PlayerCardSkeleton, StandingsTableSkeleton } from '../components/Skeleton'
 import { resolveCrest } from '../utils/crest'
 import { MATCH_STATUS } from '../types'
@@ -105,6 +106,15 @@ export function MatchPage() {
                 {data && (
                     <div className="space-y-10">
                         <MatchHeader match={data.match} group={data.group} teamA={data.teamA} teamB={data.teamB} />
+
+                        <MatchPreviewExport
+                            match={data.match}
+                            group={data.group}
+                            teamAPlayers={teamAPlayers}
+                            teamBPlayers={teamBPlayers}
+                            byTeam={eligibility.byTeam}
+                            byPlayer={eligibility.byPlayer}
+                        />
 
                         {!played && data.group && (
                             <CommonOpponents
