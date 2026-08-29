@@ -4,6 +4,7 @@ import { Search } from 'lucide-react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { useMatchData } from '../hooks/useMatchData'
 import { useMatchEligibility } from '../hooks/useMatchEligibility'
+import { useMatchCardStats } from '../hooks/useMatchCardStats'
 import { MatchHeader } from '../components/MatchHeader'
 import { MatchLineups } from '../components/MatchLineups'
 import { StandingsTable } from '../components/StandingsTable'
@@ -14,6 +15,7 @@ import { CommonOpponents } from '../components/CommonOpponents'
 import { MatchHeaderSkeleton, PlayerCardSkeleton, StandingsTableSkeleton } from '../components/Skeleton'
 import { resolveCrest } from '../utils/crest'
 import { MATCH_STATUS } from '../types'
+import type { PlayerStats } from '../types'
 
 export function MatchPage() {
     const { matchId = '' } = useParams()
@@ -23,6 +25,7 @@ export function MatchPage() {
     const [showStickyHeader, setShowStickyHeader] = useState(false)
     const { loading, error, data, fetchData } = useMatchData()
     const eligibility = useMatchEligibility(data?.match, data?.group, data?.teamA, data?.teamB)
+    const cardStats = useMatchCardStats(data?.match)
 
     useEffect(() => {
         setSearchValue(matchId)
@@ -41,8 +44,13 @@ export function MatchPage() {
         if (trimmed) navigate(`/match/${trimmed}`)
     }
 
-    const teamAPlayers = data?.players?.filter(p => p.teamIdInMatch === data.match.team_A_id) ?? []
-    const teamBPlayers = data?.players?.filter(p => p.teamIdInMatch === data.match.team_B_id) ?? []
+    const withAsOf = (p: PlayerStats): PlayerStats => {
+        const extra = p.playerId ? cardStats[p.playerId] : undefined
+        if (!extra) return p
+        return { ...p, ...extra }
+    }
+    const teamAPlayers = (data?.players?.filter(p => p.teamIdInMatch === data.match.team_A_id) ?? []).map(withAsOf)
+    const teamBPlayers = (data?.players?.filter(p => p.teamIdInMatch === data.match.team_B_id) ?? []).map(withAsOf)
 
     return (
         <div className="min-h-screen px-4 py-8 md:py-16">
