@@ -86,6 +86,8 @@ export interface PlayerSeriesSlice {
     wins?: number
     draws?: number
     losses?: number
+    gf?: number
+    ga?: number
 }
 
 export interface PlayerStats {
