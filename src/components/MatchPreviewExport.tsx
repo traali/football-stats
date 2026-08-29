@@ -3,7 +3,7 @@ import { Download } from 'lucide-react'
 import { buildMatchPreviewMd } from '../utils/buildMatchPreviewMd'
 import { useSeasonGoalTimeline } from '../hooks/useSeasonGoalTimeline'
 import type { MatchDetails, GroupDetails, PlayerStats } from '../types'
-import type { PlayerEligibilityResult, TeamEligibilityResult } from '../domain/eligibility'
+import type { PlayerEligibilityResult, SquadEligibilityResult } from '../domain/eligibility'
 
 export function MatchPreviewExport({
     match, group, teamAPlayers, teamBPlayers, byTeam, byPlayer,
@@ -12,7 +12,7 @@ export function MatchPreviewExport({
     group: GroupDetails | null
     teamAPlayers: PlayerStats[]
     teamBPlayers: PlayerStats[]
-    byTeam?: Record<string, TeamEligibilityResult>
+    byTeam?: Record<string, SquadEligibilityResult>
     byPlayer?: Record<string, PlayerEligibilityResult>
 }) {
     const a = useSeasonGoalTimeline(match.team_A_id, group?.matches)

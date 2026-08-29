@@ -1,5 +1,5 @@
 import type { MatchDetails, GroupDetails, PlayerStats, StandingTeam } from '../types'
-import type { PlayerEligibilityResult, TeamEligibilityResult } from '../domain/eligibility'
+import type { PlayerEligibilityResult, SquadEligibilityResult } from '../domain/eligibility'
 import type { GoalMoment } from '../hooks/useSeasonGoalTimeline'
 
 function pos(teams: StandingTeam[] | undefined, id: string): string {
@@ -49,7 +49,7 @@ export function buildMatchPreviewMd(opts: {
     group: GroupDetails | null
     teamAPlayers: PlayerStats[]
     teamBPlayers: PlayerStats[]
-    byTeam?: Record<string, TeamEligibilityResult>
+    byTeam?: Record<string, SquadEligibilityResult>
     byPlayer?: Record<string, PlayerEligibilityResult>
     goalsA: GoalMoment[]
     goalsB: GoalMoment[]
@@ -64,7 +64,7 @@ export function buildMatchPreviewMd(opts: {
     const quota = (id: string, name: string) => {
         const q = opts.byTeam?.[id]
         if (!q) return ''
-        return `${name}: ylhäältä ${q.fromHigher}/${q.maxFromHigher}${q.exceptionUsed ? ', poikkeus käytetty' : ''}`
+        return `${name}: ylhäältä ${q.downQuotaUsed}/${q.downQuotaMax}${q.exceptionUsed ? `, poikkeus ${q.exceptionUsed}` : ''}`
     }
 
     return [
