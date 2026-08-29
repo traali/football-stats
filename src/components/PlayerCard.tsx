@@ -45,6 +45,13 @@ function WdlDots({ wins = 0, draws = 0, losses = 0 }: { wins?: number; draws?: n
     )
 }
 
+function gdLabel(gf?: number, ga?: number): string {
+    if (gf == null || ga == null) return ''
+    const d = gf - ga
+    const sign = d > 0 ? '+' : ''
+    return `${gf}–${ga} (${sign}${d})`
+}
+
 export function PlayerCard({ stats, eligibility }: { stats: PlayerStats; eligibility?: PlayerEligibilityResult }) {
     const [imgError, setImgError] = useState(false)
     const series = stats.seriesThisYear || []
@@ -104,7 +111,7 @@ export function PlayerCard({ stats, eligibility }: { stats: PlayerStats; eligibi
                                     {row.teamName && row.teamName !== stats.currentTeamName ? ` · ${row.teamName}` : ''}
                                 </span>
                                 <span className="text-text-muted shrink-0 font-mono">
-                                    {row.goals} m · {row.warnings ?? 0} var
+                                    {row.goals} m · {row.warnings ?? 0} var · {gdLabel(row.gf, row.ga)}
                                 </span>
                             </div>
                             <div className="flex items-center justify-between gap-2">
