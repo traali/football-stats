@@ -44,6 +44,30 @@ function playerLines(players: PlayerStats[], elig?: Record<string, PlayerEligibi
     }).join('\n')
 }
 
+function analysisPrompt(m: MatchDetails): string {
+    return [
+        '## Prompt tekoälylle',
+        '',
+        'Kopioi tämä osio + yllä oleva data malliin. Vastaa suomeksi, valmentajalle, juniori P13.',
+        '',
+        '```',
+        `Olet juniorijalkapallon otteluanalyytikko. Käytä VAIN tämän dokumentin lukuja. Älä keksitytä pelaajia, minuutteja tai sijoituksia. Jos tieto puuttuu, sano "ei datassa".`,
+        '',
+        `Ottelu: ${m.team_A_name} vs ${m.team_B_name}, ${m.date}${m.time ? ` ${m.time}` : ''}.`,
+        '',
+        'Tee tämä rakenne:',
+        '1. Lyhyt ennakko (5–8 riviä): tasoero, viimeiset tulokset, mitä taulukko kertoo.',
+        '2. Avainpelaajat molemmille: maalintekijät, paljon pelanneet, pelaajat jotka ovat juuri pelanneet ylempänä. Perustele luvuilla.',
+        '3. Maaliaikojen kuvio: milloin joukkueet tekevät ja päästävät (alku / loppu, kasaumat). Listaa 2–3 riskiminuuttia.',
+        '4. Pelioikeus ja rotaatio: ylhäältä tulleet, kiintiö, ketä kannattaa seurata jos kokoonpano elää.',
+        '5. Ennuste: todennäköisin tuloshaarukka (esim. 2–1 / 1–1 / 3–2), ei varmaa voittajaa. Anna 3 skenaariota: koti, tasapeli, vieras — mikä niistä näyttää datan perusteella todennäköisimmältä ja miksi.',
+        '6. Valmentajan 4 tekoa: mitä seurata lämmittelyssä, avausvartissa, vaihdoissa, jos peli aukeaa.',
+        '',
+        'Sävy: asiallinen, ei hypeä, ei loukkaavaa. Juniorit.',
+        '```',
+    ].join('\n')
+}
+
 export function buildMatchPreviewMd(opts: {
     match: MatchDetails
     group: GroupDetails | null
@@ -93,6 +117,8 @@ export function buildMatchPreviewMd(opts: {
         goalsBlock(m.team_A_name, opts.goalsA),
         '',
         goalsBlock(m.team_B_name, opts.goalsB),
+        '',
+        analysisPrompt(m),
         '',
         `_Luotu football-stats, ottelu ${m.match_id}_`,
     ].filter(line => line !== '').join('\n')
