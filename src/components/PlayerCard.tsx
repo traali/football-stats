@@ -107,8 +107,7 @@ export function PlayerCard({ stats, eligibility }: { stats: PlayerStats; eligibi
                         <div key={`${row.category}-${row.half}-${row.teamName || ''}`} className="space-y-0.5">
                             <div className="flex items-baseline justify-between gap-2 text-xs">
                                 <span className="text-text-primary truncate">
-                                    {row.category}{row.half ? ` · ${row.half}` : ''}
-                                    {row.teamName && row.teamName !== stats.currentTeamName ? ` · ${row.teamName}` : ''}
+                                    {row.category}{row.half ? ` · ${row.half}` : ''}{row.teamName ? ` · ${row.teamName}` : ''}
                                 </span>
                                 <span className="text-text-muted shrink-0 font-mono">
                                     {row.goals} m · {row.warnings ?? 0} var · {gdLabel(row.gf, row.ga)}
