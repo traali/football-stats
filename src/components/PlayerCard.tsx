@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { motion, type Variants } from 'framer-motion'
 import { PlayerStats } from '../types'
 import { User } from 'lucide-react'
@@ -13,12 +14,8 @@ const cardVariants: Variants = {
 export function PlayerCard({ stats, eligibility }: { stats: PlayerStats; eligibility?: PlayerEligibilityResult }) {
     const [imgError, setImgError] = useState(false)
     const pos = stats.position_fi === 'MV' || stats.position_fi === 'mv' ? 'MV' : stats.position_fi
-
-    return (
-        <motion.div
-            variants={cardVariants}
-            className="bg-surface-1 border border-border-hairline rounded-xl p-4 space-y-2"
-        >
+    const body = (
+        <motion.div variants={cardVariants} className="bg-surface-1 border border-border-hairline rounded-xl p-4 space-y-2 hover:border-accent/30">
             <div className="flex items-start gap-3">
                 <div className="relative shrink-0">
                     {!imgError && stats.img_url ? (
@@ -42,6 +39,13 @@ export function PlayerCard({ stats, eligibility }: { stats: PlayerStats; eligibi
                         </h3>
                         <EligibilityChip result={eligibility} />
                     </div>
+                    {(stats.currentTeamName || stats.teamsThisYear) && (
+                        <p className="text-xs text-text-primary mt-0.5 leading-snug">
+                            {stats.currentTeamName}
+                            {stats.currentTeamName && stats.teamsThisYear ? ' · ' : ''}
+                            {stats.teamsThisYear}
+                        </p>
+                    )}
                     <p className="text-text-secondary text-xs mt-0.5 flex flex-wrap gap-x-2">
                         {stats.birthYear && <span>{stats.birthYear}</span>}
                         {pos && <span>{pos}</span>}
@@ -57,4 +61,6 @@ export function PlayerCard({ stats, eligibility }: { stats: PlayerStats; eligibi
             </div>
         </motion.div>
     )
+    if (!stats.playerId) return body
+    return <Link to={`/player/${stats.playerId}`} className="block">{body}</Link>
 }

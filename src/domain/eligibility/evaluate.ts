@@ -44,10 +44,9 @@ export function evaluatePlayer(
 
     const sameHalfApps = ctx.appearances.filter(a =>
         a.official &&
-        a.onLineup &&
         (target.seasonHalf === 'single' || a.seasonHalf === target.seasonHalf || a.seasonHalf === 'single'),
     )
-    const confirmed = sameHalfApps.filter(a => a.lineupConfirmed)
+    const confirmed = sameHalfApps.filter(a => a.onLineup && a.lineupConfirmed)
     const lastAny = lastOf(confirmed)
     const lastHigher = lastOf(confirmed.filter(a => isHigherLevel(a.level, target.level) && a.ageClass === target.ageClass))
 
@@ -99,10 +98,10 @@ export function evaluatePlayer(
     }
 
     const unconfirmedHigher = sameHalfApps.find(a =>
-        isHigherLevel(a.level, target.level) && a.ageClass === target.ageClass && !a.lineupConfirmed,
+        isHigherLevel(a.level, target.level) && a.ageClass === target.ageClass && (!a.lineupConfirmed || !a.onLineup),
     )
     if (unconfirmedHigher && !lastHigher) {
-        verdict = verdict === 'block' ? 'block' : 'warn'
+        verdict = 'warn'
         reasons.push(reason('NOT_OFFICIAL_SOURCE', 'Ylemmän tason lineup puuttuu — vahvista TASOsta', 'app'))
     }
 
