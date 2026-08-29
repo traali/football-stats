@@ -4,6 +4,7 @@ import type { MatchDetails, GroupDetails, PlayerStats, TeamResponse, PlayerLineu
 
 function lineupToStats(lineupInfo: PlayerLineupInfo): PlayerStats {
     return {
+        playerId: lineupInfo.player_id,
         name: lineupInfo.player_name,
         shirtNumber: lineupInfo.shirt_number,
         birthYear: '',
@@ -48,30 +49,24 @@ export function useMatchData() {
         abortRef.current?.abort();
         const controller = new AbortController();
         abortRef.current = controller;
-
         setData(null);
         setLoading(true);
         setError(null);
-
         if (!/^\d+$/.test(matchId)) {
             setError('Virheellinen ottelun tunnus');
             setLoading(false);
             return;
         }
-
         try {
             const match = await getMatchDetails(matchId, controller.signal);
             if (controller.signal.aborted || !mountedRef.current) return;
-
             const [group, teamA, teamB] = await Promise.all([
                 getGroupDetails(match.competition_id, match.category_id, match.group_id, controller.signal),
                 getTeamProfile(match.team_A_id, controller.signal),
                 getTeamProfile(match.team_B_id, controller.signal),
             ]);
             if (controller.signal.aborted || !mountedRef.current) return;
-
-            const processedPlayers = (match.lineups || []).map(lineupToStats);
-            setData({ match, group, players: processedPlayers, teamA, teamB });
+            setData({ match, group, players: (match.lineups || []).map(lineupToStats), teamA, teamB });
         } catch (err: unknown) {
             if (controller.signal.aborted || !mountedRef.current) return;
             setError(err instanceof Error ? err.message : 'Ottelua ei voitu ladata. Yritä uudelleen.');
