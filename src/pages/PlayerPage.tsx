@@ -4,7 +4,7 @@ import { User, TrendingDown, Calendar, ExternalLink } from 'lucide-react'
 import { cn } from '../utils/cn'
 import { formatDate } from '../utils/dates'
 import { WLD_CONFIG } from '../utils/wld'
-import { getPlayerData } from '../services/api'
+import { loadPlayer } from '../services/playerStore'
 import { MATCH_STATUS } from '../types'
 import type { PlayerAPIResponse } from '../types'
 import { BackButton, PageLayout } from '../components'
@@ -30,7 +30,7 @@ export function PlayerPage() {
         abortRef.current = controller
         setLoading(true)
         setError(null)
-        getPlayerData(playerId, controller.signal)
+        loadPlayer(playerId, controller.signal)
             .then(p => {
                 if (controller.signal.aborted) return
                 if (!p) setError('Pelaajaa ei löytynyt')
@@ -71,7 +71,6 @@ export function PlayerPage() {
     return (
         <PageLayout>
             <BackButton className="mb-2" />
-
             <div className="bg-surface-1 border border-border-hairline rounded-2xl p-6 relative overflow-hidden">
                 <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-bmw-cyan via-bmw-magenta to-bmw-amber" />
                 <div className="flex items-center gap-4">
@@ -90,7 +89,6 @@ export function PlayerPage() {
                     </div>
                 </div>
             </div>
-
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                 <div className="lg:col-span-1 space-y-6">
                     {teams.length > 0 && (
@@ -113,7 +111,6 @@ export function PlayerPage() {
                             ))}
                         </div>
                     )}
-
                     {seasons.map(s => (
                         <div key={s.seasonId} className="bg-surface-1 border border-border-hairline rounded-xl p-5 space-y-3">
                             <h2 className="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-1.5">
@@ -130,7 +127,6 @@ export function PlayerPage() {
                                             {row.matches} ott. · {row.goals} maalia
                                             {row.assists ? ` · ${row.assists} syöttöä` : ''}
                                             {row.warnings ? ` · ${row.warnings} var.` : ''}
-                                            {row.suspensions ? ` · ${row.suspensions} ullk.` : ''}
                                             {' · '}{row.wins}V {row.draws}T {row.losses}H
                                         </p>
                                     </button>
@@ -139,63 +135,33 @@ export function PlayerPage() {
                         </div>
                     ))}
                 </div>
-
                 <div className="lg:col-span-2 space-y-6">
-                    {pastMatches.length > 0 && (
-                        <div className="bg-surface-1 border border-border-hairline rounded-xl p-5 space-y-3">
-                            <div className="flex items-center justify-between">
-                                <h2 className="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
-                                    <TrendingDown className="w-4 h-4 text-accent" /> Viimeisimmät ottelut
-                                </h2>
-                                {selectedTeamId && <span className="text-xs text-accent">Suodatettu</span>}
+                    {pastMatches.map(m => {
+                        const isA = m.team_id === m.team_A_id
+                        const myTeamName = m.team_name || (isA ? m.team_A_name : m.team_B_name)
+                        const oppName = isA ? m.team_B_name : m.team_A_name
+                        const myScore = isA ? m.fs_A : m.fs_B
+                        const oppScore = isA ? m.fs_B : m.fs_A
+                        const wld = parseInt(myScore || '0', 10) > parseInt(oppScore || '0', 10) ? 'V' : parseInt(myScore || '0', 10) < parseInt(oppScore || '0', 10) ? 'H' : 'T'
+                        return (
+                            <div key={m.match_id} onClick={() => navigate(`/match/${m.match_id}`)} className="flex items-center gap-3 py-2 px-2.5 rounded-lg hover:bg-surface-2 cursor-pointer text-sm min-h-[44px]">
+                                <span className={cn('w-2 h-2 rounded-full shrink-0', WLD_CONFIG[wld]?.dot || 'bg-accent')} />
+                                <span className="text-text-muted text-xs w-10">{formatDate(m.date, 'short')}</span>
+                                <div className="flex-1 min-w-0 truncate">{myTeamName} vs {oppName}</div>
+                                <span className="font-mono font-bold text-sm">{m.fs_A && m.fs_B ? `${myScore}–${oppScore}` : '–'}</span>
                             </div>
-                            {pastMatches.map(m => {
-                                const isA = m.team_id === m.team_A_id
-                                const myTeamName = m.team_name || (isA ? m.team_A_name : m.team_B_name)
-                                const oppName = isA ? m.team_B_name : m.team_A_name
-                                const myScore = isA ? m.fs_A : m.fs_B
-                                const oppScore = isA ? m.fs_B : m.fs_A
-                                const myScoreVal = parseInt(myScore || '0', 10)
-                                const oppScoreVal = parseInt(oppScore || '0', 10)
-                                const wld = myScoreVal > oppScoreVal ? 'V' : myScoreVal < oppScoreVal ? 'H' : 'T'
-                                const wldBg = WLD_CONFIG[wld as keyof typeof WLD_CONFIG]?.dot || 'bg-accent'
-                                return (
-                                    <div key={m.match_id} onClick={() => navigate(`/match/${m.match_id}`)}
-                                        className="flex items-center gap-3 py-2 px-2.5 rounded-lg hover:bg-surface-2 cursor-pointer text-sm min-h-[44px]">
-                                        <span className={cn('w-2 h-2 rounded-full shrink-0', wldBg)} />
-                                        <span className="text-text-muted text-xs shrink-0 w-10">{formatDate(m.date, 'short')}</span>
-                                        <div className="flex-1 min-w-0 flex items-center gap-1.5 text-xs sm:text-sm">
-                                            <span className="text-text-primary font-semibold truncate max-w-[140px]">{myTeamName}</span>
-                                            <span className="text-text-muted">vs</span>
-                                            <span className="text-text-secondary truncate">{oppName}</span>
-                                        </div>
-                                        <span className="font-mono font-bold text-sm">{m.fs_A && m.fs_B ? `${myScore}–${oppScore}` : '–'}</span>
-                                        {Number(m.player_goals || 0) > 0 && <span className="text-[10px] font-bold bg-accent text-text-inverse px-1.5 py-0.5 rounded">MAALI</span>}
-                                    </div>
-                                )
-                            })}
-                        </div>
-                    )}
-                    {upcomingMatches.length > 0 && (
-                        <div className="bg-surface-1 border border-border-hairline rounded-xl p-5 space-y-3">
-                            <h2 className="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
-                                <Calendar className="w-4 h-4 text-accent" /> Tulevat ottelut
-                            </h2>
-                            {upcomingMatches.map(m => {
-                                const isA = m.team_id === m.team_A_id
-                                const oppName = isA ? m.team_B_name : m.team_A_name
-                                return (
-                                    <div key={m.match_id} onClick={() => navigate(`/match/${m.match_id}`)}
-                                        className="flex items-center gap-3 py-2 px-2.5 rounded-lg hover:bg-surface-2 cursor-pointer text-sm min-h-[44px]">
-                                        <span className="w-2 h-2 rounded-full bg-text-muted shrink-0" />
-                                        <span className="text-text-muted text-xs w-10">{formatDate(m.date, 'short')}</span>
-                                        <div className="flex-1 min-w-0 text-sm truncate">{m.team_name} vs {oppName}</div>
-                                        <span className="text-text-muted text-xs font-mono">{m.time || '–'}</span>
-                                    </div>
-                                )
-                            })}
-                        </div>
-                    )}
+                        )
+                    })}
+                    {upcomingMatches.map(m => {
+                        const isA = m.team_id === m.team_A_id
+                        return (
+                            <div key={m.match_id} onClick={() => navigate(`/match/${m.match_id}`)} className="flex items-center gap-3 py-2 cursor-pointer text-sm">
+                                <Calendar className="w-4 h-4 text-accent" />
+                                <span className="text-text-muted text-xs w-10">{formatDate(m.date, 'short')}</span>
+                                <span className="truncate">{m.team_name} vs {isA ? m.team_B_name : m.team_A_name}</span>
+                            </div>
+                        )
+                    })}
                 </div>
             </div>
         </PageLayout>
