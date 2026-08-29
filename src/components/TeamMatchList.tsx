@@ -1,21 +1,23 @@
 import { Calendar } from 'lucide-react'
 import type { DiscoveryMatch } from '../types'
 import { Card, MatchRowPast, MatchRowFixture } from '.'
+import { isUpcomingDate } from '../utils/dates'
 
 export function TeamMatchList({ upcoming, pastMatches, teamId }: {
     upcoming: DiscoveryMatch[]
     pastMatches: DiscoveryMatch[]
     teamId: string
 }) {
+    const future = upcoming.filter(m => isUpcomingDate(m.date))
     return (
         <div className="space-y-6">
-            {upcoming.length > 0 && (
+            {future.length > 0 && (
                 <Card className="space-y-3">
                     <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
                         <Calendar className="w-4 h-4 text-accent animate-pulse" /> Tulevat ottelut
                     </h3>
                     <div className="space-y-1">
-                        {upcoming.map(m => (
+                        {future.map(m => (
                             <MatchRowFixture
                                 key={m.match_id}
                                 matchId={m.match_id}
@@ -57,7 +59,7 @@ export function TeamMatchList({ upcoming, pastMatches, teamId }: {
                 </Card>
             )}
 
-            {pastMatches.length === 0 && upcoming.length === 0 && (
+            {pastMatches.length === 0 && future.length === 0 && (
                 <Card className="py-8 text-center">
                     <p className="text-text-muted text-sm">Ei otteluita</p>
                 </Card>
