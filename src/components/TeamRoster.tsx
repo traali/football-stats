@@ -1,6 +1,7 @@
 import { Users } from 'lucide-react'
 import { PlayerCard } from './PlayerCard'
 import { rosterToStats } from '../utils/rosterToStats'
+import type { CardSeasonStats } from '../utils/cardStatsAsOf'
 
 interface P {
     player_id: string
@@ -17,7 +18,7 @@ interface P {
 }
 
 export function TeamRoster({
-    players, teamName, level, rosterYear, loading, error, lastSeasonById,
+    players, teamName, level, rosterYear, loading, error, lastSeasonById, cardStats,
 }: {
     players: P[]
     teamName?: string
@@ -26,13 +27,14 @@ export function TeamRoster({
     loading?: boolean
     error?: string | null
     lastSeasonById?: Record<string, { matches?: number; goals?: number }>
+    cardStats?: Record<string, CardSeasonStats>
 }) {
     return (
         <div className="space-y-4">
             <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center justify-between gap-2">
                 <span className="flex items-center gap-2">
                     <Users className="w-4 h-4 text-accent" />
-                    Kokoonpano {rosterYear}
+                    {`Kokoonpano ${rosterYear}`}
                     <span className="text-text-muted font-normal text-xs">({players.length})</span>
                 </span>
                 {loading && <span className="w-3.5 h-3.5 border-2 border-accent border-t-transparent rounded-full animate-spin" />}
@@ -42,17 +44,21 @@ export function TeamRoster({
                 <p className="text-text-muted text-sm text-center py-8">Ei pelaajatietoja</p>
             ) : (
                 <div className="grid grid-cols-1 gap-3">
-                    {players.map(p => (
-                        <PlayerCard
-                            key={p.player_id}
-                            stats={rosterToStats(p, {
-                                teamName,
-                                level,
-                                lastSeasonGames: lastSeasonById?.[p.player_id]?.matches,
-                                lastSeasonGoals: lastSeasonById?.[p.player_id]?.goals,
-                            })}
-                        />
-                    ))}
+                    {players.map(p => {
+                        const extra = cardStats?.[p.player_id]
+                        const base = rosterToStats(p, {
+                            teamName,
+                            level,
+                            lastSeasonGames: extra?.gamesPlayedLastSeason ?? lastSeasonById?.[p.player_id]?.matches,
+                            lastSeasonGoals: extra?.goalsScoredLastSeason ?? lastSeasonById?.[p.player_id]?.goals,
+                        })
+                        return (
+                            <PlayerCard
+                                key={p.player_id}
+                                stats={extra ? { ...base, ...extra } : base}
+                            />
+                        )
+                    })}
                 </div>
             )}
         </div>
