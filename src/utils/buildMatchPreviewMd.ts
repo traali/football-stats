@@ -1,6 +1,6 @@
 import type { MatchDetails, GroupDetails, PlayerStats, StandingTeam } from '../types'
 import type { PlayerEligibilityResult, SquadEligibilityResult } from '../domain/eligibility'
-import type { GoalMoment } from '../hooks/useSeasonGoalTimeline'
+import type { GoalMoment, PlayedLineup } from '../hooks/useSeasonGoalTimeline'
 
 function pos(teams: StandingTeam[] | undefined, id: string): string {
     const t = teams?.find(x => x.team_id === id)
@@ -29,6 +29,15 @@ function goalsBlock(title: string, moments: GoalMoment[]): string {
         `### ${title} — päästänyt`,
         byMatch(conceded),
     ].join('\n')
+}
+
+function lineupBlock(title: string, rows: PlayedLineup[]): string {
+    if (!rows.length) return `### ${title} — pelatut kokoonpanot\n_ei dataa_`
+    const lines = rows.map(r => {
+        const tag = r.won === true ? 'VOITTO' : r.won === false ? 'TAPPIO' : ''
+        return `- ${r.date} vs ${r.opponent} ${r.score} ${tag} (${r.names.length} pelaajaa): ${r.names.join(', ') || 'ei nimiä'}`
+    })
+    return [`### ${title} — pelatut kokoonpanot`, ...lines].join('\n')
 }
 
 function playerLines(players: PlayerStats[], elig?: Record<string, PlayerEligibilityResult>): string {
@@ -60,8 +69,9 @@ function analysisPrompt(m: MatchDetails): string {
         '2. Avainpelaajat molemmille: maalintekijät, paljon pelanneet, pelaajat jotka ovat juuri pelanneet ylempänä. Perustele luvuilla.',
         '3. Maaliaikojen kuvio: milloin joukkueet tekevät ja päästävät (alku / loppu, kasaumat). Listaa 2–3 riskiminuuttia.',
         '4. Pelioikeus ja rotaatio: ylhäältä tulleet, kiintiö, ketä kannattaa seurata jos kokoonpano elää.',
-        '5. Ennuste: todennäköisin tuloshaarukka (esim. 2–1 / 1–1 / 3–2), ei varmaa voittajaa. Anna 3 skenaariota: koti, tasapeli, vieras — mikä niistä näyttää datan perusteella todennäköisimmältä ja miksi.',
-        '6. Valmentajan 4 tekoa: mitä seurata lämmittelyssä, avausvartissa, vaihdoissa, jos peli aukeaa.',
+        '5. Kokoonpanovertailu: ketkä olivat mukana voitoissa vs isoissa tappioissa, keitä puuttui (lkm + nimet).',
+        '6. Ennuste: todennäköisin tuloshaarukka. 3 skenaariota: koti, tasapeli, vieras.',
+        '7. Valmentajan 4 tekoa: lämmittely, avausvartti, vaihdot, jos peli aukeaa.',
         '',
         'Sävy: asiallinen, ei hypeä, ei loukkaavaa. Juniorit.',
         '```',
@@ -77,6 +87,8 @@ export function buildMatchPreviewMd(opts: {
     byPlayer?: Record<string, PlayerEligibilityResult>
     goalsA: GoalMoment[]
     goalsB: GoalMoment[]
+    lineupsA?: PlayedLineup[]
+    lineupsB?: PlayedLineup[]
 }): string {
     const m = opts.match
     const g = opts.group
@@ -112,6 +124,11 @@ export function buildMatchPreviewMd(opts: {
         '',
         `## ${m.team_B_name}`,
         playerLines(opts.teamBPlayers, opts.byPlayer),
+        '',
+        '## Pelatut kokoonpanot',
+        lineupBlock(m.team_A_name, opts.lineupsA || []),
+        '',
+        lineupBlock(m.team_B_name, opts.lineupsB || []),
         '',
         '## Maaliajat tällä kaudella',
         goalsBlock(m.team_A_name, opts.goalsA),

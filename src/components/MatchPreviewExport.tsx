@@ -24,7 +24,8 @@ export function MatchPreviewExport({
     const md = useMemo(() => buildMatchPreviewMd({
         match, group, teamAPlayers, teamBPlayers, byTeam, byPlayer,
         goalsA: a.moments, goalsB: b.moments,
-    }), [match, group, teamAPlayers, teamBPlayers, byTeam, byPlayer, a.moments, b.moments])
+        lineupsA: a.lineups, lineupsB: b.lineups,
+    }), [match, group, teamAPlayers, teamBPlayers, byTeam, byPlayer, a.moments, b.moments, a.lineups, b.lineups])
 
     const download = () => {
         if (busy) return
