@@ -79,9 +79,13 @@ import type { PastMatchDetail } from './matches'
 export interface PlayerSeriesSlice {
     category: string
     half: 'kevät' | 'syksy' | ''
+    teamName?: string
     matches: number
     goals: number
     warnings: number
+    wins?: number
+    draws?: number
+    losses?: number
 }
 
 export interface PlayerStats {
