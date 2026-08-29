@@ -1,4 +1,5 @@
 import type { PastMatchDetail, PlayerMatchEntry } from '../types';
+import { seasonMatchesYear } from './names';
 
 interface ProcessedStats {
     gamesPlayedThisYear: number;
@@ -43,7 +44,7 @@ export function processPlayerMatchHistory(
         const suspensions = parseInt(match.player_suspensions ?? "") || 0;
         const teamName = match.team_name || "Tuntematon joukkue";
 
-        if (match.season_id === currentSeasonId) {
+        if (seasonMatchesYear(match.season_id, currentSeasonId, match.date)) {
             if (match.status === "Played") {
                 stats.gamesPlayedThisYear++;
                 stats.goalsThisYear += goals;
@@ -110,7 +111,7 @@ export function processPlayerMatchHistory(
                     });
                 }
             }
-        } else if (match.season_id === previousSeasonId) {
+        } else if (seasonMatchesYear(match.season_id, previousSeasonId, match.date)) {
             if (match.status === "Played") {
                 stats.gamesPlayedLastSeason++;
                 stats.goalsScoredLastSeason += goals;
@@ -141,7 +142,6 @@ export function getTeamCategory(team: any, currentYear: string): string | undefi
             if (typeof name === 'string') nameStr = name
             else if (name && typeof name === 'object' && typeof name.fi === 'string') nameStr = name.fi
             else if (c.category_name_translations && typeof c.category_name_translations.fi === 'string') nameStr = c.category_name_translations.fi
-            
             if (nameStr) categoryNames.add(nameStr)
         }
     }
