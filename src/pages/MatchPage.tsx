@@ -10,7 +10,6 @@ import { MatchLineups } from '../components/MatchLineups'
 import { StandingsTable } from '../components/StandingsTable'
 import { Button } from '../components/Button'
 import { DualStatBar } from '../components/DualStatBar'
-import { PreMatchComparison } from '../components/PreMatchComparison'
 import { CommonOpponents } from '../components/CommonOpponents'
 import { MatchHeaderSkeleton, PlayerCardSkeleton, StandingsTableSkeleton } from '../components/Skeleton'
 import { resolveCrest } from '../utils/crest'
@@ -51,6 +50,7 @@ export function MatchPage() {
     }
     const teamAPlayers = (data?.players?.filter(p => p.teamIdInMatch === data.match.team_A_id) ?? []).map(withAsOf)
     const teamBPlayers = (data?.players?.filter(p => p.teamIdInMatch === data.match.team_B_id) ?? []).map(withAsOf)
+    const played = data?.match.status === MATCH_STATUS.PLAYED
 
     return (
         <div className="min-h-screen px-4 py-8 md:py-16">
@@ -106,16 +106,7 @@ export function MatchPage() {
                     <div className="space-y-10">
                         <MatchHeader match={data.match} group={data.group} teamA={data.teamA} teamB={data.teamB} />
 
-                        {data.match.status !== MATCH_STATUS.PLAYED && data.group?.matches && (
-                            <PreMatchComparison
-                                teamAId={data.match.team_A_id}
-                                teamBId={data.match.team_B_id}
-                                teamAName={data.match.team_A_name}
-                                teamBName={data.match.team_B_name}
-                                matches={data.group.matches}
-                            />
-                        )}
-                        {data.match.status !== MATCH_STATUS.PLAYED && data.group && (
+                        {!played && data.group && (
                             <CommonOpponents
                                 teamAId={data.match.team_A_id}
                                 teamBId={data.match.team_B_id}
@@ -126,11 +117,13 @@ export function MatchPage() {
                             />
                         )}
 
-                        <div className="bg-surface-1 border border-border-hairline rounded-xl p-5 space-y-4">
-                            <h4 className="text-xs font-bold text-text-muted uppercase tracking-widest">Joukkuevertailu</h4>
-                            <DualStatBar label="Maalit" valueA={Number(data.match.fs_A || 0)} valueB={Number(data.match.fs_B || 0)} />
-                            <DualStatBar label="Pelaajat" valueA={teamAPlayers.length} valueB={teamBPlayers.length} />
-                        </div>
+                        {played && (
+                            <div className="bg-surface-1 border border-border-hairline rounded-xl p-5 space-y-4">
+                                <h4 className="text-xs font-bold text-text-muted uppercase tracking-widest">Joukkuevertailu</h4>
+                                <DualStatBar label="Maalit" valueA={Number(data.match.fs_A || 0)} valueB={Number(data.match.fs_B || 0)} />
+                                <DualStatBar label="Pelaajat" valueA={teamAPlayers.length} valueB={teamBPlayers.length} />
+                            </div>
+                        )}
 
                         <MatchLineups
                             teamAName={data.match.team_A_name}
