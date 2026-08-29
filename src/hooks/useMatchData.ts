@@ -2,29 +2,35 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { getMatchDetails, getGroupDetails, getTeamProfile } from '../services/api';
 import type { MatchDetails, GroupDetails, PlayerStats, TeamResponse, PlayerLineupInfo } from '../types';
 
-function lineupToStats(lineupInfo: PlayerLineupInfo): PlayerStats {
+function lineupToStats(p: PlayerLineupInfo): PlayerStats {
+    const first = (p.first_name || '').trim()
+    const last = (p.last_name || '').trim()
+    const name = first && last ? `${first} ${last}` : (p.player_name || '')
+    const pos = (p.position_fi || p.position || '').toLowerCase()
     return {
-        playerId: lineupInfo.player_id,
-        name: lineupInfo.player_name,
-        shirtNumber: lineupInfo.shirt_number,
-        birthYear: '',
-        img_url: undefined,
-        teamIdInMatch: lineupInfo.team_id,
+        playerId: p.player_id,
+        name,
+        shirtNumber: p.shirt_number,
+        birthYear: p.birthyear || '',
+        img_url: p.img_url || undefined,
+        teamIdInMatch: p.team_id,
         gamesPlayedThisYear: 0,
-        goalsThisYear: 0,
-        warningsThisYear: 0,
-        suspensionsThisYear: 0,
+        goalsThisYear: Number(p.goals || 0),
+        warningsThisYear: Number(p.warnings || 0),
+        suspensionsThisYear: Number(p.suspensions || 0),
         goalsByTeamThisYear: {},
         warningsByTeamThisYear: {},
         gamesByTeamThisYear: {},
-        goalsForThisSpecificTeamInSeason: 0,
+        goalsForThisSpecificTeamInSeason: Number(p.goals || 0),
         gamesPlayedLastSeason: 0,
         goalsScoredLastSeason: 0,
         teamsThisYear: '',
-        isCaptainInMatch: lineupInfo.captain === '1',
-        position_fi: lineupInfo.position_fi,
-        height: lineupInfo.height,
-        weight: lineupInfo.weight,
+        isCaptainInMatch: p.captain === '1',
+        position_fi: pos === 'mv' ? 'MV' : (p.position_fi || p.position || undefined),
+        height: p.height,
+        weight: p.weight,
+        goalsInMatch: Number(p.goals || 0),
+        overage: p.overage === '1' || p.overage === 1,
     }
 }
 
