@@ -11,10 +11,11 @@ import type { DiscoveryMatch } from '../types'
 import { MATCH_STATUS } from '../types'
 import { PageLayout } from '../components'
 import { formatDate, formatTime } from '../utils/dates'
+import { isMatchLive, pickHeroMatch } from '../utils/matchLive'
 
 export function Home() {
     const [matchId, setMatchId] = useState('')
-    const [next, setNext] = useState<DiscoveryMatch | null>(null)
+    const [hero, setHero] = useState<DiscoveryMatch | null>(null)
     const [loadingNext, setLoadingNext] = useState(true)
     const navigate = useNavigate()
     const { favorites, updateName } = useFavorites()
@@ -23,12 +24,10 @@ export function Home() {
         const ctrl = new AbortController()
         getTeamMatches(FEATURED.teamId, ctrl.signal)
             .then(matches => {
-                const upcoming = matches
-                    .filter(m => m.status === MATCH_STATUS.FIXTURE && m.date)
-                    .sort((a, b) => `${a.date}${a.time || ''}`.localeCompare(`${b.date}${b.time || ''}`))
-                setNext(upcoming[0] || null)
+                const today = new Date().toISOString().slice(0, 10)
+                setHero(pickHeroMatch(matches, today))
             })
-            .catch(() => setNext(null))
+            .catch(() => setHero(null))
             .finally(() => setLoadingNext(false))
         return () => ctrl.abort()
     }, [])
@@ -60,7 +59,13 @@ export function Home() {
         navigate(`/match/${trimmed}`)
     }
 
-    const venue = next ? String(next.venue_name || next.venue || next.venue_city_name || '') : ''
+    const venue = hero ? String(hero.venue_name || hero.venue || hero.venue_city_name || '') : ''
+    const live = hero ? isMatchLive(hero) : false
+    const justPlayed = hero?.status === MATCH_STATUS.PLAYED
+    const label = live ? 'Käynnissä' : justPlayed ? 'Viimeisin ottelu' : 'Seuraava ottelu'
+    const score = justPlayed || live
+        ? `${hero?.fs_A ?? hero?.live_A ?? '-'} – ${hero?.fs_B ?? hero?.live_B ?? '-'}`
+        : null
 
     return (
         <PageLayout>
@@ -71,15 +76,16 @@ export function Home() {
 
             <section>
                 {loadingNext && <div className="animate-pulse bg-surface-1 rounded-xl h-28" />}
-                {next && (
-                    <button type="button" onClick={() => navigate(`/match/${next.match_id}`)}
+                {hero && (
+                    <button type="button" onClick={() => navigate(`/match/${hero.match_id}`)}
                         className="w-full text-left bg-surface-1 border border-border-hairline rounded-2xl p-4 hover:bg-surface-2 transition-colors">
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-accent mb-2">Seuraava ottelu</p>
-                        <p className="text-lg font-bold text-text-primary">{next.team_A_name} – {next.team_B_name}</p>
+                        <p className={`text-[10px] font-bold uppercase tracking-widest mb-2 ${live ? 'text-semantic-red' : 'text-accent'}`}>{label}</p>
+                        <p className="text-lg font-bold text-text-primary">{hero.team_A_name} – {hero.team_B_name}</p>
+                        {score && <p className="font-mono text-xl font-bold mt-1">{score}</p>}
                         <p className="text-sm text-text-secondary mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
                             <span className="flex items-center gap-1">
                                 <Calendar className="w-3.5 h-3.5" />
-                                {formatDate(next.date, 'with-year')} {formatTime(next.time)}
+                                {formatDate(hero.date, 'with-year')} {live && String(hero.time || '').includes("'") ? hero.time : formatTime(hero.time)}
                             </span>
                             {venue && (
                                 <span className="flex items-center gap-1">
@@ -89,8 +95,8 @@ export function Home() {
                         </p>
                     </button>
                 )}
-                {!loadingNext && !next && (
-                    <p className="text-text-muted text-sm">Ei merkittyä seuraavaa ottelua.</p>
+                {!loadingNext && !hero && (
+                    <p className="text-text-muted text-sm">Ei merkittyä ottelua.</p>
                 )}
             </section>
 
