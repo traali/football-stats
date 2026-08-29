@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Calendar } from 'lucide-react'
 import type { DiscoveryMatch, TeamResponse } from '../types'
 import { Card, MatchRowPast, MatchRowFixture } from '.'
 import { isUpcomingDate } from '../utils/dates'
 import { TeamStandingsBlock } from './TeamStandingsBlock'
+import { useTeamStandings } from '../hooks/useTeamStandings'
 import { getTeamProfile } from '../services/api'
 import { APP_CONFIG } from '../config'
 
@@ -22,8 +23,17 @@ export function TeamMatchList({ upcoming, pastMatches, teamId, team, year }: {
         return () => { cancelled = true }
     }, [team, teamId])
 
-    const future = upcoming.filter(m => isUpcomingDate(m.date))
     const tableYear = year || APP_CONFIG.CURRENT_YEAR
+    const { group } = useTeamStandings(resolved, teamId, tableYear)
+    const pos = useMemo(() => {
+        const map: Record<string, string | number> = {}
+        for (const t of group?.teams || []) {
+            if (t.team_id) map[String(t.team_id)] = t.current_standing
+        }
+        return map
+    }, [group])
+
+    const future = upcoming.filter(m => isUpcomingDate(m.date))
     return (
         <div className="space-y-6">
             <TeamStandingsBlock team={resolved} teamId={teamId} year={tableYear} />
@@ -41,6 +51,8 @@ export function TeamMatchList({ upcoming, pastMatches, teamId, team, year }: {
                                 date={m.date}
                                 teamAName={m.team_A_name}
                                 teamBName={m.team_B_name}
+                                standingA={pos[m.team_A_id]}
+                                standingB={pos[m.team_B_id]}
                             />
                         ))}
                     </div>
@@ -57,6 +69,7 @@ export function TeamMatchList({ upcoming, pastMatches, teamId, team, year }: {
                             const isA = m.team_A_id === teamId
                             const myScore = isA ? m.fs_A : m.fs_B
                             const oppScore = isA ? m.fs_B : m.fs_A
+                            const oppId = isA ? m.team_B_id : m.team_A_id
                             const wld: 'V' | 'H' | 'T' | undefined = m.fs_A && m.fs_B
                                 ? (Number(isA ? m.fs_A : m.fs_B) > Number(isA ? m.fs_B : m.fs_A) ? 'V' : Number(isA ? m.fs_A : m.fs_B) < Number(isA ? m.fs_B : m.fs_A) ? 'H' : 'T')
                                 : undefined
@@ -69,6 +82,7 @@ export function TeamMatchList({ upcoming, pastMatches, teamId, team, year }: {
                                     myScore={myScore}
                                     oppScore={oppScore}
                                     resultIndicator={wld}
+                                    opponentStanding={pos[oppId]}
                                 />
                             )
                         })}
