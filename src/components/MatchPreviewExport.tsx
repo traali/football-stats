@@ -6,7 +6,7 @@ import type { MatchDetails, GroupDetails, PlayerStats } from '../types'
 import type { PlayerEligibilityResult, SquadEligibilityResult } from '../domain/eligibility'
 
 export function MatchPreviewExport({
-    match, group, teamAPlayers, teamBPlayers, byTeam, byPlayer,
+    match, group, teamAPlayers, teamBPlayers, byTeam, byPlayer, statsReady = true,
 }: {
     match: MatchDetails
     group: GroupDetails | null
@@ -14,10 +14,12 @@ export function MatchPreviewExport({
     teamBPlayers: PlayerStats[]
     byTeam?: Record<string, SquadEligibilityResult>
     byPlayer?: Record<string, PlayerEligibilityResult>
+    statsReady?: boolean
 }) {
     const a = useSeasonGoalTimeline(match.team_A_id, group?.matches)
     const b = useSeasonGoalTimeline(match.team_B_id, group?.matches)
     const [copied, setCopied] = useState(false)
+    const busy = !statsReady || a.loading || b.loading
 
     const md = useMemo(() => buildMatchPreviewMd({
         match, group, teamAPlayers, teamBPlayers, byTeam, byPlayer,
@@ -25,6 +27,7 @@ export function MatchPreviewExport({
     }), [match, group, teamAPlayers, teamBPlayers, byTeam, byPlayer, a.moments, b.moments])
 
     const download = () => {
+        if (busy) return
         const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' })
         const url = URL.createObjectURL(blob)
         const el = document.createElement('a')
@@ -35,17 +38,18 @@ export function MatchPreviewExport({
     }
 
     const copy = async () => {
+        if (busy) return
         await navigator.clipboard.writeText(md)
         setCopied(true)
         setTimeout(() => setCopied(false), 1500)
     }
 
     return (
-        <div className="flex items-center gap-2">
-            <button type="button" onClick={copy} className="text-xs font-semibold px-3 py-2 rounded-lg bg-surface-2 border border-border-hairline text-text-primary">
-                {copied ? 'Kopioitu' : a.loading || b.loading ? 'Kerätään maaliaikoja…' : 'Kopioi markdown'}
+        <div className="flex flex-wrap items-center gap-2">
+            <button type="button" disabled={busy} onClick={copy} className="text-xs font-semibold px-3 py-2 rounded-lg bg-surface-2 border border-border-hairline text-text-primary disabled:opacity-50">
+                {copied ? 'Kopioitu' : busy ? 'Ladataan pelaajatilastoja…' : 'Kopioi markdown'}
             </button>
-            <button type="button" onClick={download} className="text-xs font-semibold px-3 py-2 rounded-lg bg-accent text-text-inverse inline-flex items-center gap-1">
+            <button type="button" disabled={busy} onClick={download} className="text-xs font-semibold px-3 py-2 rounded-lg bg-accent text-text-inverse inline-flex items-center gap-1 disabled:opacity-50">
                 <Download className="w-3.5 h-3.5" /> Lataa .md
             </button>
         </div>

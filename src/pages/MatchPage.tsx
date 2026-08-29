@@ -25,7 +25,7 @@ export function MatchPage() {
     const [showStickyHeader, setShowStickyHeader] = useState(false)
     const { loading, error, data, fetchData } = useMatchData()
     const eligibility = useMatchEligibility(data?.match, data?.group, data?.teamA, data?.teamB)
-    const cardStats = useMatchCardStats(data?.match)
+    const { byPlayer: cardStats, loading: cardStatsLoading } = useMatchCardStats(data?.match)
 
     useEffect(() => {
         setSearchValue(matchId)
@@ -114,6 +114,7 @@ export function MatchPage() {
                             teamBPlayers={teamBPlayers}
                             byTeam={eligibility.byTeam}
                             byPlayer={eligibility.byPlayer}
+                            statsReady={!cardStatsLoading}
                         />
 
                         {!played && data.group && (
