@@ -7,7 +7,6 @@ export const MATCH_STATUS = {
 
 export type MatchStatus = typeof MATCH_STATUS[keyof typeof MATCH_STATUS];
 
-
 export interface MatchGoal {
     event_id?: string
     team_id?: string
@@ -52,6 +51,11 @@ export interface MatchDetails {
     competition_name: string
     referee_1_name?: string
     referee_1_id?: string
+    referee_1_player_id?: string
+    playing_time?: string
+    period_count?: string
+    venue_city_name?: string
+    venue_id?: string
     lineups: PlayerLineupInfo[]
     goals?: MatchGoal[]
     bookings?: MatchBooking[]
@@ -98,6 +102,7 @@ export interface GetMatchesParams {
     category_id?: string
     group_id?: string
     team_id?: string
+    referee_id?: string
     date_from?: string
     date_to?: string
     limit?: number

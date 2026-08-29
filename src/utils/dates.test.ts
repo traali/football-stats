@@ -14,6 +14,10 @@ describe('dates utils', () => {
         it('should format date with day-month format', () => {
             expect(formatDate('2026-06-14')).toBe('Su 14.6.')
         })
+
+        it('should include year when asked', () => {
+            expect(formatDate('2026-08-29', 'with-year')).toBe('29.8.2026')
+        })
     })
 
     describe('formatTime', () => {
