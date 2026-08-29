@@ -1,7 +1,7 @@
 import { MATCH_STATUS } from '../types'
 import type { MatchDetails, GroupDetails, TeamResponse } from '../types'
 import { motion } from 'framer-motion'
-import { Calendar, Clock, Users, Timer } from 'lucide-react'
+import { Calendar, Clock, Users, Timer, CloudSun, Thermometer } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { cn } from '../utils/cn'
 import { resolveCrest } from '../utils/crest'
@@ -29,6 +29,12 @@ export function MatchHeader({ match, group, teamA, teamB }: { match: MatchDetail
     const crestA = resolveCrest(teamA || {})
     const crestB = resolveCrest(teamB || {})
     const clock = String(match.time || '').includes("'") ? match.time : null
+    const facts = [
+        match.weather,
+        (match as { temperature?: string | number }).temperature ? `${(match as { temperature?: string | number }).temperature}°` : null,
+        match.attendance ? `${match.attendance} katsojaa` : null,
+        match.playing_time ? `${match.playing_time} min` : null,
+    ].filter(Boolean)
 
     return (
         <motion.div
@@ -84,12 +90,24 @@ export function MatchHeader({ match, group, teamA, teamB }: { match: MatchDetail
                                             <div className={cn('w-1.5 h-1.5 rounded-full', isA ? 'bg-bmw-cyan' : 'bg-bmw-magenta')} />
                                         </div>
                                         <span className="text-text-muted text-xs font-mono w-8 shrink-0">{g.time_min}'</span>
-                                        <span className="text-text-primary font-medium truncate">{g.player_name}</span>
+                                        <Link to={g.player_id ? `/player/${g.player_id}` : '#'} className="text-text-primary font-medium truncate hover:text-accent">{g.player_name}</Link>
                                         <span className="text-text-muted text-xs font-mono ml-auto shrink-0">{g.score_A}–{g.score_B}</span>
                                     </div>
                                 )
                             })}
                         </div>
+                    </div>
+                )}
+
+                {match.bookings && match.bookings.length > 0 && (
+                    <div className="w-full max-w-md space-y-2">
+                        <h4 className="text-xs font-bold text-text-muted uppercase tracking-widest">Varoitukset</h4>
+                        {match.bookings.map((b, i) => (
+                            <div key={b.event_id || i} className="flex items-center gap-2 text-sm">
+                                <span className="text-text-muted text-xs font-mono w-8">{b.time_min ? `${b.time_min}'` : ''}</span>
+                                <span className="text-text-primary truncate">{b.player_name}</span>
+                            </div>
+                        ))}
                     </div>
                 )}
 
@@ -107,7 +125,18 @@ export function MatchHeader({ match, group, teamA, teamB }: { match: MatchDetail
                             </>
                         )}
                     </div>
-                    {match.venue_name && <span className="text-xs text-text-muted">{match.venue_name}</span>}
+                    {match.venue_name && (
+                        <span className="text-xs text-text-muted">
+                            {match.venue_name}{match.venue_city_name ? `, ${match.venue_city_name}` : ''}
+                        </span>
+                    )}
+                    {facts.length > 0 && (
+                        <p className="text-xs text-text-muted flex items-center gap-2 mt-1">
+                            {match.weather && <CloudSun className="w-3.5 h-3.5 text-accent" />}
+                            {(match as { temperature?: string }).temperature && <Thermometer className="w-3.5 h-3.5 text-accent" />}
+                            {facts.join(' · ')}
+                        </p>
+                    )}
                 </div>
 
                 {match.referee_1_name && (
