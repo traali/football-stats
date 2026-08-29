@@ -66,6 +66,7 @@ export interface PlayerAPIResponse {
 import type { PastMatchDetail } from './matches'
 
 export interface PlayerStats {
+    playerId?: string
     name: string
     shirtNumber: string
     birthYear: string
