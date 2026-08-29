@@ -1,13 +1,22 @@
 export interface PlayerLineupInfo {
     player_id: string
     player_name: string
+    first_name?: string
+    last_name?: string
     shirt_number: string
     team_id: string
     captain?: string
     team_name?: string
+    position?: string
     position_fi?: string
     height?: string
     weight?: string
+    birthyear?: string
+    img_url?: string
+    goals?: string | number
+    warnings?: string | number
+    suspensions?: string | number
+    overage?: string | number
 }
 
 export interface PlayerStatsEntry {
@@ -91,4 +100,6 @@ export interface PlayerStats {
     teamIdInMatch?: string
     height?: string
     weight?: string
+    goalsInMatch?: number
+    overage?: boolean
 }
