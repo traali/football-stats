@@ -4,6 +4,7 @@ import { useFavorites } from './useFavorites'
 import { MATCH_STATUS } from '../types'
 import type { TeamResponse, DiscoveryMatch } from '../types'
 import { APP_CONFIG } from '../config'
+import { parsePlayerName } from '../utils/names'
 
 interface PlayerEntry {
     player_id: string; first_name: string; last_name: string; img_url?: string; birthyear?: string; shirt_number?: string
@@ -147,10 +148,11 @@ export function useTeamData(teamId: string | undefined) {
                     stats.forEach(p => {
                         if (String(p.team_id) !== String(teamId) || !p.player_id) return
                         const pid = String(p.player_id)
+                        const parsed = parsePlayerName(p as { first_name?: string; last_name?: string; player_name?: string })
                         playersBySeason[season][pid] = {
                             player_id: pid,
-                            first_name: p.first_name || p.player_name?.split(' ')[1] || '',
-                            last_name: p.last_name || p.player_name?.split(' ')[0] || '',
+                            first_name: parsed.first_name,
+                            last_name: parsed.last_name,
                             img_url: p.img_url,
                         }
                         const existing = statsBySeason[season][pid]
@@ -162,8 +164,8 @@ export function useTeamData(teamId: string | undefined) {
                         } else {
                             statsBySeason[season][pid] = {
                                 player_id: pid,
-                                first_name: p.first_name || p.player_name?.split(' ')[1] || '',
-                                last_name: p.last_name || p.player_name?.split(' ')[0] || '',
+                                first_name: parsed.first_name,
+                                last_name: parsed.last_name,
                                 goals: g, assists: a, img_url: p.img_url,
                             }
                         }
@@ -342,7 +344,7 @@ export function useTeamData(teamId: string | undefined) {
     }, [team])
 
     const pastMatches = useMemo(() => {
-        let filtered = filteredMatches.filter(m => m.date && new Date(m.date + 'T' + (m.time || '00:00:00')) < new Date())
+        let filtered = filteredMatches.filter(m => m.status === MATCH_STATUS.PLAYED)
         if (selectedYear !== 'all') filtered = filtered.filter(m => m.date && m.date.startsWith(selectedYear))
         return filtered.sort((a, b) => (b.date || '').localeCompare(a.date || ''))
     }, [filteredMatches, selectedYear])
