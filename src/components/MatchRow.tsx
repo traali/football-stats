@@ -27,7 +27,7 @@ export function MatchRowPast({ matchId, date, opponentName, myScore, oppScore, r
                 className,
             )}
         >
-            <span className="text-text-muted w-12 shrink-0 text-xs">{formatDate(date, 'short')}</span>
+            <span className="text-text-muted w-16 shrink-0 text-xs">{formatDate(date, 'with-year')}</span>
             <span className="text-text-primary truncate flex-1 text-right pr-2">{opponentName}</span>
             <span className="font-mono font-bold mx-2 shrink-0 flex items-center gap-1.5">
                 <span className="text-text-primary">
@@ -69,7 +69,7 @@ export function MatchRowSymmetric({ matchId, date, teamAName, teamBName, scoreA,
                 className,
             )}
         >
-            <span className="text-text-muted text-xs w-12 shrink-0">{formatDate(date, 'short')}</span>
+            <span className="text-text-muted text-xs w-16 shrink-0">{formatDate(date, 'with-year')}</span>
             <span className="text-text-primary truncate text-right min-w-0 flex-1">{teamAName}</span>
             <span className="font-mono font-bold text-text-primary mx-2 shrink-0 flex items-center gap-1">
                 {scoreA !== undefined && scoreB !== undefined ? `${scoreA}–${scoreB}` : '–'}
@@ -95,7 +95,7 @@ export function MatchRowFixture({ matchId, date, teamAName, teamBName, className
                 className,
             )}
         >
-            <span className="text-text-muted w-12 shrink-0 text-xs">{formatDate(date, 'short')}</span>
+            <span className="text-text-muted w-16 shrink-0 text-xs">{formatDate(date, 'with-year')}</span>
             <span className="text-text-primary truncate text-right flex-1 pr-2">{teamAName}</span>
             <span className="text-text-muted mx-2 shrink-0 font-mono text-xs">vs</span>
             <span className="text-text-primary truncate flex-1 pl-2">{teamBName}</span>
