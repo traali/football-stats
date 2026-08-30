@@ -67,6 +67,18 @@ async function waitForRateLimit(endpoint?: string, signal?: AbortSignal): Promis
 const FETCH_TIMEOUT_MS = 10000
 const RETRY_DELAYS_MS = [500, 1000, 2000]
 
+function requestUrl(endpoint: string, cleanParams: Record<string, string>): string {
+    const qs = new URLSearchParams(cleanParams)
+    const proxy = String(import.meta.env.VITE_TASO_PROXY || '').replace(/\/$/, '')
+    if (proxy) return `${proxy}/${endpoint}?${qs}`
+    return `${APP_CONFIG.API_BASE_URL}${endpoint}?${qs}`
+}
+
+function requestHeaders(): Record<string, string> {
+    if (import.meta.env.VITE_TASO_PROXY) return { Accept: 'application/json' }
+    return APP_CONFIG.API_HEADERS
+}
+
 export function parseTasoPayload(raw: string): unknown {
     const start = raw.indexOf('{')
     if (start < 0) throw new APIHttpError('Palvelin palautti virheellisen vastauksen')
@@ -95,7 +107,8 @@ export async function fetchAPIData<T>(
     for (const [k, v] of Object.entries(params)) {
         if (v !== undefined && v !== '') cleanParams[k] = String(v)
     }
-    const url = `${APP_CONFIG.API_BASE_URL}${endpoint}?${new URLSearchParams(cleanParams)}`
+    const url = requestUrl(endpoint, cleanParams)
+    const headers = requestHeaders()
     let lastError: Error = new APIHttpError('Tuntematon virhe')
     for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
         if (signal?.aborted) throw new APITimeoutError('Pyyntö peruutettiin')
@@ -111,7 +124,7 @@ export async function fetchAPIData<T>(
         const onAbort = () => controller.abort()
         signal?.addEventListener('abort', onAbort, { once: true })
         try {
-            const response = await fetch(url, { headers: APP_CONFIG.API_HEADERS, signal: controller.signal })
+            const response = await fetch(url, { headers, signal: controller.signal })
             clearTimeout(timeoutId)
             signal?.removeEventListener('abort', onAbort)
             if (!response.ok) {
