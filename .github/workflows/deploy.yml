@@ -25,10 +25,12 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Build
         run: npm run build
+        env:
+          VITE_TASO_PROXY: ${{ vars.VITE_TASO_PROXY }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
