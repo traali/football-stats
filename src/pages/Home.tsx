@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Search, Trophy, Heart, Shield, ChevronRight, Calendar, MapPin } from 'lucide-react'
+import { Search, Trophy, Heart, Shield, ChevronRight, Calendar, MapPin, User } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '../components'
 import { getTeamMatches, getTeamProfile } from '../services/api'
@@ -26,7 +26,7 @@ export function Home() {
     const [viewed, setViewed] = useState<ViewedMatch[]>([])
     const [loadingNext, setLoadingNext] = useState(true)
     const navigate = useNavigate()
-    const { favorites, updateName } = useFavorites()
+    const { favorites, updateName, favoritePlayers } = useFavorites()
 
     useEffect(() => {
         setSavedTournaments(getSavedTournaments())
@@ -151,23 +151,67 @@ export function Home() {
                 </section>
             )}
 
-            {favorites.length > 0 && (
+            {(favorites.length > 0 || favoritePlayers.length > 0) && (
                 <section className="space-y-3">
-                    <h2 className="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
-                        <Heart className="w-4 h-4 text-semantic-red fill-semantic-red" /> Suosikit
-                    </h2>
-                    <div className="grid grid-cols-2 gap-2">
-                        {favorites.map(fav => (
-                            <div key={fav.id} onClick={() => navigate(`/team/${fav.id}`)}
-                                className="bg-surface-1 border border-border-hairline rounded-xl p-3 flex items-center gap-3 cursor-pointer hover:bg-surface-2 min-h-[52px]">
-                                <Shield className="w-5 h-5 text-accent shrink-0" />
-                                <div className="min-w-0">
-                                    <p className="text-text-primary text-sm font-semibold truncate">{fav.name}</p>
-                                    {fav.category && <p className="text-text-muted text-xs truncate">{fav.category}</p>}
-                                </div>
-                            </div>
-                        ))}
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
+                            <Heart className="w-4 h-4 text-semantic-red fill-semantic-red" /> Suosikit
+                        </h2>
+                        <button
+                            type="button"
+                            onClick={() => navigate('/favorites')}
+                            className="text-xs text-text-muted hover:text-accent transition-colors"
+                        >
+                            Kaikki ({favorites.length + favoritePlayers.length})
+                        </button>
                     </div>
+
+                    {/* Favorite Players */}
+                    {favoritePlayers.length > 0 && (
+                        <div className="space-y-1.5">
+                            <p className="text-[11px] font-bold uppercase tracking-wider text-text-muted">Pelaajat</p>
+                            <div className="grid grid-cols-2 gap-2">
+                                {favoritePlayers.map(p => (
+                                    <div
+                                        key={p.id}
+                                        onClick={() => navigate(`/player/${p.id}`)}
+                                        className="bg-surface-1 border border-border-hairline rounded-xl p-3 flex items-center gap-2.5 cursor-pointer hover:bg-surface-2 min-h-[52px] transition-colors"
+                                    >
+                                        <div className="w-8 h-8 rounded-full bg-surface-3 border border-border-hairline flex items-center justify-center shrink-0">
+                                            {p.img_url ? (
+                                                <img src={p.img_url} alt="" className="w-full h-full rounded-full object-cover" />
+                                            ) : (
+                                                <User className="w-4 h-4 text-text-muted" />
+                                            )}
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="text-text-primary text-xs font-semibold truncate">{p.name}</p>
+                                            <p className="text-text-muted text-[10px] truncate">{p.teamName || 'Pelaaja'}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Favorite Teams */}
+                    {favorites.length > 0 && (
+                        <div className="space-y-1.5">
+                            {favoritePlayers.length > 0 && <p className="text-[11px] font-bold uppercase tracking-wider text-text-muted">Joukkueet</p>}
+                            <div className="grid grid-cols-2 gap-2">
+                                {favorites.map(fav => (
+                                    <div key={fav.id} onClick={() => navigate(`/team/${fav.id}`)}
+                                        className="bg-surface-1 border border-border-hairline rounded-xl p-3 flex items-center gap-3 cursor-pointer hover:bg-surface-2 min-h-[52px] transition-colors">
+                                        <Shield className="w-5 h-5 text-accent shrink-0" />
+                                        <div className="min-w-0">
+                                            <p className="text-text-primary text-sm font-semibold truncate">{fav.name}</p>
+                                            {fav.category && <p className="text-text-muted text-xs truncate">{fav.category}</p>}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </section>
             )}
 

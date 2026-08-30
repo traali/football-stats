@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { User, TrendingDown, Calendar, ExternalLink } from 'lucide-react'
+import { User, TrendingDown, Calendar, ExternalLink, Heart } from 'lucide-react'
 import { cn } from '../utils/cn'
 import { formatDate } from '../utils/dates'
 import { WLD_CONFIG } from '../utils/wld'
@@ -9,10 +9,12 @@ import { MATCH_STATUS } from '../types'
 import type { PlayerAPIResponse } from '../types'
 import { BackButton, PageLayout } from '../components'
 import { buildSeriesFromMatches, currentTeams } from '../utils/playerSeries'
+import { useFavorites } from '../hooks/useFavorites'
 
 export function PlayerPage() {
     const { playerId } = useParams()
     const navigate = useNavigate()
+    const { isFavoritePlayer, togglePlayer } = useFavorites()
     const [player, setPlayer] = useState<PlayerAPIResponse | null>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -67,26 +69,50 @@ export function PlayerPage() {
     const playerName = `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Tuntematon pelaaja'
     const age = player.birthyear ? new Date().getFullYear() - parseInt(player.birthyear) : null
     const ageValid = age !== null && !isNaN(age) && age > 0 && age < 100
+    const isFav = playerId ? isFavoritePlayer(playerId) : false
+
+    const handleToggleFavorite = () => {
+        if (!playerId || !player) return
+        const primaryTeam = teams[0]
+        togglePlayer({
+            id: playerId,
+            name: playerName,
+            teamName: primaryTeam?.teamName,
+            category: primaryTeam?.level,
+            img_url: player.img_url,
+            birthyear: player.birthyear,
+        })
+    }
 
     return (
         <PageLayout>
             <BackButton className="mb-2" />
             <div className="bg-surface-1 border border-border-hairline rounded-2xl p-6 relative overflow-hidden">
                 <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-bmw-cyan via-bmw-magenta to-bmw-amber" />
-                <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-full bg-surface-3 border border-border-hairline flex items-center justify-center shrink-0">
-                        {player.img_url ? <img src={player.img_url} alt="" className="w-full h-full rounded-full object-cover" /> : <User className="w-7 h-7 text-text-muted" />}
-                    </div>
-                    <div className="min-w-0">
-                        <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-accent">Pelaajaprofiili</span>
-                        <h1 className="text-2xl font-bold text-text-primary truncate mt-0.5">{playerName}</h1>
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-text-secondary mt-1.5">
-                            {ageValid && <span className="font-medium bg-surface-2 px-2 py-0.5 rounded-md">{age} v ({player.birthyear})</span>}
-                            {teams.slice(0, 3).map(t => (
-                                <span key={t.teamId} className="text-xs bg-surface-3 border border-border-hairline px-2 py-0.5 rounded-md text-text-primary">{t.teamName} · {t.level}</span>
-                            ))}
+                <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-center gap-4 min-w-0">
+                        <div className="w-14 h-14 rounded-full bg-surface-3 border border-border-hairline flex items-center justify-center shrink-0">
+                            {player.img_url ? <img src={player.img_url} alt="" className="w-full h-full rounded-full object-cover" /> : <User className="w-7 h-7 text-text-muted" />}
+                        </div>
+                        <div className="min-w-0">
+                            <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-accent">Pelaajaprofiili</span>
+                            <h1 className="text-2xl font-bold text-text-primary truncate mt-0.5">{playerName}</h1>
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-text-secondary mt-1.5">
+                                {ageValid && <span className="font-medium bg-surface-2 px-2 py-0.5 rounded-md">{age} v ({player.birthyear})</span>}
+                                {teams.slice(0, 3).map(t => (
+                                    <span key={t.teamId} className="text-xs bg-surface-3 border border-border-hairline px-2 py-0.5 rounded-md text-text-primary">{t.teamName} · {t.level}</span>
+                                ))}
+                            </div>
                         </div>
                     </div>
+                    <button
+                        type="button"
+                        onClick={handleToggleFavorite}
+                        className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl bg-surface-2 border border-border-hairline hover:border-accent/30 hover:bg-surface-3 transition-all cursor-pointer active:scale-95 shrink-0"
+                        aria-label={isFav ? 'Poista suosikeista' : 'Lisää suosikkeihin'}
+                    >
+                        <Heart className={cn('w-5 h-5 transition-colors', isFav ? 'fill-semantic-red text-semantic-red' : 'text-text-muted')} />
+                    </button>
                 </div>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
