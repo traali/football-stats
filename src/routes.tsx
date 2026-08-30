@@ -14,8 +14,10 @@ import { BottomNav } from './components/BottomNav'
 
 function Layout() {
     return (
-        <div className="pb-20">
-            <Outlet />
+        <div className="min-h-screen min-h-[100dvh] flex flex-col justify-between pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))]">
+            <div className="flex-1 w-full">
+                <Outlet />
+            </div>
             <BottomNav />
         </div>
     )

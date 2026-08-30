@@ -11,7 +11,15 @@ const navItems = [
 
 export function BottomNav() {
     return (
-        <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around bg-surface-1/80 backdrop-blur-xl border-t border-border-hairline pb-[env(safe-area-inset-bottom,0px)]">
+        <nav
+            className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around bg-surface-1/90 backdrop-blur-xl border-t border-border-hairline pb-[env(safe-area-inset-bottom,0px)] transform-gpu"
+            style={{
+                transform: 'translate3d(0, 0, 0)',
+                WebkitTransform: 'translate3d(0, 0, 0)',
+                WebkitBackfaceVisibility: 'hidden',
+                backfaceVisibility: 'hidden',
+            }}
+        >
             {navItems.map((item) => (
                 <NavLink
                     key={item.label}
