@@ -6,7 +6,7 @@ import { getTeamProfile } from '../services/api'
 import { getTeamCategory } from '../utils/dataProcessors'
 import { APP_CONFIG } from '../config'
 import type { TeamResponse } from '../types'
-import { PageLayout } from '../components'
+import { PageLayout, BackButton } from '../components'
 
 export function FavoritesPage() {
     const navigate = useNavigate()
@@ -25,6 +25,7 @@ export function FavoritesPage() {
 
     return (
         <PageLayout>
+            <BackButton className="mb-2" />
             <div className="flex items-center justify-between">
                     <h1 className="text-2xl font-bold text-text-primary flex items-center gap-2">
                         <Heart className="w-6 h-6 text-semantic-red fill-semantic-red" /> Suosikit

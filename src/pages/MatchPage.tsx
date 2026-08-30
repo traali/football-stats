@@ -9,6 +9,7 @@ import { MatchHeader } from '../components/MatchHeader'
 import { MatchLineups } from '../components/MatchLineups'
 import { StandingsTable } from '../components/StandingsTable'
 import { Button } from '../components/Button'
+import { BackButton } from '../components/BackButton'
 import { DualStatBar } from '../components/DualStatBar'
 import { CommonOpponents } from '../components/CommonOpponents'
 import { MatchPreviewExport } from '../components/MatchPreviewExport'
@@ -28,20 +29,25 @@ export function MatchPage() {
     const { byPlayer: cardStats, loading: cardStatsLoading } = useMatchCardStats(data?.match)
 
     useEffect(() => {
-        setSearchValue(matchId)
-        if (matchId.trim()) fetchData(matchId.trim())
+        if (matchId) {
+            fetchData(matchId)
+            setSearchValue(matchId)
+        }
     }, [matchId, fetchData])
 
     useEffect(() => {
-        const onScroll = () => setShowStickyHeader(window.scrollY > 280)
-        window.addEventListener('scroll', onScroll)
-        return () => window.removeEventListener('scroll', onScroll)
+        const handleScroll = () => {
+            setShowStickyHeader(window.scrollY > 140)
+        }
+        window.addEventListener('scroll', handleScroll, { passive: true })
+        return () => window.removeEventListener('scroll', handleScroll)
     }, [])
 
-    const handleSearch = (e?: React.FormEvent) => {
-        if (e) e.preventDefault()
-        const trimmed = searchValue.trim()
-        if (trimmed) navigate(`/match/${trimmed}`)
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault()
+        if (searchValue.trim()) {
+            navigate(`/match/${searchValue.trim()}`)
+        }
     }
 
     const withAsOf = (p: PlayerStats): PlayerStats => {
@@ -68,17 +74,17 @@ export function MatchPage() {
     const played = data?.match.status === MATCH_STATUS.PLAYED
 
     return (
-        <div className="min-h-screen px-4 py-8 md:py-16">
+        <div className="min-h-screen px-4 py-4 md:py-8">
             <AnimatePresence>
                 {showStickyHeader && data && (
                     <motion.div
                         initial={{ y: -64, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         exit={{ y: -64, opacity: 0 }}
-                        className="fixed top-0 left-0 right-0 z-50 bg-surface-1/95 backdrop-blur-xl border-b border-border-hairline h-14 flex items-center justify-center px-4"
+                        className="fixed top-0 left-0 right-0 z-50 bg-surface-1/95 backdrop-blur-xl border-b border-border-hairline pt-[env(safe-area-inset-top,0px)] h-[calc(3.5rem+env(safe-area-inset-top,0px))] flex items-center justify-center px-4"
                     >
                         <div className="max-w-3xl w-full flex items-center justify-between gap-2">
-                            <button onClick={() => navigate(-1)} className="text-xs text-text-muted">← Takaisin</button>
+                            <button onClick={() => navigate(-1)} className="text-xs text-text-muted hover:text-text-primary px-2 py-1">← Takaisin</button>
                             <div className="flex items-center gap-3">
                                 <Link to={`/team/${data.match.team_A_id}`} className="text-xs font-bold truncate max-w-[120px]">{data.match.team_A_name}</Link>
                                 <span className="font-mono font-bold">{data.match.fs_A ?? '-'} : {data.match.fs_B ?? '-'}</span>
@@ -90,7 +96,8 @@ export function MatchPage() {
                 )}
             </AnimatePresence>
 
-            <div className="max-w-3xl mx-auto space-y-10">
+            <div className="max-w-3xl mx-auto space-y-6">
+                <BackButton className="mb-2" />
                 {!matchId && (
                     <section>
                         <form onSubmit={handleSearch} className="flex items-center bg-surface-2 border border-border-hairline rounded-lg overflow-hidden">

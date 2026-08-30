@@ -25,14 +25,16 @@ export function BackButton({ to = '-1', fallbackTo = '/', label = 'Takaisin', cl
 
     return (
         <button
+            type="button"
             onClick={handleClick}
             className={`
-                flex items-center gap-1.5 text-text-muted hover:text-text-primary transition-colors text-sm
+                inline-flex items-center gap-2 px-3 py-2 -ml-2 rounded-xl text-text-secondary hover:text-text-primary hover:bg-surface-2 active:bg-surface-3 transition-colors text-sm font-medium min-h-[44px] min-w-[44px] focus-visible:outline-none focus-visible:ring-2 ring-accent/50
                 ${className}
             `}
+            aria-label={label}
         >
-            <ArrowLeft className="w-4 h-4" />
-            {label}
+            <ArrowLeft className="w-4 h-4 text-accent shrink-0" />
+            <span>{label}</span>
         </button>
     )
 }
