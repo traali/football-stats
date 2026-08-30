@@ -1,0 +1,9 @@
+name = "taso-proxy"
+main = "src/index.ts"
+compatibility_date = "2026-08-30"
+
+[vars]
+TASO_BASE = "https://spl.torneopal.net/taso/rest/"
+TASO_REFERER = "https://tulospalvelu.palloliitto.fi/"
+
+# wrangler secret put TASO_ACCEPT
