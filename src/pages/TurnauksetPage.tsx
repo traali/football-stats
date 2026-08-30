@@ -35,6 +35,10 @@ interface PlayoffInfo {
     matches: MatchWithVenue[]
 }
 
+interface TournamentPlayerStats extends PlayerStats {
+    player_id: string
+}
+
 export function TurnauksetPage() {
     const { turnaus, sarja, teamId } = useParams()
     const navigate = useNavigate()
@@ -52,7 +56,7 @@ export function TurnauksetPage() {
     const [teamName, setTeamName] = useState('')
     const [teamCrest, setTeamCrest] = useState('')
     const [players, setPlayers] = useState<TeamRosterPlayer[]>([])
-    const [processedPlayers, setProcessedPlayers] = useState<PlayerStats[]>([])
+    const [processedPlayers, setProcessedPlayers] = useState<TournamentPlayerStats[]>([])
     const [loadingPlayers, setLoadingPlayers] = useState(false)
 
     const [playerStats, setPlayerStats] = useState<PlayerStatsEntry[]>([])
@@ -132,7 +136,7 @@ export function TurnauksetPage() {
                     
                     if (cancelled) return
 
-                    const processed: PlayerStats[] = []
+                    const processed: TournamentPlayerStats[] = []
                     for (let idx = 0; idx < teamData.players.length; idx++) {
                         const rosterPlayer = teamData.players[idx]
                         const pData = playerDataList[idx]
@@ -146,6 +150,7 @@ export function TurnauksetPage() {
                         )
 
                         processed.push({
+                            player_id: rosterPlayer.player_id || '',
                             name: `${rosterPlayer.first_name || ''} ${rosterPlayer.last_name || ''}`.trim(),
                             shirtNumber: rosterPlayer.shirt_number || 'N/A',
                             birthYear: rosterPlayer.birthyear || pData.birthyear || '',
@@ -193,6 +198,13 @@ export function TurnauksetPage() {
             .sort((a, b) => (parseInt(b.goals || '0') || 0) - (parseInt(a.goals || '0') || 0))
             .slice(0, 20)
     }, [playerStats, teamId])
+
+    const rosterScorers = useMemo(() => {
+        return processedPlayers
+            .filter(p => p.goalsForThisSpecificTeamInSeason > 0)
+            .sort((a, b) => b.goalsForThisSpecificTeamInSeason - a.goalsForThisSpecificTeamInSeason)
+            .slice(0, 15)
+    }, [processedPlayers])
 
 
     const groupLinkMap = useMemo(() => {
@@ -501,7 +513,7 @@ export function TurnauksetPage() {
                     <div className="bg-surface-1 border border-border-hairline rounded-xl p-5 space-y-3">
                         <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
                             <TrendingUp className="w-4 h-4 text-accent" />
-                            Maalintekijät
+                            Maalintekijät (Turnaus)
                         </h3>
                         <div className="space-y-1">
                             {topScorers.map((p, i) => (
@@ -522,6 +534,32 @@ export function TurnauksetPage() {
                                         {(p.assists && parseInt(p.assists) > 0) && (
                                             <span className="text-text-muted text-xs font-mono">{p.assists} syöttöä</span>
                                         )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {topScorers.length === 0 && rosterScorers.length > 0 && (
+                    <div className="bg-surface-1 border border-border-hairline rounded-xl p-5 space-y-3">
+                        <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
+                            <TrendingUp className="w-4 h-4 text-accent" />
+                            Parhaat maalintekijät (Kausi {APP_CONFIG.CURRENT_YEAR})
+                        </h3>
+                        <div className="space-y-1">
+                            {rosterScorers.map((p, i) => (
+                                <div
+                                    key={p.player_id || i}
+                                    onClick={() => p.player_id && navigate(`/player/${p.player_id}`)}
+                                    className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-surface-2 border border-transparent hover:border-border-hairline cursor-pointer transition-all active:scale-[0.99] min-h-[44px]"
+                                >
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <span className="text-text-muted text-xs font-mono w-5 shrink-0">{i + 1}.</span>
+                                        <span className="text-text-primary font-medium truncate text-sm">{p.name}</span>
+                                    </div>
+                                    <div className="flex items-center gap-3 shrink-0 ml-2">
+                                        <span className="text-accent font-bold font-mono text-sm">{p.goalsForThisSpecificTeamInSeason || 0} maalia</span>
                                     </div>
                                 </div>
                             ))}

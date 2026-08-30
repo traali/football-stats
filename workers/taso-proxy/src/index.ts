@@ -52,7 +52,11 @@ export default {
 
         const accept = env.TASO_ACCEPT || 'json/4h7dznqdxwtp3hsfdyf5r793uahfxy7x'
         const upstream = await fetch(taso.toString(), {
-            headers: { Accept: accept, Referer: env.TASO_REFERER },
+            headers: {
+                Accept: accept,
+                Referer: env.TASO_REFERER,
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
+            },
         })
         const raw = await upstream.text()
         const played = endpoint === 'getMatch' && jsonStatus(raw).played
