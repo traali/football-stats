@@ -14,8 +14,14 @@ import { PageLayout } from '../components'
 import { formatDate, formatTime } from '../utils/dates'
 import { isMatchLive, pickHeroMatch } from '../utils/matchLive'
 
+import { getSavedTournaments, saveTournamentFromUrl, type SavedTournament } from '../services/tournamentStorage'
+import { parseTournamentUrl } from '../utils/tournamentUrl'
+
 export function Home() {
     const [matchId, setMatchId] = useState('')
+    const [tournamentUrlInput, setTournamentUrlInput] = useState('')
+    const [tournamentError, setTournamentError] = useState<string | null>(null)
+    const [savedTournaments, setSavedTournaments] = useState<SavedTournament[]>([])
     const [hero, setHero] = useState<DiscoveryMatch | null>(null)
     const [viewed, setViewed] = useState<ViewedMatch[]>([])
     const [loadingNext, setLoadingNext] = useState(true)
@@ -23,6 +29,7 @@ export function Home() {
     const { favorites, updateName } = useFavorites()
 
     useEffect(() => {
+        setSavedTournaments(getSavedTournaments())
         setViewed(listViewedMatches().slice(0, 8))
         const ctrl = new AbortController()
         getTeamMatches(FEATURED.teamId, ctrl.signal)
@@ -60,6 +67,26 @@ export function Home() {
         const trimmed = matchId.trim()
         if (!trimmed) return
         navigate(`/match/${trimmed}`)
+    }
+
+    const handleImportTournament = (e: React.FormEvent) => {
+        e.preventDefault()
+        setTournamentError(null)
+        const trimmed = tournamentUrlInput.trim()
+        if (!trimmed) return
+
+        const parsed = parseTournamentUrl(trimmed)
+        if (!parsed) {
+            setTournamentError('Virheellinen osoite. Liitä Torneopal-turnauksen joukkue- tai sarjasivun linkki.')
+            return
+        }
+
+        saveTournamentFromUrl(trimmed)
+        setSavedTournaments(getSavedTournaments())
+        setTournamentUrlInput('')
+
+        const hostParam = parsed.host ? `?host=${parsed.host}` : ''
+        navigate(`/turnaukset/${parsed.turnaus || 'turnaus'}/${parsed.sarja || 'sarja'}/${parsed.teamId || '0'}${hostParam}`)
     }
 
     const venue = hero ? String(hero.venue_name || hero.venue || hero.venue_city_name || '') : ''
@@ -145,20 +172,55 @@ export function Home() {
             )}
 
             <section className="space-y-3">
-                <h2 className="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
-                    <Trophy className="w-4 h-4 text-accent" /> Cupit
-                </h2>
+                <div className="flex items-center justify-between">
+                    <h2 className="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
+                        <Trophy className="w-4 h-4 text-accent" /> Turnaukset ja Cupit
+                    </h2>
+                </div>
                 <div className="space-y-2">
-                    <div onClick={() => navigate('/turnaukset/hc2026/B13-8/185085')}
-                        className="bg-surface-1 border border-border-hairline rounded-xl p-4 flex items-center justify-between cursor-pointer hover:bg-surface-2">
-                        <div>
-                            <p className="text-text-primary font-medium">Helsinki Cup 2026</p>
-                            <p className="text-text-muted text-sm">PPJ · B13 8v8 · Lohko M</p>
-                        </div>
-                        <ChevronRight className="w-5 h-5 text-text-muted" />
-                    </div>
+                    {savedTournaments.map(t => {
+                        const hostParam = t.host ? `?host=${t.host}` : ''
+                        const link = `/turnaukset/${t.turnaus}/${t.sarja}/${t.teamId}${hostParam}`
+                        return (
+                            <div
+                                key={t.id}
+                                onClick={() => navigate(link)}
+                                className="bg-surface-1 border border-border-hairline rounded-xl p-4 flex items-center justify-between cursor-pointer hover:bg-surface-2 transition-colors min-h-[44px]"
+                            >
+                                <div>
+                                    <p className="text-text-primary font-semibold text-sm">{t.title}</p>
+                                    <p className="text-text-muted text-xs mt-0.5">{t.teamName} · {t.category}</p>
+                                </div>
+                                <ChevronRight className="w-5 h-5 text-text-muted" />
+                            </div>
+                        )
+                    })}
                 </div>
             </section>
+
+            <details className="bg-surface-1 border border-border-hairline rounded-xl p-4">
+                <summary className="cursor-pointer text-sm font-semibold text-text-primary flex items-center gap-2">
+                    <Trophy className="w-4 h-4 text-accent" /> Tuo turnaus linkillä
+                </summary>
+                <form onSubmit={handleImportTournament} className="mt-3 space-y-2">
+                    <p className="text-xs text-text-secondary">
+                        Liitä Torneopal-turnauksen joukkue- tai sarjasivun osoite (esim. vierumaki-turnaus, helsinkicup jne.):
+                    </p>
+                    <div className="flex gap-2">
+                        <input
+                            type="url"
+                            value={tournamentUrlInput}
+                            onChange={(e) => { setTournamentUrlInput(e.target.value); setTournamentError(null) }}
+                            placeholder="https://vierumaki-turnaus5-2026.torneopal.fi/taso/joukkue.php?..."
+                            className="flex-1 bg-surface-2 border border-border-hairline rounded-lg px-3 py-2 text-text-primary text-xs font-mono"
+                        />
+                        <Button type="submit">Tuo</Button>
+                    </div>
+                    {tournamentError && (
+                        <p className="text-xs text-semantic-red font-medium">{tournamentError}</p>
+                    )}
+                </form>
+            </details>
 
             <details className="bg-surface-1 border border-border-hairline rounded-xl p-4">
                 <summary className="cursor-pointer text-sm font-semibold text-text-primary flex items-center gap-2">

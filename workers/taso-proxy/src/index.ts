@@ -1,6 +1,7 @@
 const ALLOWED = new Set([
     'getMatch', 'getGroup', 'getGroups', 'getTeam', 'getPlayer',
     'getMatches', 'getCompetitions', 'getCategories', 'getSeasons',
+    'tournamentWidget',
 ])
 
 const PLAYED = new Set(['Played', 'played', '1'])
@@ -38,6 +39,31 @@ export default {
         const endpoint = parts[parts.length - 1]
         if (!endpoint || !ALLOWED.has(endpoint)) {
             return cors(new Response('endpoint', { status: 400 }))
+        }
+
+        if (endpoint === 'tournamentWidget') {
+            const host = url.searchParams.get('host') || 'vierumaki-turnaus5-2026.torneopal.fi'
+            if (!/^[a-z0-9\-.]+\.torneopal\.(fi|net)$/i.test(host)) {
+                return cors(new Response('invalid host', { status: 400 }))
+            }
+            const targetUrl = new URL(`https://${host}/taso/widget.php`)
+            url.searchParams.forEach((v, k) => {
+                if (k !== 'host') targetUrl.searchParams.set(k, v)
+            })
+            const upstream = await fetch(targetUrl.toString(), {
+                headers: {
+                    Referer: `https://${host}/`,
+                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
+                },
+            })
+            const raw = await upstream.text()
+            return cors(new Response(raw, {
+                status: upstream.status,
+                headers: {
+                    'Content-Type': 'text/javascript; charset=utf-8',
+                    'Cache-Control': 'public, max-age=120, stale-while-revalidate=600',
+                },
+            }))
         }
 
         const taso = new URL(`${env.TASO_BASE}${endpoint}`)

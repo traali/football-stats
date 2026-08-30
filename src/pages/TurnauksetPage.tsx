@@ -1,9 +1,10 @@
 import { useEffect, useState, useMemo } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { Trophy, Users, Shield, Calendar, MapPin, ChevronDown, ChevronRight, TrendingUp } from 'lucide-react'
 import { cn } from '../utils/cn'
 import { formatDate, formatTime } from '../utils/dates'
 import { getGroups, getGroupFull, getTeamProfile, getPlayerData, batchFetch } from '../services/api'
+import { loadTournamentData } from '../services/tournamentLoader'
 import { MATCH_STATUS } from '../types'
 import type { StandingTeam, TeamRosterPlayer, PlayerStatsEntry, GroupDetails, PlayerStats } from '../types'
 import { BackButton, PageLayout, PlayerCard, PlayerCardSkeleton } from '../components'
@@ -41,6 +42,7 @@ interface TournamentPlayerStats extends PlayerStats {
 
 export function TurnauksetPage() {
     const { turnaus, sarja, teamId } = useParams()
+    const [searchParams] = useSearchParams()
     const navigate = useNavigate()
 
     const [loading, setLoading] = useState(true)
@@ -72,6 +74,61 @@ export function TurnauksetPage() {
 
         const fetchData = async () => {
             try {
+                const tHost = searchParams.get('host') || (turnaus === 'lime_0016' ? 'vierumaki-turnaus5-2026.torneopal.fi' : '')
+                if (tHost) {
+                    const tData = await loadTournamentData({
+                        host: tHost,
+                        turnaus,
+                        sarja,
+                        teamId,
+                        rawUrl: '',
+                    })
+                    if (cancelled) return
+                    setCompName(tData.tournamentTitle)
+                    setCatName(tData.categoryName)
+                    setGroupName(tData.groupName || 'Lohko B')
+                    setTeamName(tData.teamName || 'PPJ/Laru Sininen')
+                    setStandings(tData.standings.map(s => {
+                        const gParts = s.goals.split('-')
+                        const gf = parseInt(gParts[0] || '0', 10)
+                        const ga = parseInt(gParts[1] || '0', 10)
+                        return {
+                            team_id: s.teamId || s.teamName,
+                            team_name: s.teamName,
+                            current_standing: String(s.rank),
+                            matches_played: s.played,
+                            matches_won: s.wins,
+                            matches_tied: s.draws,
+                            matches_lost: s.losses,
+                            goals_for: gf,
+                            goals_against: ga,
+                            goals_diff: gf - ga,
+                            points: s.points,
+                        }
+                    }))
+                    setMatches(tData.matches.map(m => {
+                        const dParts = m.date.split('.')
+                        const isoDate = dParts.length === 3 ? `${dParts[2]}-${dParts[1]}-${dParts[0]}` : m.date
+                        const scoreParts = m.score.includes('–') ? m.score.split('–') : m.score.split('-')
+                        return {
+                            match_id: m.matchId || m.matchNumber,
+                            date: isoDate,
+                            time: m.time,
+                            team_A_id: m.homeTeam,
+                            team_B_id: m.awayTeam,
+                            team_A_name: m.homeTeam,
+                            team_B_name: m.awayTeam,
+                            fs_A: scoreParts[0]?.trim() || '',
+                            fs_B: scoreParts[1]?.trim() || '',
+                            winner_id: '',
+                            status: m.status === 'played' ? MATCH_STATUS.PLAYED : MATCH_STATUS.FIXTURE,
+                            venue_name: m.pitch,
+                        }
+                    }))
+                    setLoading(false)
+                    return
+                }
+
                 const groups = await getGroups(turnaus, sarja)
                 setAllGroups(groups)
                 const found = groups.find(g =>
