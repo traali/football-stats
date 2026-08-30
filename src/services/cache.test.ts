@@ -2,6 +2,17 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { setCached, getCached, withCache } from './cache'
 import { MATCH_STATUS } from '../types'
 
+const store = new Map<string, string>()
+const mockStorage = {
+    getItem: (k: string) => store.get(k) ?? null,
+    setItem: (k: string, v: string) => { store.set(k, String(v)) },
+    removeItem: (k: string) => { store.delete(k) },
+    clear: () => { store.clear() },
+    get length() { return store.size },
+    key: (i: number) => Array.from(store.keys())[i] ?? null,
+}
+Object.defineProperty(globalThis, 'localStorage', { value: mockStorage, configurable: true, writable: true })
+
 describe('persist cache', () => {
     beforeEach(() => localStorage.clear())
 

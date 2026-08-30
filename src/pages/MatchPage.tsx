@@ -51,6 +51,20 @@ export function MatchPage() {
     }
     const teamAPlayers = (data?.players?.filter(p => p.teamIdInMatch === data.match.team_A_id) ?? []).map(withAsOf)
     const teamBPlayers = (data?.players?.filter(p => p.teamIdInMatch === data.match.team_B_id) ?? []).map(withAsOf)
+
+    const teamAStanding = data?.group?.teams?.find(t => t.team_id === data?.match?.team_A_id)
+    const teamBStanding = data?.group?.teams?.find(t => t.team_id === data?.match?.team_B_id)
+    const teamAGoalsFor = teamAStanding ? parseInt(String(teamAStanding.goals_for || '0'), 10) : 0
+    const teamBGoalsFor = teamBStanding ? parseInt(String(teamBStanding.goals_for || '0'), 10) : 0
+    const teamAGoalsAgainst = teamAStanding ? parseInt(String(teamAStanding.goals_against || '0'), 10) : 0
+    const teamBGoalsAgainst = teamBStanding ? parseInt(String(teamBStanding.goals_against || '0'), 10) : 0
+
+    const teamARosterGoals = teamAPlayers.reduce((sum, p) => sum + (p.goalsForThisSpecificTeamInSeason || p.goalsThisYear || 0), 0)
+    const teamBRosterGoals = teamBPlayers.reduce((sum, p) => sum + (p.goalsForThisSpecificTeamInSeason || p.goalsThisYear || 0), 0)
+
+    const teamAYellows = teamAPlayers.reduce((sum, p) => sum + (p.warningsThisYear || 0), 0)
+    const teamBYellows = teamBPlayers.reduce((sum, p) => sum + (p.warningsThisYear || 0), 0)
+
     const played = data?.match.status === MATCH_STATUS.PLAYED
 
     return (
@@ -128,13 +142,34 @@ export function MatchPage() {
                             />
                         )}
 
-                        {played && (
-                            <div className="bg-surface-1 border border-border-hairline rounded-xl p-5 space-y-4">
+                        <div className="bg-surface-1 border border-border-hairline rounded-xl p-5 space-y-4">
+                            <div className="flex items-center justify-between">
                                 <h4 className="text-xs font-bold text-text-muted uppercase tracking-widest">Joukkuevertailu</h4>
-                                <DualStatBar label="Maalit" valueA={Number(data.match.fs_A || 0)} valueB={Number(data.match.fs_B || 0)} />
-                                <DualStatBar label="Pelaajat" valueA={teamAPlayers.length} valueB={teamBPlayers.length} />
+                                <div className="flex items-center gap-3 text-xs">
+                                    <span className="text-accent font-bold truncate max-w-[130px] text-right">{data.match.team_A_name}</span>
+                                    <span className="text-text-muted">vs</span>
+                                    <span className="text-semantic-blue font-bold truncate max-w-[130px] text-left">{data.match.team_B_name}</span>
+                                </div>
                             </div>
-                        )}
+                            <div className="space-y-3 pt-1">
+                                {played && (
+                                    <DualStatBar label="Ottelun maalit" valueA={Number(data.match.fs_A || 0)} valueB={Number(data.match.fs_B || 0)} />
+                                )}
+                                <DualStatBar label="Kokoonpanon pelaajat" valueA={teamAPlayers.length} valueB={teamBPlayers.length} />
+                                {(teamAStanding || teamBStanding) && (
+                                    <>
+                                        <DualStatBar label="Tehdyt maalit (sarja)" valueA={teamAGoalsFor} valueB={teamBGoalsFor} />
+                                        <DualStatBar label="Päästetyt maalit (sarja)" valueA={teamAGoalsAgainst} valueB={teamBGoalsAgainst} />
+                                    </>
+                                )}
+                                {(teamARosterGoals > 0 || teamBRosterGoals > 0) && (
+                                    <DualStatBar label="Kokoonpanon kausimaalit" valueA={teamARosterGoals} valueB={teamBRosterGoals} />
+                                )}
+                                {(teamAYellows > 0 || teamBYellows > 0) && (
+                                    <DualStatBar label="Kokoonpanon varoitukset" valueA={teamAYellows} valueB={teamBYellows} />
+                                )}
+                            </div>
+                        </div>
 
                         <MatchLineups
                             teamAName={data.match.team_A_name}

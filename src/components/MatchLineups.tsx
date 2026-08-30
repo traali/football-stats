@@ -17,21 +17,29 @@ function TeamLineup({
     squad?: SquadEligibilityResult
     byPlayer: Record<string, PlayerEligibilityResult>
 }) {
-    const exceptions = players.filter(p => p.overage).length
+    const exceptions = players.filter(p => p.overage).length + (squad?.exceptionUsed || 0)
+    const yellows = players.reduce((sum, p) => sum + (p.warningsThisYear || 0), 0)
+    const goals = players.reduce((sum, p) => sum + (p.goalsForThisSpecificTeamInSeason || p.goalsThisYear || 0), 0)
+
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div className="flex items-center min-w-0">
                     <div className="w-1 h-8 mr-4 rounded-full bg-accent shrink-0" />
-                    <h2 className="text-2xl font-bold text-text-primary truncate">{name}</h2>
+                    <div>
+                        <h2 className="text-2xl font-bold text-text-primary truncate">{name}</h2>
+                        <div className="text-xs text-text-muted flex items-center gap-2 mt-0.5">
+                            <span>{players.length} pelaajaa</span>
+                            {goals > 0 && <span>· {goals} maalia</span>}
+                        </div>
+                    </div>
                 </div>
-                {squad && (
-                    <SquadQuotaBar
-                        used={squad.downQuotaUsed}
-                        max={squad.downQuotaMax}
-                        exceptions={exceptions + (squad.exceptionUsed || 0)}
-                    />
-                )}
+                <SquadQuotaBar
+                    used={squad?.downQuotaUsed ?? 0}
+                    max={squad?.downQuotaMax ?? 4}
+                    exceptions={exceptions}
+                    yellows={yellows}
+                />
             </div>
             <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-5" variants={stagger} initial="hidden" animate="visible">
                 {players.map(player => (
