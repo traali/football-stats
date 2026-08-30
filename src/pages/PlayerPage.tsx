@@ -136,32 +136,120 @@ export function PlayerPage() {
                     ))}
                 </div>
                 <div className="lg:col-span-2 space-y-6">
-                    {pastMatches.map(m => {
-                        const isA = m.team_id === m.team_A_id
-                        const myTeamName = m.team_name || (isA ? m.team_A_name : m.team_B_name)
-                        const oppName = isA ? m.team_B_name : m.team_A_name
-                        const myScore = isA ? m.fs_A : m.fs_B
-                        const oppScore = isA ? m.fs_B : m.fs_A
-                        const wld = parseInt(myScore || '0', 10) > parseInt(oppScore || '0', 10) ? 'V' : parseInt(myScore || '0', 10) < parseInt(oppScore || '0', 10) ? 'H' : 'T'
-                        return (
-                            <div key={m.match_id} onClick={() => navigate(`/match/${m.match_id}`)} className="flex items-center gap-3 py-2 px-2.5 rounded-lg hover:bg-surface-2 cursor-pointer text-sm min-h-[44px]">
-                                <span className={cn('w-2 h-2 rounded-full shrink-0', WLD_CONFIG[wld]?.dot || 'bg-accent')} />
-                                <span className="text-text-muted text-xs w-10">{formatDate(m.date, 'short')}</span>
-                                <div className="flex-1 min-w-0 truncate">{myTeamName} vs {oppName}</div>
-                                <span className="font-mono font-bold text-sm">{m.fs_A && m.fs_B ? `${myScore}–${oppScore}` : '–'}</span>
+                    {upcomingMatches.length > 0 && (
+                        <div className="bg-surface-1 border border-border-hairline rounded-xl p-5 space-y-3">
+                            <h2 className="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-1.5">
+                                <Calendar className="w-4 h-4 text-accent" /> Tulevat ottelut
+                            </h2>
+                            <div className="space-y-2">
+                                {upcomingMatches.map(m => {
+                                    const isA = m.team_id === m.team_A_id
+                                    const myTeamName = m.team_name || (isA ? m.team_A_name : m.team_B_name)
+                                    const oppName = isA ? m.team_B_name : m.team_A_name
+
+                                    return (
+                                        <div
+                                            key={m.match_id}
+                                            onClick={() => navigate(`/match/${m.match_id}`)}
+                                            className="flex items-center justify-between gap-3 p-3 rounded-lg border border-border-hairline hover:bg-surface-2 cursor-pointer transition-colors min-h-[44px]"
+                                        >
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <Calendar className="w-4 h-4 text-accent shrink-0" />
+                                                <div className="min-w-0">
+                                                    <p className="text-text-primary font-semibold text-sm truncate">
+                                                        {myTeamName} vs {oppName}
+                                                    </p>
+                                                    <p className="text-text-muted text-xs truncate mt-0.5">
+                                                        <span className="text-accent/90 font-medium">{myTeamName}</span>
+                                                        {m.category_name && <span> · {m.category_name}</span>}
+                                                        {m.competition_name && <span className="opacity-75"> ({m.competition_name})</span>}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="text-right shrink-0">
+                                                <span className="text-xs text-text-secondary font-mono block">
+                                                    {formatDate(m.date, 'short')}
+                                                </span>
+                                                {m.time && (
+                                                    <span className="text-[11px] text-text-muted font-mono block">
+                                                        klo {m.time}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )
+                                })}
                             </div>
-                        )
-                    })}
-                    {upcomingMatches.map(m => {
-                        const isA = m.team_id === m.team_A_id
-                        return (
-                            <div key={m.match_id} onClick={() => navigate(`/match/${m.match_id}`)} className="flex items-center gap-3 py-2 cursor-pointer text-sm">
-                                <Calendar className="w-4 h-4 text-accent" />
-                                <span className="text-text-muted text-xs w-10">{formatDate(m.date, 'short')}</span>
-                                <span className="truncate">{m.team_name} vs {isA ? m.team_B_name : m.team_A_name}</span>
-                            </div>
-                        )
-                    })}
+                        </div>
+                    )}
+
+                    <div className="bg-surface-1 border border-border-hairline rounded-xl p-5 space-y-3">
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-1.5">
+                                <TrendingDown className="w-4 h-4 text-accent" /> Pelatut ottelut
+                            </h2>
+                            <span className="text-xs text-text-muted">{pastMatches.length} ottelua</span>
+                        </div>
+                        <div className="space-y-2">
+                            {pastMatches.map(m => {
+                                const isA = m.team_id === m.team_A_id
+                                const myTeamName = m.team_name || (isA ? m.team_A_name : m.team_B_name)
+                                const oppName = isA ? m.team_B_name : m.team_A_name
+                                const myScore = isA ? m.fs_A : m.fs_B
+                                const oppScore = isA ? m.fs_B : m.fs_A
+                                const myScoreNum = parseInt(myScore || '0', 10)
+                                const oppScoreNum = parseInt(oppScore || '0', 10)
+                                const wld = myScoreNum > oppScoreNum ? 'V' : myScoreNum < oppScoreNum ? 'H' : 'T'
+                                const goals = parseInt(m.player_goals || '0', 10) || 0
+                                const warnings = parseInt(m.player_warnings || '0', 10) || 0
+
+                                return (
+                                    <div
+                                        key={m.match_id}
+                                        onClick={() => navigate(`/match/${m.match_id}`)}
+                                        className="flex items-center justify-between gap-3 p-3 rounded-lg border border-border-hairline hover:bg-surface-2 cursor-pointer transition-colors min-h-[44px]"
+                                    >
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <span className={cn('w-2.5 h-2.5 rounded-full shrink-0', WLD_CONFIG[wld]?.dot || 'bg-accent')} title={`${wld}-tulos`} />
+                                            <div className="min-w-0">
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <span className="text-text-primary font-semibold text-sm truncate">
+                                                        {myTeamName} vs {oppName}
+                                                    </span>
+                                                    {goals > 0 && (
+                                                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-semantic-green bg-semantic-green/10 border border-semantic-green/20 px-1.5 py-0.2 rounded">
+                                                            ⚽ {goals} {goals === 1 ? 'maali' : 'maalia'}
+                                                        </span>
+                                                    )}
+                                                    {warnings > 0 && (
+                                                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-semantic-amber bg-semantic-amber/10 border border-semantic-amber/20 px-1.5 py-0.2 rounded">
+                                                            🟨 {warnings > 1 ? warnings : ''}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <p className="text-text-muted text-xs truncate mt-0.5">
+                                                    <span className="text-accent/90 font-medium">{myTeamName}</span>
+                                                    {m.category_name && <span> · {m.category_name}</span>}
+                                                    {m.competition_name && <span className="opacity-75"> ({m.competition_name})</span>}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="text-right shrink-0 ml-2">
+                                            <span className="font-mono font-bold text-sm text-text-primary block">
+                                                {m.fs_A != null && m.fs_B != null ? `${myScore}–${oppScore}` : '–'}
+                                            </span>
+                                            <span className="text-text-muted text-xs font-mono block mt-0.5">
+                                                {formatDate(m.date, 'short')}
+                                            </span>
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                            {pastMatches.length === 0 && (
+                                <p className="text-xs text-text-muted py-4 text-center">Ei pelattuja otteluita valitulle rajaukselle.</p>
+                            )}
+                        </div>
+                    </div>
                 </div>
             </div>
         </PageLayout>
