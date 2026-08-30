@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, type Variants } from 'framer-motion'
 import { PlayerStats } from '../types'
-import { User, Shield, AlertTriangle, Target } from 'lucide-react'
+import { User, Shield, AlertTriangle, Target, Activity } from 'lucide-react'
 import { StatBadge } from './StatBadge'
 import { EligibilityChip } from './EligibilityChip'
 import type { PlayerEligibilityResult } from '../domain/eligibility'
@@ -55,7 +55,7 @@ function gdLabel(gf?: number, ga?: number): string {
 export function PlayerCard({ stats, eligibility }: { stats: PlayerStats; eligibility?: PlayerEligibilityResult }) {
     const [imgError, setImgError] = useState(false)
     const series = stats.seriesThisYear || []
-    const showTotals = stats.gamesPlayedThisYear > 0 || stats.goalsThisYear > 0 || stats.warningsThisYear > 0 || (stats.goalsInMatch || 0) > 0
+    const showTotals = stats.gamesPlayedThisYear > 0 || stats.goalsThisYear > 0 || stats.warningsThisYear > 0 || (stats.goalsInMatch || 0) > 0 || (stats.gamesLast14Days || 0) > 0
     const lastHigher = eligibility?.lastOfficialHigher
 
     const inner = (
@@ -94,10 +94,16 @@ export function PlayerCard({ stats, eligibility }: { stats: PlayerStats; eligibi
             </div>
 
             {showTotals && (
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     <StatBadge label="Ottelut" value={stats.gamesPlayedThisYear} icon={<Shield />} />
                     <StatBadge label="Maalit" value={stats.goalsThisYear} icon={<Target />} variant="success" />
                     <StatBadge label="Varoitukset" value={stats.warningsThisYear} icon={<AlertTriangle />} variant={stats.warningsThisYear > 0 ? 'warning' : 'default'} />
+                    <StatBadge
+                        label="14 vrk"
+                        value={stats.gamesLast14Days ?? 0}
+                        icon={<Activity />}
+                        variant={(stats.gamesLast14Days ?? 0) >= 3 ? 'warning' : (stats.gamesLast14Days ?? 0) > 0 ? 'info' : 'default'}
+                    />
                 </div>
             )}
 

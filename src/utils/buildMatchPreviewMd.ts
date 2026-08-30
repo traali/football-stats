@@ -49,7 +49,8 @@ function playerLines(players: PlayerStats[], elig?: Record<string, PlayerEligibi
         }).join('\n')
         const badge = elig && p.playerId ? elig[p.playerId] : undefined
         const extra = badge?.lastOfficialHigher ? ` · edellinen ylempänä ${badge.lastOfficialHigher.level} ${badge.lastOfficialHigher.date}` : ''
-        return `- **${p.name}** ${p.shirtNumber !== 'N/A' ? `#${p.shirtNumber}` : ''} · ${p.gamesPlayedThisYear} ott · ${p.goalsThisYear} m · ${p.warningsThisYear} var${extra}\n${series}`
+        const recent = p.gamesLast14Days ? ` · 14 vrk: ${p.gamesLast14Days} ott` : ''
+        return `- **${p.name}** ${p.shirtNumber !== 'N/A' ? `#${p.shirtNumber}` : ''} · ${p.gamesPlayedThisYear} ott · ${p.goalsThisYear} m · ${p.warningsThisYear} var${recent}${extra}\n${series}`
     }).join('\n')
 }
 

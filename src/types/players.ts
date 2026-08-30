@@ -119,4 +119,5 @@ export interface PlayerStats {
     weight?: string
     goalsInMatch?: number
     overage?: boolean
+    gamesLast14Days?: number
 }

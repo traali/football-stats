@@ -9,7 +9,7 @@ const matches = [
 
 describe('cardStatsAsOf', () => {
     it('counts W-D-L and warnings per level', () => {
-        const s = cardStatsAsOf(matches, { seasonYear: '2026' })
+        const s = cardStatsAsOf(matches, { seasonYear: '2026', refDate: '2026-08-25' })
         const nel = s.seriesThisYear.find(r => r.category.includes('Nelonen'))!
         expect(nel.wins).toBe(1)
         expect(nel.draws).toBe(1)
@@ -18,5 +18,6 @@ describe('cardStatsAsOf', () => {
         const kol = s.seriesThisYear.find(r => r.category.includes('Kolmonen'))!
         expect(kol.losses).toBe(1)
         expect(kol.goals).toBe(1)
+        expect(s.gamesLast14Days).toBe(1) // match on 2026-08-20 is within 14 days of 2026-08-25
     })
 })

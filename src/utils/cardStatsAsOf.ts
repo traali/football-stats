@@ -21,6 +21,7 @@ export interface CardSeasonStats {
     warningsThisYear: number
     gamesPlayedLastSeason: number
     goalsScoredLastSeason: number
+    gamesLast14Days: number
     seriesThisYear: CardSeriesRow[]
 }
 
@@ -47,7 +48,7 @@ function scorePair(m: PlayerMatchEntry): { my: number; opp: number } | null {
 
 export function cardStatsAsOf(
     matches: PlayerMatchEntry[] | undefined,
-    opts: { seasonYear: string; asOfDate?: string },
+    opts: { seasonYear: string; asOfDate?: string; refDate?: string },
 ): CardSeasonStats {
     const out: CardSeasonStats = {
         gamesPlayedThisYear: 0,
@@ -55,12 +56,23 @@ export function cardStatsAsOf(
         warningsThisYear: 0,
         gamesPlayedLastSeason: 0,
         goalsScoredLastSeason: 0,
+        gamesLast14Days: 0,
         seriesThisYear: [],
     }
+    const refDate = opts.refDate || new Date().toISOString().slice(0, 10)
+    const refTime = new Date(refDate).getTime()
+    const fourteenDaysAgo = new Date(refTime - 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+
     const prev = opts.seasonYear ? String(parseInt(opts.seasonYear, 10) - 1) : ''
     const byKey = new Map<string, CardSeriesRow>()
     for (const m of matches || []) {
-        if (m.status !== MATCH_STATUS.PLAYED) continue
+        const isPlayed = m.status === MATCH_STATUS.PLAYED || m.status === 'Played' || m.status === 'played' || m.status === '1'
+        if (!isPlayed) continue
+
+        if (m.date && m.date >= fourteenDaysAgo && m.date <= refDate) {
+            out.gamesLast14Days++
+        }
+
         if (opts.asOfDate && (m.date || '') > opts.asOfDate) continue
         const y = seasonYear(m.season_id, m.date)
         const goals = parseInt(m.player_goals || '0', 10) || 0

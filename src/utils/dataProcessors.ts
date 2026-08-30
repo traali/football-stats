@@ -13,6 +13,7 @@ interface ProcessedStats {
     pastMatchesDetails: PastMatchDetail[];
     gamesPlayedLastSeason: number;
     goalsScoredLastSeason: number;
+    gamesLast14Days: number;
     teamsThisYear: string;
 }
 
@@ -34,15 +35,25 @@ export function processPlayerMatchHistory(
         pastMatchesDetails: [] as PastMatchDetail[],
         gamesPlayedLastSeason: 0,
         goalsScoredLastSeason: 0,
+        gamesLast14Days: 0,
     };
 
     if (!matches) return { ...stats, teamsThisYear: "" };
+
+    const now = new Date();
+    const todayStr = now.toISOString().slice(0, 10);
+    const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
     matches.forEach((match) => {
         const goals = parseInt(match.player_goals ?? "") || 0;
         const warnings = parseInt(match.player_warnings ?? "") || 0;
         const suspensions = parseInt(match.player_suspensions ?? "") || 0;
         const teamName = match.team_name || "Tuntematon joukkue";
+
+        const isPlayed = match.status === "Played" || match.status === "played" || match.status === "1";
+        if (isPlayed && match.date && match.date >= fourteenDaysAgo && match.date <= todayStr) {
+            stats.gamesLast14Days++;
+        }
 
         if (seasonMatchesYear(match.season_id, currentSeasonId, match.date)) {
             if (match.status === "Played") {
