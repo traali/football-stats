@@ -1,3 +1,4 @@
+import { AlertTriangle } from 'lucide-react'
 import { cn } from '../utils/cn'
 import type { PlayerEligibilityResult } from '../domain/eligibility'
 
@@ -9,7 +10,7 @@ const STYLES = {
 
 export function EligibilityChip({ result }: { result?: PlayerEligibilityResult }) {
     if (!result || result.verdict === 'ok') return null
-    const label = result.verdict === 'block' ? 'Estetty' : 'Tarkista'
+    const label = result.verdict === 'block' ? 'Ylempi taso' : 'Tarkista'
     return (
         <span
             title={result.reasons[0]?.messageFi}
@@ -44,18 +45,19 @@ export function SquadQuotaBar({
                     </span>
                 )}
                 <span className={cn(
-                    'inline-flex items-center text-[11px] font-bold px-2 py-0.5 rounded-md border',
-                    over ? 'bg-semantic-red/15 text-semantic-red border-semantic-red/30' : 'bg-surface-2 text-text-primary border-border-hairline'
+                    'inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-md border',
+                    over ? 'bg-semantic-red/15 text-semantic-red border-semantic-red/40 shadow-sm' : 'bg-surface-2 text-text-primary border-border-hairline'
                 )}>
-                    <span>Ylhäältä {used}/{max}</span>
+                    {over && <AlertTriangle className="w-3.5 h-3.5 text-semantic-red shrink-0" />}
+                    <span>{over ? `Ylhäältä ${used}/${max} (Kiintiö ylittynyt!)` : `Ylhäältä ${used}/${max}`}</span>
                     {typeof exceptions === 'number' && exceptions > 0 && (
-                        <span className="ml-1.5 text-semantic-amber font-semibold">
+                        <span className="ml-1 text-semantic-amber font-semibold">
                             · {exceptions} {exceptions === 1 ? 'poikkeuslupa' : 'poikkeuslupaa'}
                         </span>
                     )}
                 </span>
             </div>
-            <div className="w-28 h-1.5 rounded-full bg-surface-3 overflow-hidden">
+            <div className="w-32 h-1.5 rounded-full bg-surface-3 overflow-hidden">
                 <div className={cn('h-full transition-all', over ? 'bg-semantic-red' : 'bg-accent')} style={{ width: `${Math.min(100, max === 0 ? 0 : (used / max) * 100)}%` }} />
             </div>
         </div>

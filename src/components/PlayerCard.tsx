@@ -4,7 +4,6 @@ import { motion, type Variants } from 'framer-motion'
 import { PlayerStats } from '../types'
 import { User, Shield, AlertTriangle, Target, Activity } from 'lucide-react'
 import { StatBadge } from './StatBadge'
-import { EligibilityChip } from './EligibilityChip'
 import type { PlayerEligibilityResult } from '../domain/eligibility'
 
 const cardVariants: Variants = {
@@ -77,7 +76,6 @@ export function PlayerCard({ stats, eligibility }: { stats: PlayerStats; eligibi
                     <h3 className="text-xl font-bold text-text-primary flex items-center flex-wrap gap-2">
                         {stats.name}
                         {stats.shirtNumber !== 'N/A' && <span className="text-accent text-sm font-mono font-medium">#{stats.shirtNumber}</span>}
-                        <EligibilityChip result={eligibility} />
                     </h3>
                     {(stats.currentTeamName || stats.teamsThisYear) && (
                         <p className="text-text-primary text-sm mt-0.5">
