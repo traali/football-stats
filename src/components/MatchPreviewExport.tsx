@@ -50,23 +50,43 @@ export function MatchPreviewExport({
         setTimeout(() => setCopied(false), 1500)
     }
 
+    const shareWhatsApp = () => {
+        const text = `⚽ OTTELUENNAKKO: ${match.team_A_name} vs ${match.team_B_name}\n` +
+            `📅 ${match.date} klo ${match.time || '18:00'} | 📍 ${match.venue_name || 'Kenttä'}\n` +
+            `🏆 ${group?.group_name || match.category_name || 'Sarjaottelu'}\n` +
+            `🔗 Katso tilastot: ${window.location.href}`
+        if (typeof navigator !== 'undefined' && navigator.share) {
+            navigator.share({ title: `Ottelu: ${match.team_A_name} vs ${match.team_B_name}`, text }).catch(() => {})
+        } else {
+            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank')
+        }
+    }
+
     return (
         <div className="flex flex-wrap items-center gap-2">
+            <button
+                type="button"
+                onClick={shareWhatsApp}
+                className="text-xs font-bold px-3 py-2 rounded-lg bg-emerald-600/20 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-600/30 transition-all cursor-pointer inline-flex items-center gap-1.5"
+            >
+                <span>💬</span>
+                <span>Jaa WhatsAppiin</span>
+            </button>
             {!requested && (
                 <button
                     type="button"
                     onClick={() => setRequested(true)}
-                    className="text-xs font-semibold px-3 py-2 rounded-lg bg-surface-2 border border-border-hairline text-text-primary"
+                    className="text-xs font-semibold px-3 py-2 rounded-lg bg-surface-2 border border-border-hairline text-text-primary hover:bg-surface-3 transition-all cursor-pointer"
                 >
                     Luo markdown
                 </button>
             )}
             {requested && (
                 <>
-                    <button type="button" disabled={!ready} onClick={copy} className="text-xs font-semibold px-3 py-2 rounded-lg bg-surface-2 border border-border-hairline text-text-primary disabled:opacity-50">
+                    <button type="button" disabled={!ready} onClick={copy} className="text-xs font-semibold px-3 py-2 rounded-lg bg-surface-2 border border-border-hairline text-text-primary disabled:opacity-50 hover:bg-surface-3 transition-all cursor-pointer">
                         {copied ? 'Kopioitu' : busy ? 'Haetaan maaliaikoja ja kokoonpanoja…' : 'Kopioi markdown'}
                     </button>
-                    <button type="button" disabled={!ready} onClick={download} className="text-xs font-semibold px-3 py-2 rounded-lg bg-accent text-text-inverse inline-flex items-center gap-1 disabled:opacity-50">
+                    <button type="button" disabled={!ready} onClick={download} className="text-xs font-semibold px-3 py-2 rounded-lg bg-accent text-text-inverse inline-flex items-center gap-1 disabled:opacity-50 hover:brightness-110 transition-all cursor-pointer">
                         <Download className="w-3.5 h-3.5" /> Lataa .md
                     </button>
                 </>
