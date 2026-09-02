@@ -1,62 +1,32 @@
-import { useEffect, useState, useMemo } from 'react'
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
-import { Trophy, Users, Shield, MapPin, ChevronDown, ChevronRight, TrendingUp } from 'lucide-react'
-import { cn } from '../utils/cn'
-import { formatDate, formatTime } from '../utils/dates'
-import { getGroups, getGroupFull, getTeamProfile, getPlayerData, batchFetch } from '../services/api'
-import { loadTournamentData } from '../services/tournamentLoader'
-import { getSavedTournaments } from '../services/tournamentStorage'
-import { MATCH_STATUS } from '../types'
-import type { StandingTeam, TeamRosterPlayer, PlayerStatsEntry, GroupDetails, PlayerStats } from '../types'
-import { BackButton, PageLayout, PlayerCard, PlayerCardSkeleton } from '../components'
-import { TournamentStandingsTable, TournamentMatchesList } from '../components/tournament'
-import { processPlayerMatchHistory } from '../utils/dataProcessors'
-import { APP_CONFIG } from '../config'
-
-interface MatchWithVenue {
-    match_id: string
-    date: string
-    time: string
-    team_A_id: string
-    team_B_id: string
-    team_A_name: string
-    team_B_name: string
-    fs_A: string
-    fs_B: string
-    winner_id: string
-    status: string
-    venue_name?: string
-    venue_location_name?: string
-    referee_1_name?: string
-    [key: string]: unknown
-}
-
-interface PlayoffInfo {
-    id: string
-    name: string
-    label: string
-    matches: MatchWithVenue[]
-}
-
-interface TournamentPlayerStats extends PlayerStats {
-    player_id: string
-}
+import { useMemo } from "react";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { Users, Shield } from "lucide-react";
+import { getSavedTournaments } from "../services/tournamentStorage";
+import { BackButton, PageLayout, PlayerCard, PlayerCardSkeleton } from "../components";
+import {
+  TournamentStandingsTable,
+  TournamentMatchesList,
+  TournamentPlayoffsTree,
+  TournamentScorersList,
+} from "../components/tournament";
+import { useTournamentData } from "../hooks/useTournamentData";
+import { APP_CONFIG } from "../config";
 
 export function TurnauksetPage() {
-    const params = useParams()
-    const { turnaus, sarja } = params
-    const rawTeamParam = (params['*'] || params.teamId || '').trim()
-    let decodedTeam = rawTeamParam.replace(/^\/+/, '')
-    try {
-        decodedTeam = decodeURIComponent(decodedTeam)
-    } catch {
-        // keep as-is
-    }
+  const params = useParams();
+  const { turnaus, sarja } = params;
+  const rawTeamParam = (params["*"] || params.teamId || "").trim();
+  let decodedTeam = rawTeamParam.replace(/^\/+/, "");
+  try {
+    decodedTeam = decodeURIComponent(decodedTeam);
+  } catch {
+    // keep as-is
+  }
 
-    // Resolve effective numeric teamId if a team name or slug was provided
-    let effectiveTeamId = decodedTeam
-    if (!/^\d+$/.test(effectiveTeamId)) {
-        const saved = getSavedTournaments()
+  // Resolve effective numeric teamId if a team name or slug was provided
+  let effectiveTeamId = decodedTeam;
+  if (!/^\d+$/.test(effectiveTeamId)) {
+    const saved = getSavedTournaments()
         const match = saved.find(t =>
             t.turnaus === turnaus &&
             (t.teamName.toLowerCase().includes(decodedTeam.toLowerCase()) || decodedTeam.toLowerCase().includes(t.teamName.toLowerCase()))
@@ -72,195 +42,31 @@ export function TurnauksetPage() {
     const [searchParams] = useSearchParams()
     const navigate = useNavigate()
 
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
-
-    const [, setGroupId] = useState('')
-    const [groupName, setGroupName] = useState('')
-    const [compName, setCompName] = useState('')
-    const [catName, setCatName] = useState('')
-    const [standings, setStandings] = useState<StandingTeam[]>([])
-    const [matches, setMatches] = useState<MatchWithVenue[]>([])
-
-    const [teamName, setTeamName] = useState(decodedTeam && !/^\d+$/.test(decodedTeam) ? decodedTeam : '')
-    const [teamCrest, setTeamCrest] = useState('')
-    const [players, setPlayers] = useState<TeamRosterPlayer[]>([])
-    const [processedPlayers, setProcessedPlayers] = useState<TournamentPlayerStats[]>([])
-    const [loadingPlayers, setLoadingPlayers] = useState(false)
-
-    const [playerStats, setPlayerStats] = useState<PlayerStatsEntry[]>([])
-
-    const [playoffs, setPlayoffs] = useState<PlayoffInfo[]>([])
-    const [expandedPlayoff, setExpandedPlayoff] = useState<string | null>(null)
-    const [allGroups, setAllGroups] = useState<GroupDetails[]>([])
-
-    useEffect(() => {
-        if (!turnaus || !sarja) return
-        let cancelled = false
-        const controller = new AbortController()
-
-        const fetchData = async () => {
-            try {
-                const tHost = searchParams.get('host') || (turnaus === 'lime_0016' ? 'vierumaki-turnaus5-2026.torneopal.fi' : '')
-                if (tHost) {
-                    const tData = await loadTournamentData({
-                        host: tHost,
-                        turnaus,
-                        sarja,
-                        teamId: effectiveTeamId || '201313',
-                        rawUrl: '',
-                    })
-                    if (cancelled) return
-                    setCompName(tData.tournamentTitle)
-                    setCatName(tData.categoryName)
-                    setGroupName(tData.groupName || 'Lohko B')
-                    setTeamName(tData.teamName || (decodedTeam && !/^\d+$/.test(decodedTeam) ? decodedTeam : 'PPJ/Laru Sininen'))
-                    setStandings(tData.standings.map(s => {
-                        const gParts = s.goals.split('-')
-                        const gf = parseInt(gParts[0] || '0', 10)
-                        const ga = parseInt(gParts[1] || '0', 10)
-                        return {
-                            team_id: s.teamId || s.teamName,
-                            team_name: s.teamName,
-                            current_standing: String(s.rank),
-                            matches_played: s.played,
-                            matches_won: s.wins,
-                            matches_tied: s.draws,
-                            matches_lost: s.losses,
-                            goals_for: gf,
-                            goals_against: ga,
-                            goals_diff: gf - ga,
-                            points: s.points,
-                        }
-                    }))
-                    setMatches(tData.matches.map(m => {
-                        const dParts = m.date.split('.')
-                        const isoDate = dParts.length === 3 ? `${dParts[2]}-${dParts[1]}-${dParts[0]}` : m.date
-                        const scoreParts = m.score.includes('–') ? m.score.split('–') : m.score.split('-')
-                        return {
-                            match_id: m.matchId || m.matchNumber,
-                            date: isoDate,
-                            time: m.time,
-                            team_A_id: m.homeTeam,
-                            team_B_id: m.awayTeam,
-                            team_A_name: m.homeTeam,
-                            team_B_name: m.awayTeam,
-                            fs_A: scoreParts[0]?.trim() || '',
-                            fs_B: scoreParts[1]?.trim() || '',
-                            winner_id: '',
-                            status: m.status === 'played' ? MATCH_STATUS.PLAYED : MATCH_STATUS.FIXTURE,
-                            venue_name: m.pitch,
-                        }
-                    }))
-                    setLoading(false)
-                    return
-                }
-
-                const groups = await getGroups(turnaus, sarja)
-                setAllGroups(groups)
-                const found = groups.find(g =>
-                    g.teams?.some(t => String(t.team_id) === teamId)
-                )
-                if (!found) throw new Error('Joukkuetta ei löydy tästä turnauksesta')
-
-                setGroupId(found.group_id)
-                setGroupName(found.group_name || '')
-                setCompName(found.competition_name || '')
-                setCatName(found.category_name || '')
-                setStandings(found.teams || [])
-
-                const [groupData, teamData] = await Promise.all([
-                    getGroupFull(turnaus, sarja, found.group_id, controller.signal),
-                    getTeamProfile(teamId, controller.signal),
-                ])
-
-                if (cancelled) return
-
-                if (groupData?.matches) {
-                    setMatches(groupData.matches as MatchWithVenue[])
-                }
-                if (groupData?.player_statistics) {
-                    setPlayerStats(groupData.player_statistics)
-                }
-                if (teamData) {
-                    setTeamName(teamData.team_name || '')
-                    setTeamCrest(teamData.crest || '')
-                    setPlayers(teamData.players || [])
-                }
-
-                const playoffGroups = groups.filter(g => !g.teams?.length && g.group_id !== found.group_id)
-                if (playoffGroups.length > 0) {
-                    const playoffLabels = playoffGroups.map(g => ({
-                        id: g.group_id,
-                        name: g.group_name || `Lohko ${g.group_id}`,
-                        label: g.group_name || '',
-                    }))
-                    const playoffResults = await batchFetch(
-                        playoffLabels.map(p => p.id),
-                        (id, signal) => getGroupFull(turnaus!, sarja!, id, signal),
-                        3,
-                        controller.signal
-                    )
-                    if (cancelled) return
-                    const parsedPlayoffs = playoffLabels.map((p, i) => ({
-                        ...p,
-                        matches: (playoffResults[i]?.matches || []) as MatchWithVenue[],
-                    }))
-                    setPlayoffs(parsedPlayoffs)
-                }
-
-                // Page load completes first
-                setLoading(false)
-
-                // Background batch-fetch detailed player profiles
-                if (teamData?.players && teamData.players.length > 0) {
-                    setLoadingPlayers(true)
-                    const playerIds = teamData.players.map(p => p.player_id).filter((id): id is string => !!id)
-                    const playerDataList = await batchFetch(playerIds, getPlayerData, 5, controller.signal)
-                    
-                    if (cancelled) return
-
-                    const processed: TournamentPlayerStats[] = []
-                    for (let idx = 0; idx < teamData.players.length; idx++) {
-                        const rosterPlayer = teamData.players[idx]
-                        const pData = playerDataList[idx]
-                        if (!pData) continue
-
-                        const processedHistory = processPlayerMatchHistory(
-                            pData.matches,
-                            APP_CONFIG.CURRENT_YEAR,
-                            APP_CONFIG.PREVIOUS_YEAR,
-                            teamData.team_name || ''
-                        )
-
-                        processed.push({
-                            player_id: rosterPlayer.player_id || '',
-                            name: `${rosterPlayer.first_name || ''} ${rosterPlayer.last_name || ''}`.trim(),
-                            shirtNumber: rosterPlayer.shirt_number || 'N/A',
-                            birthYear: rosterPlayer.birthyear || pData.birthyear || '',
-                            img_url: rosterPlayer.img_url || pData.img_url,
-                            ...processedHistory,
-                            isCaptainInMatch: false,
-                            teamIdInMatch: teamId,
-                        })
-                    }
-                    setProcessedPlayers(processed)
-                    setLoadingPlayers(false)
-                }
-            } catch (err) {
-                if (!cancelled) {
-                    setError((err as Error).message)
-                    setLoading(false)
-                }
-            }
-        }
-
-        fetchData()
-        return () => {
-            cancelled = true
-            controller.abort()
-        }
-    }, [turnaus, sarja, effectiveTeamId, decodedTeam])
+    const {
+        loading,
+        error,
+        groupName,
+        compName,
+        catName,
+        standings,
+        matches,
+        teamName,
+        teamCrest,
+        players,
+        processedPlayers,
+        loadingPlayers,
+        playerStats,
+        playoffs,
+        expandedPlayoff,
+        setExpandedPlayoff,
+        allGroups,
+    } = useTournamentData({
+        turnaus,
+        sarja,
+        teamId,
+        decodedTeam,
+        hostParam: searchParams.get('host'),
+    })
 
     const teamMatches = useMemo(() => {
         return matches
@@ -402,149 +208,27 @@ export function TurnauksetPage() {
                     onSelectMatch={(mId) => navigate(`/match/${mId}`)}
                 />
 
-                <div className="bg-surface-1 border border-border-hairline rounded-xl p-5 space-y-3">
-                    <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
-                        <Trophy className="w-4 h-4 text-accent" />
-                        Jatko-ottelut
-                    </h3>
+                <TournamentPlayoffsTree
+                    playoffs={playoffs}
+                    expandedPlayoff={expandedPlayoff}
+                    onTogglePlayoff={(id) => setExpandedPlayoff(expandedPlayoff === id ? null : id)}
+                    groupName={groupName}
+                    onSelectMatch={(mId) => navigate(`/match/${mId}`)}
+                    renderPlayoffTeamName={renderPlayoffTeamName}
+                />
 
-                    <div className="space-y-2">
-                        {playoffs.map(p => (
-                            <div key={p.id} className="border border-border-hairline rounded-xl overflow-hidden">
-                                <button
-                                    onClick={() => setExpandedPlayoff(expandedPlayoff === p.id ? null : p.id)}
-                                    className="w-full flex items-center justify-between p-4 hover:bg-surface-2 transition-colors min-h-[48px] cursor-pointer"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <div className={cn(
-                                            "w-3 h-3 rounded-full shrink-0",
-                                            p.matches.length > 0 ? 'bg-accent' : 'bg-text-muted'
-                                        )} />
-                                        <span className="text-sm font-bold text-text-primary">{p.name}</span>
-                                        {p.label && <span className="text-xs text-text-muted">{p.label}</span>}
-                                    </div>
-                                    {expandedPlayoff === p.id ? (
-                                        <ChevronDown className="w-4 h-4 text-text-muted" />
-                                    ) : (
-                                        <ChevronRight className="w-4 h-4 text-text-muted" />
-                                    )}
-                                </button>
+                <TournamentScorersList
+                    title="Maalintekijät (Turnaus)"
+                    scorers={topScorers}
+                    onSelectPlayer={(pId) => navigate(`/player/${pId}`)}
+                />
 
-                                {expandedPlayoff === p.id && (
-                                    <div className="border-t border-border-hairline">
-                                        {p.matches.length === 0 ? (
-                                            <p className="text-text-muted text-sm text-center py-4">Ei otteluita</p>
-                                        ) : (
-                                            <div className="divide-y divide-border-hairline/50">
-                                                {[...p.matches]
-                                                    .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))
-                                                    .map(m => (
-                                                        <div
-                                                            key={m.match_id}
-                                                            onClick={() => navigate(`/match/${m.match_id}`)}
-                                                            className="flex items-center justify-between py-2.5 px-4 hover:bg-surface-2 cursor-pointer transition-all min-h-[44px]"
-                                                        >
-                                                            <div className="flex items-center gap-3 min-w-0 flex-1">
-                                                                <div className="text-center shrink-0 w-14">
-                                                                    <p className="text-xs text-text-muted font-mono">{formatDate(m.date)}</p>
-                                                                    <p className="text-[11px] text-text-muted/70 font-mono">{formatTime(m.time)}</p>
-                                                                </div>
-                                                                <div className="min-w-0 flex-1 space-y-0.5">
-                                                                    <p className="text-xs font-mono truncate">
-                                                                        {renderPlayoffTeamName(m.team_A_name || '—')}
-                                                                    </p>
-                                                                    <p className="text-[10px] text-text-muted/40 text-center leading-none">vs</p>
-                                                                    <p className="text-xs font-mono truncate">
-                                                                        {renderPlayoffTeamName(m.team_B_name || '—')}
-                                                                    </p>
-                                                                    {(m.venue_name || m.venue_location_name) && (
-                                                                        <p className="text-xs text-text-muted/70 flex items-center gap-1 mt-1 truncate">
-                                                                            <MapPin className="w-3 h-3 shrink-0" />
-                                                                            {m.venue_name}{m.venue_location_name ? ` · ${m.venue_location_name}` : ''}
-                                                                        </p>
-                                                                    )}
-                                                                    {m.referee_1_name && (
-                                                                        <p className="text-[10px] text-text-muted/50 flex items-center gap-1 mt-0.5 truncate">
-                                                                            <Users className="w-2.5 h-2.5 shrink-0" />
-                                                                            {m.referee_1_name}
-                                                                        </p>
-                                                                    )}
-                                                                </div>
-                                                             </div>
-                                                          </div>
-                                                     )
-                                                    )}
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-
-                    {playoffs.filter(p => p.matches.length > 0).length > 0 && (
-                        <p className="text-xs text-text-muted/60 pt-1">
-                            Esim. {groupName}/I = {groupName}-lohkon 1. sija · Roomalaiset numerot viittaavat lohkon sijoitukseen
-                        </p>
-                    )}
-                </div>
-
-                {topScorers.length > 0 && (
-                    <div className="bg-surface-1 border border-border-hairline rounded-xl p-5 space-y-3">
-                        <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
-                            <TrendingUp className="w-4 h-4 text-accent" />
-                            Maalintekijät (Turnaus)
-                        </h3>
-                        <div className="space-y-1">
-                            {topScorers.map((p, i) => (
-                                <div
-                                    key={p.player_id || i}
-                                    onClick={() => p.player_id && navigate(`/player/${p.player_id}`)}
-                                    className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-surface-2 border border-transparent hover:border-border-hairline cursor-pointer transition-all active:scale-[0.99] min-h-[44px]"
-                                >
-                                    <div className="flex items-center gap-3 min-w-0">
-                                        <span className="text-text-muted text-xs font-mono w-5 shrink-0">{i + 1}.</span>
-                                        <span className="text-text-primary font-medium truncate text-sm">{p.player_name}</span>
-                                        {p.team_name && (
-                                            <span className="text-text-muted text-xs truncate shrink-0">({p.team_name})</span>
-                                        )}
-                                    </div>
-                                    <div className="flex items-center gap-3 shrink-0 ml-2">
-                                        <span className="text-accent font-bold font-mono text-sm">{p.goals || 0} maalia</span>
-                                        {(p.assists && parseInt(p.assists) > 0) && (
-                                            <span className="text-text-muted text-xs font-mono">{p.assists} syöttöä</span>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {topScorers.length === 0 && rosterScorers.length > 0 && (
-                    <div className="bg-surface-1 border border-border-hairline rounded-xl p-5 space-y-3">
-                        <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
-                            <TrendingUp className="w-4 h-4 text-accent" />
-                            Parhaat maalintekijät (Kausi {APP_CONFIG.CURRENT_YEAR})
-                        </h3>
-                        <div className="space-y-1">
-                            {rosterScorers.map((p, i) => (
-                                <div
-                                    key={p.player_id || i}
-                                    onClick={() => p.player_id && navigate(`/player/${p.player_id}`)}
-                                    className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-surface-2 border border-transparent hover:border-border-hairline cursor-pointer transition-all active:scale-[0.99] min-h-[44px]"
-                                >
-                                    <div className="flex items-center gap-3 min-w-0">
-                                        <span className="text-text-muted text-xs font-mono w-5 shrink-0">{i + 1}.</span>
-                                        <span className="text-text-primary font-medium truncate text-sm">{p.name}</span>
-                                    </div>
-                                    <div className="flex items-center gap-3 shrink-0 ml-2">
-                                        <span className="text-accent font-bold font-mono text-sm">{p.goalsForThisSpecificTeamInSeason || 0} maalia</span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
+                {topScorers.length === 0 && (
+                    <TournamentScorersList
+                        title={`Parhaat maalintekijät (Kausi ${APP_CONFIG.CURRENT_YEAR})`}
+                        scorers={rosterScorers}
+                        onSelectPlayer={(pId) => navigate(`/player/${pId}`)}
+                    />
                 )}
 
                 <div className="bg-surface-1 border border-border-hairline rounded-xl p-5 space-y-3">
