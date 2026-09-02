@@ -137,7 +137,7 @@ export function processPlayerMatchHistory(
 
 export type { ProcessedStats };
 
-export function getTeamCategory(team: any, currentYear: string): string | undefined {
+export function getTeamCategory(team: { categories?: Array<{ competition_season?: string | number; competition_id?: string | number; category_name?: string } | null> } | null | undefined, currentYear: string): string | undefined {
     if (!team || !team.categories) return undefined
     const categoryNames = new Set<string>()
     for (const c of team.categories) {

@@ -68,11 +68,10 @@ export function TeamPage() {
     )
 }
 
-function TeamPageReady(props: ReturnType<typeof collect> extends never ? any : any) {
+/* eslint-disable @typescript-eslint/no-explicit-any */
+function TeamPageReady(props: any) {
     return <TeamPageBody {...props} />
 }
-
-function collect() { return null }
 
 function TeamPageBody({
     teamId, navigate, team, tab, setTab, selectedYear, setSelectedYear,
@@ -81,6 +80,7 @@ function TeamPageBody({
     loadingPlayers, historyError, historicalPlayersByYear,
     currentScorers, pastMatches, upcoming, last5Form, fav, toggle,
 }: any) {
+/* eslint-enable @typescript-eslint/no-explicit-any */
     const cardStats = usePlayerCardStats(rosterPlayers.map((p: { player_id: string }) => p.player_id), rosterYear)
     const prevYear = String(parseInt(rosterYear, 10) - 1)
     const lastSeasonById = Object.fromEntries(

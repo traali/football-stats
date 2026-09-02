@@ -6,7 +6,7 @@ import type { MatchDetails, GroupDetails, PlayerStats } from '../types'
 import type { PlayerEligibilityResult, SquadEligibilityResult } from '../domain/eligibility'
 
 export function MatchPreviewExport({
-    match, group, teamAPlayers, teamBPlayers, byTeam, byPlayer, statsReady = true,
+    match, group, teamAPlayers, teamBPlayers, byTeam, byPlayer,
 }: {
     match: MatchDetails
     group: GroupDetails | null

@@ -21,12 +21,13 @@ function loadFavorites(): FavoriteTeam[] {
         if (!raw) return []
         const parsed = JSON.parse(raw)
         if (!Array.isArray(parsed)) return []
-        return parsed.map((item: any) => {
+        return parsed.map((item: unknown) => {
             if (typeof item === 'string') {
                 return { id: item, name: item }
             }
-            if (item && typeof item === 'object' && typeof item.id === 'string') {
-                return { id: item.id, name: item.name || item.id, category: item.category }
+            if (item && typeof item === 'object' && 'id' in item && typeof (item as { id: unknown }).id === 'string') {
+                const obj = item as { id: string; name?: string; category?: string };
+                return { id: obj.id, name: obj.name || obj.id, category: obj.category }
             }
             return null
         }).filter((item): item is FavoriteTeam => item !== null)

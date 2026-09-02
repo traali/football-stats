@@ -13,12 +13,20 @@ import { TurnauksetPage } from './pages/TurnauksetPage'
 import { BottomNav } from './components/BottomNav'
 
 function Layout() {
+    const isEmbed =
+        typeof window !== 'undefined' &&
+        new URLSearchParams(window.location.search || window.location.hash.split('?')[1] || '').get('embed') === 'true'
+
     return (
-        <div className="min-h-screen min-h-[100dvh] flex flex-col justify-between pt-[env(safe-area-inset-top,0px)] pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))]">
+        <div
+            className={`min-h-screen min-h-[100dvh] flex flex-col justify-between pt-[env(safe-area-inset-top,0px)] ${
+                isEmbed ? 'pb-2' : 'pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))]'
+            }`}
+        >
             <div className="flex-1 w-full">
                 <Outlet />
             </div>
-            <BottomNav />
+            {!isEmbed && <BottomNav />}
         </div>
     )
 }

@@ -1,28 +1,73 @@
-## Build & Check
+# AGENTS.md — The Rule of Football Stats
 
-```bash
-npm run build   # tsc + vite build
-```
+The canonical, tool-agnostic rule for all AI agents and contributors working in `football-stats`.
 
-## Review Pipeline
+---
 
-```bash
-# Run the full review pipeline with 8 parallel agents and 4 hours of watch loop
-scripts/review.sh
-```
+## §0 Precedence
+1. `AGENTS.md` (this file) is the supreme project rule.
+2. Native tool configs (`CLAUDE.md`, `.cursorrules`, etc.) are thin pointers to this file and must contain no independent rules.
+3. In conflicts between code comments and `AGENTS.md`, `AGENTS.md` wins.
 
-## Deploy
+---
 
-Push to `main` → GitHub Actions deploys to GH Pages.
+## §1 Identity & Architecture
+- **Identity:** Modern Finnish youth football statistics viewer and match intelligence dashboard.
+- **Architecture:** Fast client-side SPA (React 19, Vite, Tailwind CSS v4) consuming Suomen Palloliitto (SPL) APIs with edge rate limiting, caching, and cross-repo contract conformance with `pelipaiva`.
 
-## Conventions
+---
 
-- Dark-only, mobile-first, Finnish youth football data
-- Electric yellow accent (#faff69), surface ladder (canvas → surface-1/2/3), no shadows
-- All cards: rounded-xl, bg-surface-1, border border-border-hairline
-- Interactive elements: focus-visible:ring-2 ring-accent/50
-- Touch targets: min 44px
-- Player stats: DualStatBar for team comparison
-- API batching: batchFetch with concurrency=5
-- API timeout: AbortController at 10s
-- Team crests: teamA.img_url / teamB.img_url (TeamBasic type)
+## §2 Stack & Invariants
+
+| Use | Never |
+|---|---|
+| Strict TypeScript (no `any` types) | Ad-hoc `any` casting, untyped dynamic JSON objects |
+| React 19 + Tailwind CSS v4 + Framer Motion | Legacy CSS, un-animated jarring layout shifts |
+| "Night Captain" OLED Dark Design System | Ad-hoc light themes, hardcoded hex colors |
+| Suomen Palloliitto (SPL) typed API client | Scraping un-typed HTML without rate limits |
+| Canonical `SportStatsContract` interface | Altering or removing contract fields without a major version bump |
+| Zero-Secret Commitment | Hardcoded API keys or environment secrets in client bundle |
+
+---
+
+## §3 Testing & Quality Gates
+- **Pre-visitation Gate:** Run `npm run visit` before any commit.
+- **Contract Verification:** Local types and exports must satisfy `SportStatsContract`.
+- **Definition of Done:**
+  1. `npm run lint` reports 0 errors.
+  2. `npm run test` passes with 100% green tests.
+  3. `npm run build` compiles production bundle without warnings.
+  4. Cross-repo contract compatibility check passes.
+
+---
+
+## §4 Security & Hardening
+- **Zero Secrets:** Never commit credentials, tokens, or environment keys.
+- **Defensive API Ingestion:** Validate and sanitize all external SPL responses before rendering.
+- **Rate-Limiting & Timeouts:** All remote API calls must use `AbortController` (10s timeout) and concurrency batching.
+
+---
+
+## §5 Design & Usability ("Night Captain")
+- **Palette:** Dark canvas (`#0a0b0e`), electric yellow accent (`#faff69`), layered surface ladder (`surface-1/2/3`).
+- **Touch Targets:** All buttons and interactive tabs must have minimum 44px height (`min-h-[44px]`).
+- **Cards & Visuals:** `rounded-xl`, `bg-surface-1`, subtle hairline borders, smooth spring animations.
+
+---
+
+## §6 Visitation (Separation of Duties)
+- The author who wrote a change does NOT perform its final audit.
+- An independent **Visitor subagent** receives only: `AGENTS.md`, the git diff, and test results (no conversation history).
+- **Verdicts:** `PASS` · `PASS WITH FINDINGS` · `BLOCK`
+- **Finding Classes:**
+  - `blocking`: Security flaw, contract breach, build failure. Must fix before merge.
+  - `advisory`: Rule violation without breakage. Fix or log in `DEBT.md`.
+- **Fault Attribution:** `house` (fix code) vs `RULE` (amend `AGENTS.md` and log in `ROLL.md`).
+
+---
+
+## §7 Volatile Facts
+Do NOT put volatile facts in `AGENTS.md`. Single sources of truth:
+- Library versions: `package.json`
+- Recent history: `CHANGELOG.md` and git log
+- Architecture decisions: `ROLL.md` and `docs/`

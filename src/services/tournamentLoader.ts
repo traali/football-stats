@@ -85,7 +85,7 @@ export async function fetchTournamentWidgetHtml(url: string): Promise<string> {
             }
         }
 
-        iframe.srcdoc = `<!DOCTYPE html><html><body><script src="${url}"><\/script></body></html>`
+        iframe.srcdoc = `<!DOCTYPE html><html><body><script src="${url}"></script></body></html>`
         document.body.appendChild(iframe)
     })
 }

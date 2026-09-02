@@ -27,14 +27,14 @@ function Wld({ v }: { v: 'V' | 'T' | 'H' }) {
 }
 
 export function CommonOpponents({
-    teamAId, teamBId, teamAName, teamBName, group, upcomingMatch,
+    teamAId, teamBId, teamAName, teamBName, group,
 }: {
     teamAId: string
     teamBId: string
     teamAName: string
     teamBName: string
     group: GroupDetails | null
-    upcomingMatch: MatchDetails
+    _upcomingMatch?: MatchDetails
 }) {
     const [openId, setOpenId] = useState<string | null>(null)
     const [loading, setLoading] = useState<Record<string, boolean>>({})
