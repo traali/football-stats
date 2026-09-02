@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
-import { Trophy, Users, Shield, Calendar, MapPin, ChevronDown, ChevronRight, TrendingUp } from 'lucide-react'
+import { Trophy, Users, Shield, MapPin, ChevronDown, ChevronRight, TrendingUp } from 'lucide-react'
 import { cn } from '../utils/cn'
 import { formatDate, formatTime } from '../utils/dates'
 import { getGroups, getGroupFull, getTeamProfile, getPlayerData, batchFetch } from '../services/api'
@@ -9,6 +9,7 @@ import { getSavedTournaments } from '../services/tournamentStorage'
 import { MATCH_STATUS } from '../types'
 import type { StandingTeam, TeamRosterPlayer, PlayerStatsEntry, GroupDetails, PlayerStats } from '../types'
 import { BackButton, PageLayout, PlayerCard, PlayerCardSkeleton } from '../components'
+import { TournamentStandingsTable, TournamentMatchesList } from '../components/tournament'
 import { processPlayerMatchHistory } from '../utils/dataProcessors'
 import { APP_CONFIG } from '../config'
 
@@ -387,132 +388,19 @@ export function TurnauksetPage() {
                     </div>
                 </div>
 
-                <div className="bg-surface-1 border border-border-hairline rounded-xl p-5 space-y-3">
-                    <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
-                        <Trophy className="w-4 h-4 text-accent" />
-                        Sarjataulukko · {groupName}
-                    </h3>
+                <TournamentStandingsTable
+                    groupName={groupName}
+                    standings={sortedStandings}
+                    teamId={teamId}
+                    onSelectTeam={(tId) => navigate(`/turnaukset/${turnaus}/${sarja}/${tId}`)}
+                />
 
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                            <thead>
-                                <tr className="text-text-muted text-xs uppercase tracking-wider border-b border-border-hairline">
-                                    <th className="text-left py-2 pr-2 font-semibold w-8">#</th>
-                                    <th className="text-left py-2 pr-2 font-semibold">Joukkue</th>
-                                    <th className="text-center py-2 px-1.5 font-semibold">O</th>
-                                    <th className="text-center py-2 px-1.5 font-semibold">V</th>
-                                    <th className="text-center py-2 px-1.5 font-semibold">T</th>
-                                    <th className="text-center py-2 px-1.5 font-semibold">H</th>
-                                    <th className="text-center py-2 px-1.5 font-semibold">TM</th>
-                                    <th className="text-center py-2 px-1.5 font-semibold">PM</th>
-                                    <th className="text-center py-2 px-1.5 font-semibold">ME</th>
-                                    <th className="text-center py-2 pl-1.5 font-semibold">P</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {sortedStandings.map(s => {
-                                    const isPPJ = String(s.team_id) === teamId
-                                    return (
-                                        <tr
-                                            key={s.team_id}
-                                            onClick={() => !isPPJ && navigate(`/turnaukset/${turnaus}/${sarja}/${s.team_id}`)}
-                                            className={cn(
-                                                "border-b border-border-hairline/50 transition-colors",
-                                                isPPJ ? "bg-accent/5" : "hover:bg-surface-2 cursor-pointer"
-                                            )}
-                                        >
-                                            <td className="py-2.5 pr-2 font-mono text-text-muted text-xs">{s.current_standing}</td>
-                                            <td className={cn("py-2.5 pr-2 font-semibold text-text-primary text-sm", isPPJ && "text-accent")}>
-                                                {s.team_name}
-                                            </td>
-                                            <td className="text-center py-2.5 px-1.5 font-mono text-text-secondary text-xs">{s.matches_played}</td>
-                                            <td className="text-center py-2.5 px-1.5 font-mono text-semantic-green text-xs">{s.matches_won}</td>
-                                            <td className="text-center py-2.5 px-1.5 font-mono text-accent text-xs">{s.matches_tied}</td>
-                                            <td className="text-center py-2.5 px-1.5 font-mono text-semantic-red text-xs">{s.matches_lost}</td>
-                                            <td className="text-center py-2.5 px-1.5 font-mono text-text-secondary text-xs">{s.goals_for}</td>
-                                            <td className="text-center py-2.5 px-1.5 font-mono text-text-secondary text-xs">{s.goals_against}</td>
-                                            <td className="text-center py-2.5 px-1.5 font-mono text-text-secondary text-xs">{s.goals_diff}</td>
-                                            <td className="text-center py-2.5 pl-1.5 font-mono font-bold text-accent">{s.points}</td>
-                                        </tr>
-                                    )
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div className="bg-surface-1 border border-border-hairline rounded-xl p-5 space-y-3">
-                    <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-accent" />
-                        PPJ:n ottelut ({teamMatches.length})
-                    </h3>
-
-                    {teamMatches.length === 0 ? (
-                        <p className="text-text-muted text-sm text-center py-4">Ei otteluita</p>
-                    ) : (
-                        <div className="space-y-0 divide-y divide-border-hairline/50">
-                            {teamMatches.map(m => {
-                                const isHome = m.team_A_id === teamId
-                                const opponent = isHome ? m.team_B_name : m.team_A_name
-                                const ppjScore = isHome ? m.fs_A : m.fs_B
-                                const oppScore = isHome ? m.fs_B : m.fs_A
-                                const isFixture = m.status === MATCH_STATUS.FIXTURE || (!m.fs_A && !m.fs_B)
-                                return (
-                                    <div
-                                        key={m.match_id}
-                                        onClick={() => navigate(`/match/${m.match_id}`)}
-                                        className="flex items-center justify-between py-3 px-2 -mx-2 rounded-lg hover:bg-surface-2 cursor-pointer transition-all active:scale-[0.99] min-h-[52px]"
-                                    >
-                                        <div className="flex items-center gap-3 min-w-0 flex-1">
-                                            <div className="text-center shrink-0 w-14">
-                                                <p className="text-xs text-text-muted font-mono">{formatDate(m.date)}</p>
-                                                <p className="text-[10px] text-text-muted/60 font-mono">{formatTime(m.time)}</p>
-                                            </div>
-                                            <div className="min-w-0 flex-1">
-                                                <div className="flex items-center gap-1 text-sm">
-                                                    {isHome ? (
-                                                        <>
-                                                            <span className="text-accent font-semibold">{teamName}</span>
-                                                            <span className="text-text-muted mx-1">vs</span>
-                                                            <span className="text-text-primary truncate">{opponent}</span>
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <span className="text-text-primary truncate">{opponent}</span>
-                                                            <span className="text-text-muted mx-1">vs</span>
-                                                            <span className="text-accent font-semibold">{teamName}</span>
-                                                        </>
-                                                    )}
-                                                </div>
-                                                {(m.venue_name || m.venue_location_name) && (
-                                                    <p className="text-xs text-text-muted/70 flex items-center gap-1 mt-0.5 truncate">
-                                                        <MapPin className="w-3 h-3 shrink-0" />
-                                                        {m.venue_name}{m.venue_location_name ? ` · ${m.venue_location_name}` : ''}
-                                                    </p>
-                                                )}
-                                                {m.referee_1_name && (
-                                                    <p className="text-[10px] text-text-muted/50 flex items-center gap-1 mt-0.5 truncate">
-                                                        <Users className="w-2.5 h-2.5 shrink-0" />
-                                                        Tuomari: {m.referee_1_name}
-                                                    </p>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-2 shrink-0 ml-3">
-                                            {isFixture ? (
-                                                <span className="text-text-muted font-mono text-sm font-bold min-w-[4ch] text-right">–</span>
-                                            ) : (
-                                                <span className="text-text-primary font-mono text-sm font-bold min-w-[4ch] text-right">
-                                                    {ppjScore}–{oppScore}
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                )
-                            })}
-                        </div>
-                    )}
-                </div>
+                <TournamentMatchesList
+                    teamName={teamName}
+                    teamId={teamId}
+                    matches={teamMatches}
+                    onSelectMatch={(mId) => navigate(`/match/${mId}`)}
+                />
 
                 <div className="bg-surface-1 border border-border-hairline rounded-xl p-5 space-y-3">
                     <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
