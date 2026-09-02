@@ -1,17 +1,14 @@
 /// <reference types="vite/client" />
+/// <reference types="vite-plugin-pwa/client" />
 
-interface ImportMetaEnv {
-    readonly VITE_TASO_PROXY?: string
-}
+declare const __APP_VERSION__: string;
+declare const __COMMIT_HASH__: string;
+declare const __BUILD_TIME__: string;
 
-declare module 'virtual:pwa-register' {
-    export interface RegisterSWOptions {
-        immediate?: boolean
-        onNeedRefresh?: () => void
-        onOfflineReady?: () => void
-        onRegistered?: (registration: ServiceWorkerRegistration | undefined) => void
-        onRegisteredSW?: (swUrl: string, registration: ServiceWorkerRegistration | undefined) => void
-        onRegisterError?: (error: unknown) => void
-    }
-    export function registerSW(options?: RegisterSWOptions): (reloadPage?: boolean) => Promise<void>
+interface Window {
+  __APP_BUILD_INFO__?: {
+    version: string;
+    commit: string;
+    buildTime: string;
+  };
 }

@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { createHashRouter, Outlet } from 'react-router-dom'
 import { Home } from './pages/Home'
 import { MatchPage } from './pages/MatchPage'
@@ -17,6 +18,16 @@ function Layout() {
         typeof window !== 'undefined' &&
         new URLSearchParams(window.location.search || window.location.hash.split('?')[1] || '').get('embed') === 'true'
 
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            window.__APP_BUILD_INFO__ = {
+                version: typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.0',
+                commit: typeof __COMMIT_HASH__ !== 'undefined' ? __COMMIT_HASH__ : 'dev',
+                buildTime: typeof __BUILD_TIME__ !== 'undefined' ? __BUILD_TIME__ : new Date().toISOString(),
+            }
+        }
+    }, [])
+
     return (
         <div
             className={`min-h-screen min-h-[100dvh] flex flex-col justify-between pt-[env(safe-area-inset-top,0px)] ${
@@ -26,6 +37,20 @@ function Layout() {
             <div className="flex-1 w-full">
                 <Outlet />
             </div>
+            {!isEmbed && (
+                <footer className="mt-8 mb-4 px-4 text-center">
+                    <div className="inline-flex items-center gap-2 text-[11px] text-zinc-500">
+                        <span className="font-bold text-zinc-400">Football Stats</span>
+                        <span>•</span>
+                        <span
+                            data-testid="app-version-badge"
+                            className="px-2 py-0.5 rounded-md bg-zinc-900 border border-zinc-800 font-mono text-[10px] text-emerald-400"
+                        >
+                            v{typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.0'} (git:{typeof __COMMIT_HASH__ !== 'undefined' ? __COMMIT_HASH__ : 'dev'})
+                        </span>
+                    </div>
+                </footer>
+            )}
             {!isEmbed && <BottomNav />}
         </div>
     )

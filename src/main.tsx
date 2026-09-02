@@ -6,7 +6,7 @@ import './index.css'
 
 registerSW({
     immediate: true,
-    onRegisteredSW(_swUrl, r) {
+    onRegisteredSW(_swUrl: string, r?: ServiceWorkerRegistration) {
         if (!r) return
         // Tarkista päivitys kun käyttäjä palaa sovellukseen (esim. mobiilissa taustalta)
         document.addEventListener('visibilitychange', () => {
