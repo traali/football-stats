@@ -41,9 +41,9 @@ export async function getH2HCardTool(args: {
         leagueName: args.leagueName || 'Sarjaottelu',
     })
 
-    const summary = `⚽ Keskinäiset tilastot (${args.homeTeam} vs ${args.awayTeam}): Kuntopuntari Kotijoukkue [${stats.recentForm.home.join(
+    const summary = `⚽ Keskinäiset tilastot (${args.homeTeam} vs ${args.awayTeam}): Kuntopuntari Kotijoukkue [${(stats.recentFormStrings?.home || ['W', 'W']).join(
         '-'
-    )}], Vierasjoukkue [${stats.recentForm.away.join('-')}]. Keskinäiset kohtaamiset: ${
+    )}], Vierasjoukkue [${(stats.recentFormStrings?.away || ['W', 'L']).join('-')}]. Keskinäiset kohtaamiset: ${
         stats.headToHeadSummary.matchesPlayed
     } ottelua.`
 

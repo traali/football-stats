@@ -145,7 +145,7 @@ export function MatchPage() {
                                 teamAName={data.match.team_A_name}
                                 teamBName={data.match.team_B_name}
                                 group={data.group}
-                                upcomingMatch={data.match}
+                                _upcomingMatch={data.match}
                             />
                         )}
 

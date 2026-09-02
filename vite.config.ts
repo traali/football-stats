@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
-    base: '/football-stats/',
+    base: '/',
     plugins: [
         react(),
         tailwindcss(),

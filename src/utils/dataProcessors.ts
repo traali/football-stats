@@ -148,11 +148,12 @@ export function getTeamCategory(team: { categories?: Array<{ competition_season?
             (compId && compId.includes(currentYear)) ||
             (compId && compId.includes(currentYear.slice(2)))
         if (isCurrent) {
-            const name = c.category_name
+            const raw = c as Record<string, unknown>
+            const name = raw.category_name
             let nameStr: string | null = null
             if (typeof name === 'string') nameStr = name
-            else if (name && typeof name === 'object' && typeof name.fi === 'string') nameStr = name.fi
-            else if (c.category_name_translations && typeof c.category_name_translations.fi === 'string') nameStr = c.category_name_translations.fi
+            else if (name && typeof name === 'object' && 'fi' in name && typeof (name as Record<string, unknown>).fi === 'string') nameStr = (name as Record<string, unknown>).fi as string
+            else if (raw.category_name_translations && typeof raw.category_name_translations === 'object' && 'fi' in raw.category_name_translations && typeof (raw.category_name_translations as Record<string, unknown>).fi === 'string') nameStr = (raw.category_name_translations as Record<string, unknown>).fi as string
             if (nameStr) categoryNames.add(nameStr)
         }
     }
