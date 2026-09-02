@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 
 export interface FavoriteTeam {
     id: string
@@ -65,14 +65,28 @@ export function useFavorites() {
     const [favorites, setFavorites] = useState<FavoriteTeam[]>(loadFavorites)
     const [favoritePlayers, setFavoritePlayers] = useState<FavoritePlayer[]>(loadFavoritePlayers)
 
+    useEffect(() => {
+        try {
+            localStorage.setItem('favoriteTeams', JSON.stringify(favorites))
+        } catch {
+            // Safe fallback for quota or private browsing
+        }
+    }, [favorites])
+
+    useEffect(() => {
+        try {
+            localStorage.setItem('favoritePlayers', JSON.stringify(favoritePlayers))
+        } catch {
+            // Safe fallback for quota or private browsing
+        }
+    }, [favoritePlayers])
+
     const toggle = useCallback((teamId: string, teamName?: string, category?: string) => {
         setFavorites(prev => {
             const exists = prev.some(f => f.id === teamId)
-            const next = exists
+            return exists
                 ? prev.filter(f => f.id !== teamId)
                 : [...prev, { id: teamId, name: teamName || teamId, category }]
-            localStorage.setItem('favoriteTeams', JSON.stringify(next))
-            return next
         })
     }, [])
 
@@ -80,7 +94,6 @@ export function useFavorites() {
 
     const clear = useCallback(() => {
         setFavorites([])
-        localStorage.removeItem('favoriteTeams')
     }, [])
 
     const updateName = useCallback((teamId: string, teamName: string, category?: string) => {
@@ -89,7 +102,6 @@ export function useFavorites() {
             if (index === -1 || (prev[index].name === teamName && prev[index].category === category)) return prev
             const next = [...prev]
             next[index] = { ...next[index], name: teamName, category }
-            localStorage.setItem('favoriteTeams', JSON.stringify(next))
             return next
         })
     }, [])
@@ -97,11 +109,9 @@ export function useFavorites() {
     const togglePlayer = useCallback((player: { id: string; name: string; teamName?: string; category?: string; img_url?: string; birthyear?: string }) => {
         setFavoritePlayers(prev => {
             const exists = prev.some(p => p.id === player.id)
-            const next = exists
+            return exists
                 ? prev.filter(p => p.id !== player.id)
                 : [...prev, player]
-            localStorage.setItem('favoritePlayers', JSON.stringify(next))
-            return next
         })
     }, [])
 
@@ -109,7 +119,6 @@ export function useFavorites() {
 
     const clearPlayers = useCallback(() => {
         setFavoritePlayers([])
-        localStorage.removeItem('favoritePlayers')
     }, [])
 
     return {

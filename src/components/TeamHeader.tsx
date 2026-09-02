@@ -73,8 +73,8 @@ export function TeamHeader({ team, teamId, last5Form, fav, onToggleFav }: {
                                         {team.birthyear}
                                     </span>
                                 )}
-                                {primaryCatNames.map((name, idx) => (
-                                    <span key={idx} className="text-xs bg-surface-3 border border-border-hairline px-2 py-0.5 rounded-md text-text-primary font-medium">
+                                {primaryCatNames.map((name) => (
+                                    <span key={name} className="text-xs bg-surface-3 border border-border-hairline px-2 py-0.5 rounded-md text-text-primary font-medium">
                                         {name}
                                     </span>
                                 ))}
@@ -84,7 +84,7 @@ export function TeamHeader({ team, teamId, last5Form, fav, onToggleFav }: {
                                 <div className="flex items-center gap-1.5 mt-1.5">
                                     <span className="text-[10px] text-text-muted uppercase tracking-wider font-bold">Kunto:</span>
                                     {last5Form.map((r, i) => (
-                                        <span key={i} className={cn('w-2.5 h-2.5 rounded-full', r === 'V' ? 'bg-semantic-green' : r === 'H' ? 'bg-semantic-red' : 'bg-accent')} />
+                                        <span key={`form-${team?.team_id || 'team'}-${i}`} className={cn('w-2.5 h-2.5 rounded-full', r === 'V' ? 'bg-semantic-green' : r === 'H' ? 'bg-semantic-red' : 'bg-accent')} />
                                     ))}
                                 </div>
                             )}

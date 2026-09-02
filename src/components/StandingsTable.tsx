@@ -188,7 +188,7 @@ export function StandingsTable({ teams, matches = [], teamAId, teamBId, selected
                                     <td className="w-28 px-3 py-3 text-center">
                                         <div className="flex items-center justify-center gap-0.5">
                                             {(teamForm.get(team.team_id) || []).map((r, i) => (
-                                                <span key={i} className={cn('w-2 h-2 rounded-full', r === 'V' ? 'bg-semantic-green' : r === 'H' ? 'bg-semantic-red' : 'bg-accent')} />
+                                                <span key={`${team.team_id}-form-${i}`} className={cn('w-2 h-2 rounded-full', r === 'V' ? 'bg-semantic-green' : r === 'H' ? 'bg-semantic-red' : 'bg-accent')} />
                                             ))}
                                         </div>
                                     </td>
