@@ -34,8 +34,8 @@ export default defineConfig({
                 background_color: '#111111',
                 display: 'standalone',
                 orientation: 'portrait',
-                start_url: '/football-stats/',
-                scope: '/football-stats/',
+                start_url: '/',
+                scope: '/',
                 lang: 'fi',
                 icons: [
                     { src: 'favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
@@ -43,7 +43,7 @@ export default defineConfig({
                 ],
             },
             workbox: {
-                navigateFallback: '/football-stats/index.html',
+                navigateFallback: '/index.html',
                 globPatterns: ['**/*.{js,css,html,svg,woff2,png,ico}'],
                 runtimeCaching: [
                     {
