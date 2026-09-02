@@ -5,6 +5,7 @@ import { cn } from '../utils/cn'
 import { formatDate, formatTime } from '../utils/dates'
 import { getGroups, getGroupFull, getTeamProfile, getPlayerData, batchFetch } from '../services/api'
 import { loadTournamentData } from '../services/tournamentLoader'
+import { getSavedTournaments } from '../services/tournamentStorage'
 import { MATCH_STATUS } from '../types'
 import type { StandingTeam, TeamRosterPlayer, PlayerStatsEntry, GroupDetails, PlayerStats } from '../types'
 import { BackButton, PageLayout, PlayerCard, PlayerCardSkeleton } from '../components'
@@ -41,7 +42,32 @@ interface TournamentPlayerStats extends PlayerStats {
 }
 
 export function TurnauksetPage() {
-    const { turnaus, sarja, teamId } = useParams()
+    const params = useParams()
+    const { turnaus, sarja } = params
+    const rawTeamParam = (params['*'] || params.teamId || '').trim()
+    let decodedTeam = rawTeamParam.replace(/^\/+/, '')
+    try {
+        decodedTeam = decodeURIComponent(decodedTeam)
+    } catch {
+        // keep as-is
+    }
+
+    // Resolve effective numeric teamId if a team name or slug was provided
+    let effectiveTeamId = decodedTeam
+    if (!/^\d+$/.test(effectiveTeamId)) {
+        const saved = getSavedTournaments()
+        const match = saved.find(t =>
+            t.turnaus === turnaus &&
+            (t.teamName.toLowerCase().includes(decodedTeam.toLowerCase()) || decodedTeam.toLowerCase().includes(t.teamName.toLowerCase()))
+        )
+        if (match?.teamId) {
+            effectiveTeamId = match.teamId
+        } else if (turnaus === 'lime_0016' && /ppj|laru|sininen/i.test(decodedTeam)) {
+            effectiveTeamId = '201313'
+        }
+    }
+    const teamId = effectiveTeamId
+
     const [searchParams] = useSearchParams()
     const navigate = useNavigate()
 
@@ -55,7 +81,7 @@ export function TurnauksetPage() {
     const [standings, setStandings] = useState<StandingTeam[]>([])
     const [matches, setMatches] = useState<MatchWithVenue[]>([])
 
-    const [teamName, setTeamName] = useState('')
+    const [teamName, setTeamName] = useState(decodedTeam && !/^\d+$/.test(decodedTeam) ? decodedTeam : '')
     const [teamCrest, setTeamCrest] = useState('')
     const [players, setPlayers] = useState<TeamRosterPlayer[]>([])
     const [processedPlayers, setProcessedPlayers] = useState<TournamentPlayerStats[]>([])
@@ -68,7 +94,7 @@ export function TurnauksetPage() {
     const [allGroups, setAllGroups] = useState<GroupDetails[]>([])
 
     useEffect(() => {
-        if (!turnaus || !sarja || !teamId) return
+        if (!turnaus || !sarja) return
         let cancelled = false
         const controller = new AbortController()
 
@@ -80,14 +106,14 @@ export function TurnauksetPage() {
                         host: tHost,
                         turnaus,
                         sarja,
-                        teamId,
+                        teamId: effectiveTeamId || '201313',
                         rawUrl: '',
                     })
                     if (cancelled) return
                     setCompName(tData.tournamentTitle)
                     setCatName(tData.categoryName)
                     setGroupName(tData.groupName || 'Lohko B')
-                    setTeamName(tData.teamName || 'PPJ/Laru Sininen')
+                    setTeamName(tData.teamName || (decodedTeam && !/^\d+$/.test(decodedTeam) ? decodedTeam : 'PPJ/Laru Sininen'))
                     setStandings(tData.standings.map(s => {
                         const gParts = s.goals.split('-')
                         const gf = parseInt(gParts[0] || '0', 10)
@@ -233,17 +259,26 @@ export function TurnauksetPage() {
             cancelled = true
             controller.abort()
         }
-    }, [turnaus, sarja, teamId])
+    }, [turnaus, sarja, effectiveTeamId, decodedTeam])
 
     const teamMatches = useMemo(() => {
         return matches
-            .filter(m => m.team_A_id === teamId || m.team_B_id === teamId)
+            .filter(m => 
+                m.team_A_id === effectiveTeamId || 
+                m.team_B_id === effectiveTeamId ||
+                (decodedTeam && (m.team_A_name.toLowerCase().includes(decodedTeam.toLowerCase()) || m.team_B_name.toLowerCase().includes(decodedTeam.toLowerCase()))) ||
+                (teamName && (m.team_A_name.toLowerCase().includes(teamName.toLowerCase()) || m.team_B_name.toLowerCase().includes(teamName.toLowerCase())))
+            )
             .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))
-    }, [matches, teamId])
+    }, [matches, effectiveTeamId, decodedTeam, teamName])
 
     const myStanding = useMemo(() => {
-        return standings.find(s => String(s.team_id) === teamId)
-    }, [standings, teamId])
+        return standings.find(s => 
+            String(s.team_id) === effectiveTeamId ||
+            (decodedTeam && s.team_name.toLowerCase().includes(decodedTeam.toLowerCase())) ||
+            (teamName && s.team_name.toLowerCase().includes(teamName.toLowerCase()))
+        )
+    }, [standings, effectiveTeamId, decodedTeam, teamName])
 
     const sortedStandings = useMemo(() => {
         return [...standings].sort((a, b) => parseInt(String(a.current_standing)) - parseInt(String(b.current_standing)))
@@ -251,10 +286,10 @@ export function TurnauksetPage() {
 
     const topScorers = useMemo(() => {
         return playerStats
-            .filter(p => String(p.team_id) === teamId)
+            .filter(p => String(p.team_id) === effectiveTeamId)
             .sort((a, b) => (parseInt(b.goals || '0') || 0) - (parseInt(a.goals || '0') || 0))
             .slice(0, 20)
-    }, [playerStats, teamId])
+    }, [playerStats, effectiveTeamId])
 
     const rosterScorers = useMemo(() => {
         return processedPlayers
@@ -297,7 +332,7 @@ export function TurnauksetPage() {
         return <span>{name}</span>
     }
 
-    if (!turnaus || !sarja || !teamId) return (
+    if (!turnaus || !sarja || (!effectiveTeamId && !decodedTeam)) return (
         <div className="min-h-screen px-4 py-8 text-center text-semantic-red">
             Virheellinen osoite
         </div>
