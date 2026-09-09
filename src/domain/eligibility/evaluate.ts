@@ -106,8 +106,30 @@ export function evaluatePlayer(
     }
 
     if (lastHigher) {
-        countsTowardDownQuota = true
-        reasons.push(reason('OK', `Viimeisin ylempi: ${lastHigher.level} ${lastHigher.date}`, 'KM 15.2'))
+        const hasInterveningWithoutPlayer =
+            sameHalfApps.some(a =>
+                !a.onLineup &&
+                isHigherLevel(a.level, target.level) &&
+                a.ageClass === target.ageClass &&
+                a.date > lastHigher.date &&
+                a.date <= target.date &&
+                (!lastHigher.teamId || !a.teamId || a.teamId === lastHigher.teamId)
+            ) ||
+            (ctx.higherMatchesWithoutPlayer || []).some(m =>
+                m.date > lastHigher.date &&
+                m.date <= target.date &&
+                (!m.ageClass || m.ageClass === target.ageClass) &&
+                (!m.level || isHigherLevel(m.level, target.level)) &&
+                (!lastHigher.teamId || !m.teamId || m.teamId === lastHigher.teamId)
+            )
+
+        if (hasInterveningWithoutPlayer) {
+            countsTowardDownQuota = false
+            reasons.push(reason('OK', 'Ylemmän tason väliottelu ilman kokoonpanomerkintää nollasi alaspäin-kiintiön', 'KM 15.2'))
+        } else {
+            countsTowardDownQuota = true
+            reasons.push(reason('OK', `Viimeisin ylempi: ${lastHigher.level} ${lastHigher.date}`, 'KM 15.2'))
+        }
     }
 
     const gateDate = target.seasonHalf === 'autumn' ? `${target.date.slice(0, 4)}-${rules.dateGateAutumn}` : `${target.date.slice(0, 4)}-${rules.dateGateSpring}`

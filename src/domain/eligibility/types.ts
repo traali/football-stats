@@ -48,6 +48,13 @@ export interface OfficialAppearance {
     seasonHalf: SeasonHalf
 }
 
+export interface HigherMatchWithoutPlayer {
+    date: string
+    level?: LevelRank
+    ageClass?: AgeClass
+    teamId?: string
+}
+
 export interface PlayerEligibilityContext {
     playerId: string
     clubId: string
@@ -59,6 +66,7 @@ export interface PlayerEligibilityContext {
         boundTeamId?: string
     }[]
     appearances: OfficialAppearance[]
+    higherMatchesWithoutPlayer?: HigherMatchWithoutPlayer[]
 }
 
 export interface TargetMatch {

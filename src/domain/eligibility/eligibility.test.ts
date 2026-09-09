@@ -186,4 +186,56 @@ describe('evaluatePlayer / evaluateSquad', () => {
         }), kakkonenSat, ETELA_2026)
         expect(r.countsTowardDownQuota).toBe(true)
     })
+
+    it('T14 KM 15.2: Level 1 28.8, Level 1 peli 30.8 ilman kokoonpanoa -> Level 4 2.9 EI lasketa kiintioon', () => {
+        const nelonenMatch: TargetMatch = {
+            date: '2026-09-02',
+            clubId: 'clubA',
+            teamId: 'nelonen',
+            ageClass: 'P13',
+            level: 'nelonen',
+            format: '8v8',
+            isYouth: true,
+            seasonHalf: 'autumn',
+        }
+        // Case A: unrostered match recorded in appearances
+        const rAppearances = evaluatePlayer(ctx({
+            appearances: [
+                app({ date: '2026-08-28', level: 'liiga', teamId: 'higher', onLineup: true, lineupConfirmed: true }),
+                app({ date: '2026-08-30', level: 'liiga', teamId: 'higher', onLineup: false, official: true }),
+            ],
+        }), nelonenMatch, ETELA_2026)
+        expect(rAppearances.verdict).toBe('ok')
+        expect(rAppearances.countsTowardDownQuota).toBe(false)
+        expect(rAppearances.reasons.some(x => x.messageFi.includes('nollasi alaspäin-kiintiön'))).toBe(true)
+
+        // Case B: unrostered match provided via higherMatchesWithoutPlayer
+        const rSchedule = evaluatePlayer(ctx({
+            appearances: [
+                app({ date: '2026-08-28', level: 'liiga', teamId: 'higher', onLineup: true, lineupConfirmed: true }),
+            ],
+            higherMatchesWithoutPlayer: [
+                { date: '2026-08-30', level: 'liiga', ageClass: 'P13', teamId: 'higher' },
+            ],
+        }), nelonenMatch, ETELA_2026)
+        expect(rSchedule.verdict).toBe('ok')
+        expect(rSchedule.countsTowardDownQuota).toBe(false)
+
+        // Case C (negative): no intervening match -> player DOES count toward down quota
+        const rNoIntervening = evaluatePlayer(ctx({
+            appearances: [
+                app({ date: '2026-08-28', level: 'liiga', teamId: 'higher', onLineup: true, lineupConfirmed: true }),
+            ],
+        }), nelonenMatch, ETELA_2026)
+        expect(rNoIntervening.countsTowardDownQuota).toBe(true)
+
+        // Case D (negative): unrostered match was BEFORE the last played match
+        const rBefore = evaluatePlayer(ctx({
+            appearances: [
+                app({ date: '2026-08-25', level: 'liiga', teamId: 'higher', onLineup: false, official: true }),
+                app({ date: '2026-08-28', level: 'liiga', teamId: 'higher', onLineup: true, lineupConfirmed: true }),
+            ],
+        }), nelonenMatch, ETELA_2026)
+        expect(rBefore.countsTowardDownQuota).toBe(true)
+    })
 })
