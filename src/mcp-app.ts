@@ -137,9 +137,10 @@ export function registerFootballWebMCP(): ModelContextRegistry | undefined {
                         text: typeof res === 'string' ? res : JSON.stringify(res, null, 2),
                     }],
                 }
-            } catch (err: any) {
+            } catch (err: unknown) {
+                const errorMessage = err instanceof Error ? err.message : String(err)
                 return {
-                    content: [{ type: 'text', text: `Error executing '${params.name}': ${err?.message || String(err)}` }],
+                    content: [{ type: 'text', text: `Error executing '${params.name}': ${errorMessage}` }],
                 }
             }
         },
@@ -162,11 +163,11 @@ export function registerFootballWebMCP(): ModelContextRegistry | undefined {
                 writable: true,
             })
         } catch {
-            ;(navigator as any).modelContext = registry
+            ;(navigator as unknown as { modelContext?: ModelContextRegistry }).modelContext = registry
         }
     }
     if (typeof window !== 'undefined') {
-        ;(window as any).modelContext = registry
+        ;(window as unknown as { modelContext?: ModelContextRegistry }).modelContext = registry
 
         window.addEventListener('message', async (event: MessageEvent) => {
             const data = event.data
@@ -180,11 +181,12 @@ export function registerFootballWebMCP(): ModelContextRegistry | undefined {
                     const result = await registry.callTool(data.params || { name: '', arguments: {} })
                     window.postMessage({ type: 'webmcp:response', id: data.id, result }, '*')
                 }
-            } catch (err: any) {
+            } catch (err: unknown) {
+                const errorMessage = err instanceof Error ? err.message : 'WebMCP execution failed'
                 window.postMessage({
                     type: 'webmcp:response',
                     id: data.id,
-                    error: { message: err?.message || 'WebMCP execution failed' },
+                    error: { message: errorMessage },
                 }, '*')
             }
         })
