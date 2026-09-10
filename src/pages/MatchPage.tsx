@@ -13,6 +13,7 @@ import { BackButton } from '../components/BackButton'
 import { DualStatBar } from '../components/DualStatBar'
 import { CommonOpponents } from '../components/CommonOpponents'
 import { MatchPreviewExport } from '../components/MatchPreviewExport'
+import { PitchWeatherCard } from '../components/PitchWeatherCard'
 import { MatchHeaderSkeleton, PlayerCardSkeleton, StandingsTableSkeleton } from '../components/Skeleton'
 import { resolveCrest } from '../utils/crest'
 import { MATCH_STATUS } from '../types'
@@ -127,6 +128,13 @@ export function MatchPage() {
                 {data && (
                     <div className="space-y-10">
                         <MatchHeader match={data.match} group={data.group} teamA={data.teamA} teamB={data.teamB} />
+
+                        <PitchWeatherCard
+                            venueName={data.match.venue_name}
+                            cityName={data.match.venue_city_name}
+                            date={data.match.date}
+                            time={data.match.time}
+                        />
 
                         <MatchPreviewExport
                             match={data.match}
