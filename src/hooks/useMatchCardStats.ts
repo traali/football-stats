@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
-import { batchFetch, getPlayerData } from '../services/api'
+import { batchFetch, getPlayerData, getTeamMatches } from '../services/api'
 import { MATCH_STATUS } from '../types'
 import type { MatchDetails } from '../types'
 import { cardStatsAsOf, type CardSeasonStats } from '../utils/cardStatsAsOf'
-import { halfOf } from '../utils/dates'
+import { getCurrentSeason, halfOf } from '../utils/dates'
 
 export function useMatchCardStats(match: MatchDetails | undefined) {
     const [byPlayer, setByPlayer] = useState<Record<string, CardSeasonStats>>({})
@@ -23,14 +23,37 @@ export function useMatchCardStats(match: MatchDetails | undefined) {
         }
         let cancelled = false
         setLoading(true)
-        const seasonYear = (match.date || '').slice(0, 4)
-        const preferredHalf = halfOf(match.date) || 'syksy'
+        const current = getCurrentSeason()
+        const seasonYear = (match.date || '').slice(0, 4) || current.year
+        const preferredHalf = halfOf(match.date) || current.half
         const asOfDate = match.status === MATCH_STATUS.PLAYED ? match.date : undefined
-        batchFetch(ids, getPlayerData, 4).then(players => {
+
+        batchFetch(ids, getPlayerData, 4).then(async players => {
             if (cancelled) return
+            const teamIds = new Set<string>()
+            if (match.team_A_id) teamIds.add(match.team_A_id)
+            if (match.team_B_id) teamIds.add(match.team_B_id)
+            for (const p of players) {
+                for (const m of p?.matches || []) {
+                    const y = (m.season_id || m.date || '').slice(0, 4)
+                    if (y === seasonYear && m.team_id) teamIds.add(m.team_id)
+                }
+            }
+            const teamIdList = [...teamIds].slice(0, 8)
+            const teamRows = await batchFetch(teamIdList, getTeamMatches, 3)
+            if (cancelled) return
+            const teamMatchesByTeamId: Record<string, NonNullable<typeof teamRows[number]>> = {}
+            teamIdList.forEach((tid, i) => {
+                teamMatchesByTeamId[tid] = teamRows[i] || []
+            })
             const next: Record<string, CardSeasonStats> = {}
             ids.forEach((id, i) => {
-                next[id] = cardStatsAsOf(players[i]?.matches, { seasonYear, preferredHalf, asOfDate })
+                next[id] = cardStatsAsOf(players[i]?.matches, {
+                    seasonYear,
+                    preferredHalf,
+                    asOfDate,
+                    teamMatchesByTeamId,
+                })
             })
             setByPlayer(next)
         }).catch(() => { if (!cancelled) setByPlayer({}) }).finally(() => { if (!cancelled) setLoading(false) })

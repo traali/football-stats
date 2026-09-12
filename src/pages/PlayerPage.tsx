@@ -85,7 +85,7 @@ export function PlayerPage() {
         if (selectedTeamId) matches = matches.filter(m => m.team_id === selectedTeamId)
         if (selectedYear !== 'all') matches = matches.filter(m => (m.season_id === selectedYear || (m.date && m.date.startsWith(selectedYear))))
         if (selectedYear !== 'all' && selectedHalf !== 'all') matches = matches.filter(m => halfOf(m.date) === selectedHalf)
-        return matches.slice(0, 8)
+        return matches.sort((a, b) => `${a.date}${a.time || ''}`.localeCompare(`${b.date}${b.time || ''}`)).slice(0, 8)
     }, [safeMatches, selectedTeamId, selectedYear, selectedHalf])
 
     if (loading) return <div className="min-h-screen px-4 py-8"><div className="max-w-6xl mx-auto"><div className="animate-pulse bg-surface-1 rounded-xl h-64" /></div></div>

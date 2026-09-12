@@ -40,3 +40,8 @@ Append-only record of architectural decisions, dispensations, rule amendments, a
 - **Office / Author:** Cellarer / Master of Works
 - **Verdict:** PASS
 - **Summary:** Live matches never cached. Upcoming max-age 30s (lineups). Played immutable. Roster 60s. Worker Cache API only store-played.
+
+## 2026-09-12 — Player cards: current season first
+- **Office / Author:** Master of Works
+- **Verdict:** PASS
+- **Summary:** Default/sort is current Torneopal half (syksy 2026). Games newest first. Grey DNP boxes for team matches the player missed.

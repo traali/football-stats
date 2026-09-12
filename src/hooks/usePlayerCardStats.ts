@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { batchFetch, getPlayerData } from '../services/api'
 import { cardStatsAsOf, type CardSeasonStats } from '../utils/cardStatsAsOf'
+import { getCurrentSeason } from '../utils/dates'
 
 export function usePlayerCardStats(
     playerIds: string[],
@@ -17,11 +18,12 @@ export function usePlayerCardStats(
             return
         }
         let cancelled = false
+        const preferredHalf = seasonHalf === 'all' ? getCurrentSeason().half : seasonHalf
         batchFetch(ids, getPlayerData, 4).then(players => {
             if (cancelled) return
             const next: Record<string, CardSeasonStats> = {}
             ids.forEach((id, i) => {
-                next[id] = cardStatsAsOf(players[i]?.matches, { seasonYear, seasonHalf })
+                next[id] = cardStatsAsOf(players[i]?.matches, { seasonYear, seasonHalf, preferredHalf })
             })
             setByPlayer(next)
         }).catch(() => { if (!cancelled) setByPlayer({}) })

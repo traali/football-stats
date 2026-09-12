@@ -21,37 +21,32 @@ const LEVEL_FI: Record<string, string> = {
     harraste: 'Harraste',
 }
 
-function WdlDots({
+function GameBoxes({
     results,
-    wins = 0,
-    draws = 0,
-    losses = 0,
 }: {
-    results?: Array<'V' | 'T' | 'H'>
-    wins?: number
-    draws?: number
-    losses?: number
+    results?: Array<{ result: 'V' | 'T' | 'H' | 'DNP'; date: string; opponent?: string }>
 }) {
-    const dots: Array<'V' | 'T' | 'H'> = results && results.length > 0
-        ? results
-        : [
-            ...Array.from({ length: wins }, () => 'V' as const),
-            ...Array.from({ length: draws }, () => 'T' as const),
-            ...Array.from({ length: losses }, () => 'H' as const),
-        ]
-    if (!dots.length) return null
+    if (!results?.length) return null
+    const shown = results.slice(0, 18)
+    const extra = results.length - shown.length
     return (
-        <span className="inline-flex items-center gap-0.5 shrink-0" aria-label={`${wins}V ${draws}T ${losses}H`}>
-            {dots.map((d, i) => (
-                <span
-                    key={`${d}-${i}`}
-                    className={
-                        d === 'V' ? 'w-1.5 h-1.5 rounded-full bg-semantic-green' :
-                        d === 'H' ? 'w-1.5 h-1.5 rounded-full bg-semantic-red' :
-                        'w-1.5 h-1.5 rounded-full bg-text-muted'
-                    }
-                />
-            ))}
+        <span className="inline-flex items-center flex-wrap gap-0.5" aria-label="Ottelut, uusin ensin">
+            {shown.map((d, i) => {
+                const title = [d.date, d.opponent, d.result === 'DNP' ? 'ei pelannut' : d.result].filter(Boolean).join(' · ')
+                const cls =
+                    d.result === 'V' ? 'bg-semantic-green' :
+                    d.result === 'H' ? 'bg-semantic-red' :
+                    d.result === 'T' ? 'bg-text-muted' :
+                    'bg-surface-3 border border-border-hairline'
+                return (
+                    <span
+                        key={`${d.date}-${d.result}-${i}`}
+                        title={title}
+                        className={`inline-block w-2.5 h-2.5 rounded-[3px] shrink-0 ${cls}`}
+                    />
+                )
+            })}
+            {extra > 0 && <span className="text-[9px] text-text-muted ml-0.5">+{extra}</span>}
         </span>
     )
 }
@@ -130,13 +125,16 @@ export function PlayerCard({ stats, eligibility }: { stats: PlayerStats; eligibi
                                 </span>
                             </div>
                             <div className="flex items-center justify-between gap-2">
-                                <WdlDots results={row.results?.map(r => r.result)} wins={row.wins} draws={row.draws} losses={row.losses} />
+                                <GameBoxes results={row.results} />
                                 <span className="text-[10px] text-text-muted font-mono">
                                     {row.wins ?? 0}V {row.draws ?? 0}T {row.losses ?? 0}H · {row.matches} ott
                                 </span>
                             </div>
                         </div>
                     ))}
+                    {series.some(r => r.results?.some(g => g.result === 'DNP')) && (
+                        <p className="text-[10px] text-text-muted">Harmaa ruutu = joukkue pelasi, pelaaja ei ollut kokoonpanossa.</p>
+                    )}
                 </div>
             )}
         </motion.div>

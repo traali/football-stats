@@ -62,13 +62,14 @@ export function MatchPage() {
         const extra = p.playerId ? cardStats[p.playerId] : undefined
         if (!extra) return p
         if (comparisonScope === 'season') {
-            const seasonRows = extra.seriesThisYear.filter(s => s.half === matchHalf)
+            const seasonRows = extra.seriesThisYear.filter(s => !s.half || s.half === matchHalf)
             const seasonGoals = seasonRows.reduce((sum, s) => sum + (s.goals || 0), 0)
             const seasonWarnings = seasonRows.reduce((sum, s) => sum + (s.warnings || 0), 0)
             const seasonMatches = seasonRows.reduce((sum, s) => sum + (s.matches || 0), 0)
             return {
                 ...p,
                 ...extra,
+                seriesThisYear: seasonRows,
                 gamesPlayedThisYear: seasonMatches,
                 goalsThisYear: seasonGoals,
                 warningsThisYear: seasonWarnings,

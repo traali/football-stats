@@ -79,6 +79,7 @@ import type { PastMatchDetail } from './matches'
 export interface PlayerSeriesSlice {
     category: string
     half: 'kevät' | 'syksy' | ''
+    teamId?: string
     teamName?: string
     matches: number
     goals: number
@@ -89,7 +90,7 @@ export interface PlayerSeriesSlice {
     gf?: number
     ga?: number
     latestDate?: string
-    results?: Array<{ result: 'V' | 'T' | 'H'; date: string }>
+    results?: Array<{ result: 'V' | 'T' | 'H' | 'DNP'; date: string; matchId?: string; opponent?: string }>
 }
 
 export interface PlayerStats {
