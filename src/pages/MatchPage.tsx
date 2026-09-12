@@ -18,6 +18,8 @@ import { MatchHeaderSkeleton, PlayerCardSkeleton, StandingsTableSkeleton } from 
 import { resolveCrest } from '../utils/crest'
 import { MATCH_STATUS } from '../types'
 import type { PlayerStats } from '../types'
+import { halfOf, getCurrentSeason, formatSeasonLabel } from '../utils/dates'
+import { cn } from '../utils/cn'
 
 export function MatchPage() {
     const { matchId = '' } = useParams()
@@ -25,6 +27,7 @@ export function MatchPage() {
     const [searchValue, setSearchValue] = useState(matchId)
     const [selectedTeam, setSelectedTeam] = useState<string | null>(null)
     const [showStickyHeader, setShowStickyHeader] = useState(false)
+    const [comparisonScope, setComparisonScope] = useState<'season' | 'year'>('season')
     const { loading, error, data, fetchData } = useMatchData()
     const eligibility = useMatchEligibility(data?.match, data?.group, data?.teamA, data?.teamB)
     const { byPlayer: cardStats, loading: cardStatsLoading } = useMatchCardStats(data?.match)
@@ -51,10 +54,32 @@ export function MatchPage() {
         }
     }
 
+    const matchHalf = halfOf(data?.match?.date) || getCurrentSeason().half
+    const matchYear = (data?.match?.date || '').slice(0, 4) || getCurrentSeason().year
+    const seasonButtonLabel = formatSeasonLabel(matchYear, matchHalf)
+
     const withAsOf = (p: PlayerStats): PlayerStats => {
         const extra = p.playerId ? cardStats[p.playerId] : undefined
         if (!extra) return p
-        return { ...p, ...extra }
+        if (comparisonScope === 'season') {
+            const seasonRows = extra.seriesThisYear.filter(s => s.half === matchHalf)
+            const seasonGoals = seasonRows.reduce((sum, s) => sum + (s.goals || 0), 0)
+            const seasonWarnings = seasonRows.reduce((sum, s) => sum + (s.warnings || 0), 0)
+            const seasonMatches = seasonRows.reduce((sum, s) => sum + (s.matches || 0), 0)
+            return {
+                ...p,
+                ...extra,
+                gamesPlayedThisYear: seasonMatches,
+                goalsThisYear: seasonGoals,
+                warningsThisYear: seasonWarnings,
+                goalsForThisSpecificTeamInSeason: seasonGoals,
+            }
+        }
+        return {
+            ...p,
+            ...extra,
+            goalsForThisSpecificTeamInSeason: extra.goalsThisYear,
+        }
     }
     const teamAPlayers = (data?.players?.filter(p => p.teamIdInMatch === data.match.team_A_id) ?? []).map(withAsOf)
     const teamBPlayers = (data?.players?.filter(p => p.teamIdInMatch === data.match.team_B_id) ?? []).map(withAsOf)
@@ -66,8 +91,8 @@ export function MatchPage() {
     const teamAGoalsAgainst = teamAStanding ? parseInt(String(teamAStanding.goals_against || '0'), 10) : 0
     const teamBGoalsAgainst = teamBStanding ? parseInt(String(teamBStanding.goals_against || '0'), 10) : 0
 
-    const teamARosterGoals = teamAPlayers.reduce((sum, p) => sum + (p.goalsForThisSpecificTeamInSeason || p.goalsThisYear || 0), 0)
-    const teamBRosterGoals = teamBPlayers.reduce((sum, p) => sum + (p.goalsForThisSpecificTeamInSeason || p.goalsThisYear || 0), 0)
+    const teamARosterGoals = teamAPlayers.reduce((sum, p) => sum + (p.goalsThisYear || 0), 0)
+    const teamBRosterGoals = teamBPlayers.reduce((sum, p) => sum + (p.goalsThisYear || 0), 0)
 
     const teamAYellows = teamAPlayers.reduce((sum, p) => sum + (p.warningsThisYear || 0), 0)
     const teamBYellows = teamBPlayers.reduce((sum, p) => sum + (p.warningsThisYear || 0), 0)
@@ -158,8 +183,36 @@ export function MatchPage() {
                         )}
 
                         <div className="bg-surface-1 border border-border-hairline rounded-xl p-5 space-y-4">
-                            <div className="flex items-center justify-between">
-                                <h4 className="text-xs font-bold text-text-muted uppercase tracking-widest">Joukkuevertailu</h4>
+                            <div className="flex items-center justify-between gap-2 flex-wrap">
+                                <div className="flex items-center gap-2.5">
+                                    <h4 className="text-xs font-bold text-text-muted uppercase tracking-widest">Joukkuevertailu</h4>
+                                    <div className="flex items-center gap-1 bg-surface-2 p-0.5 rounded-lg border border-border-hairline">
+                                        <button
+                                            type="button"
+                                            onClick={() => setComparisonScope('season')}
+                                            className={cn(
+                                                "text-[11px] px-2 py-0.5 rounded-md font-semibold transition-all cursor-pointer active:scale-95",
+                                                comparisonScope === 'season'
+                                                    ? "bg-accent text-text-inverse shadow-sm"
+                                                    : "text-text-muted hover:text-text-primary"
+                                            )}
+                                        >
+                                            {seasonButtonLabel}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setComparisonScope('year')}
+                                            className={cn(
+                                                "text-[11px] px-2 py-0.5 rounded-md font-semibold transition-all cursor-pointer active:scale-95",
+                                                comparisonScope === 'year'
+                                                    ? "bg-accent text-text-inverse shadow-sm"
+                                                    : "text-text-muted hover:text-text-primary"
+                                            )}
+                                        >
+                                            Koko vuosi
+                                        </button>
+                                    </div>
+                                </div>
                                 <div className="flex items-center gap-3 text-xs">
                                     <span className="text-accent font-bold truncate max-w-[130px] text-right">{data.match.team_A_name}</span>
                                     <span className="text-text-muted">vs</span>
@@ -178,10 +231,18 @@ export function MatchPage() {
                                     </>
                                 )}
                                 {(teamARosterGoals > 0 || teamBRosterGoals > 0) && (
-                                    <DualStatBar label="Kokoonpanon kausimaalit" valueA={teamARosterGoals} valueB={teamBRosterGoals} />
+                                    <DualStatBar
+                                        label={`Kokoonpanon kausimaalit (${comparisonScope === 'season' ? seasonButtonLabel : 'Koko vuosi'})`}
+                                        valueA={teamARosterGoals}
+                                        valueB={teamBRosterGoals}
+                                    />
                                 )}
                                 {(teamAYellows > 0 || teamBYellows > 0) && (
-                                    <DualStatBar label="Kokoonpanon varoitukset" valueA={teamAYellows} valueB={teamBYellows} />
+                                    <DualStatBar
+                                        label={`Kokoonpanon varoitukset (${comparisonScope === 'season' ? seasonButtonLabel : 'Koko vuosi'})`}
+                                        valueA={teamAYellows}
+                                        valueB={teamBYellows}
+                                    />
                                 )}
                             </div>
                         </div>

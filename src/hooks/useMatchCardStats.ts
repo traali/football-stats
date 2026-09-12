@@ -3,6 +3,7 @@ import { batchFetch, getPlayerData } from '../services/api'
 import { MATCH_STATUS } from '../types'
 import type { MatchDetails } from '../types'
 import { cardStatsAsOf, type CardSeasonStats } from '../utils/cardStatsAsOf'
+import { halfOf } from '../utils/dates'
 
 export function useMatchCardStats(match: MatchDetails | undefined) {
     const [byPlayer, setByPlayer] = useState<Record<string, CardSeasonStats>>({})
@@ -23,12 +24,13 @@ export function useMatchCardStats(match: MatchDetails | undefined) {
         let cancelled = false
         setLoading(true)
         const seasonYear = (match.date || '').slice(0, 4)
+        const preferredHalf = halfOf(match.date) || 'syksy'
         const asOfDate = match.status === MATCH_STATUS.PLAYED ? match.date : undefined
         batchFetch(ids, getPlayerData, 4).then(players => {
             if (cancelled) return
             const next: Record<string, CardSeasonStats> = {}
             ids.forEach((id, i) => {
-                next[id] = cardStatsAsOf(players[i]?.matches, { seasonYear, asOfDate })
+                next[id] = cardStatsAsOf(players[i]?.matches, { seasonYear, preferredHalf, asOfDate })
             })
             setByPlayer(next)
         }).catch(() => { if (!cancelled) setByPlayer({}) }).finally(() => { if (!cancelled) setLoading(false) })

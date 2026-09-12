@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatDate, formatTime, formatDayName } from './dates'
+import { formatDate, formatTime, formatDayName, halfOf, getCurrentSeason, formatSeasonLabel } from './dates'
 
 describe('dates utils', () => {
     describe('formatDate', () => {
@@ -33,6 +33,31 @@ describe('dates utils', () => {
     describe('formatDayName', () => {
         it('should return correct day name', () => {
             expect(formatDayName('2026-06-14')).toBe('Su')
+        })
+    })
+
+    describe('season helpers', () => {
+        it('halfOf correctly identifies spring and autumn', () => {
+            expect(halfOf('2026-05-15')).toBe('kevät')
+            expect(halfOf('2026-06-30')).toBe('kevät')
+            expect(halfOf('2026-07-01')).toBe('syksy')
+            expect(halfOf('2026-09-12')).toBe('syksy')
+            expect(halfOf('')).toBe('')
+        })
+
+        it('getCurrentSeason returns current year and season half', () => {
+            const springDate = new Date('2026-04-10T12:00:00Z')
+            expect(getCurrentSeason(springDate)).toEqual({ year: '2026', half: 'kevät' })
+
+            const autumnDate = new Date('2026-09-12T12:00:00Z')
+            expect(getCurrentSeason(autumnDate)).toEqual({ year: '2026', half: 'syksy' })
+        })
+
+        it('formatSeasonLabel formats labels properly', () => {
+            expect(formatSeasonLabel('all')).toBe('Kaikki kaudet (Yhteensä)')
+            expect(formatSeasonLabel('2026', 'all')).toBe('Kausi 2026')
+            expect(formatSeasonLabel('2026', 'syksy')).toBe('Syksy 2026')
+            expect(formatSeasonLabel('2026', 'kevät')).toBe('Kevät 2026')
         })
     })
 })

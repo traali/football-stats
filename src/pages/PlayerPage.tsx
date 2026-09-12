@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { User, TrendingDown, Calendar, ExternalLink, Heart } from 'lucide-react'
 import { cn } from '../utils/cn'
-import { formatDate } from '../utils/dates'
+import { formatDate, getCurrentSeason, halfOf, formatSeasonLabel } from '../utils/dates'
 import { WLD_CONFIG } from '../utils/wld'
 import { loadPlayer } from '../services/playerStore'
 import { MATCH_STATUS } from '../types'
@@ -19,6 +19,9 @@ export function PlayerPage() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null)
+    const currentSeason = useMemo(() => getCurrentSeason(), [])
+    const [selectedYear, setSelectedYear] = useState<string>(currentSeason.year)
+    const [selectedHalf, setSelectedHalf] = useState<'all' | 'kevät' | 'syksy'>(currentSeason.half)
     const abortRef = useRef<AbortController | null>(null)
 
     useEffect(() => {
@@ -48,20 +51,42 @@ export function PlayerPage() {
     }, [playerId])
 
     const safeMatches = useMemo(() => player?.matches ?? [], [player?.matches])
-    const seasons = useMemo(() => buildSeriesFromMatches(safeMatches), [safeMatches])
+    const availableYears = useMemo(() => {
+        const set = new Set<string>()
+        safeMatches.forEach(m => {
+            const yr = m.season_id || (m.date ? m.date.slice(0, 4) : '')
+            if (yr && /^\d{4}$/.test(yr)) set.add(yr)
+        })
+        return [...set].sort((a, b) => b.localeCompare(a))
+    }, [safeMatches])
+
+    useEffect(() => {
+        if (availableYears.length > 0 && selectedYear !== 'all' && !availableYears.includes(selectedYear)) {
+            setSelectedYear(availableYears[0])
+        }
+    }, [availableYears, selectedYear])
+
+    const seasons = useMemo(() => buildSeriesFromMatches(safeMatches, {
+        seasonId: selectedYear,
+        half: selectedHalf,
+    }), [safeMatches, selectedYear, selectedHalf])
     const teams = useMemo(() => currentTeams(player), [player])
 
     const pastMatches = useMemo(() => {
-        const matches = safeMatches.filter(m => m.status === MATCH_STATUS.PLAYED)
-        const filtered = selectedTeamId ? matches.filter(m => m.team_id === selectedTeamId) : matches
-        return filtered.sort((a, b) => (b.date || '').localeCompare(a.date || '')).slice(0, 40)
-    }, [safeMatches, selectedTeamId])
+        let matches = safeMatches.filter(m => m.status === MATCH_STATUS.PLAYED)
+        if (selectedTeamId) matches = matches.filter(m => m.team_id === selectedTeamId)
+        if (selectedYear !== 'all') matches = matches.filter(m => (m.season_id === selectedYear || (m.date && m.date.startsWith(selectedYear))))
+        if (selectedYear !== 'all' && selectedHalf !== 'all') matches = matches.filter(m => halfOf(m.date) === selectedHalf)
+        return matches.sort((a, b) => (b.date || '').localeCompare(a.date || '')).slice(0, 40)
+    }, [safeMatches, selectedTeamId, selectedYear, selectedHalf])
 
     const upcomingMatches = useMemo(() => {
-        const matches = safeMatches.filter(m => m.status === MATCH_STATUS.FIXTURE)
-        const filtered = selectedTeamId ? matches.filter(m => m.team_id === selectedTeamId) : matches
-        return filtered.slice(0, 8)
-    }, [safeMatches, selectedTeamId])
+        let matches = safeMatches.filter(m => m.status === MATCH_STATUS.FIXTURE)
+        if (selectedTeamId) matches = matches.filter(m => m.team_id === selectedTeamId)
+        if (selectedYear !== 'all') matches = matches.filter(m => (m.season_id === selectedYear || (m.date && m.date.startsWith(selectedYear))))
+        if (selectedYear !== 'all' && selectedHalf !== 'all') matches = matches.filter(m => halfOf(m.date) === selectedHalf)
+        return matches.slice(0, 8)
+    }, [safeMatches, selectedTeamId, selectedYear, selectedHalf])
 
     if (loading) return <div className="min-h-screen px-4 py-8"><div className="max-w-6xl mx-auto"><div className="animate-pulse bg-surface-1 rounded-xl h-64" /></div></div>
     if (error || !player) return <div className="min-h-screen px-4 py-8 text-center text-semantic-red">{error || 'Pelaajaa ei löytynyt'}</div>
@@ -115,6 +140,82 @@ export function PlayerPage() {
                     </button>
                 </div>
             </div>
+            <div className="space-y-4 pt-2">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-text-secondary">
+                        Kausitilastot: {formatSeasonLabel(selectedYear, selectedHalf)}
+                    </span>
+                    <div className="flex flex-wrap items-center gap-2">
+                        {availableYears.length > 0 && (
+                            <div className="flex items-center gap-1.5 bg-surface-2 p-1 rounded-lg border border-border-hairline">
+                                <button
+                                    onClick={() => setSelectedYear('all')}
+                                    className={cn(
+                                        "text-xs px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer active:scale-95",
+                                        selectedYear === 'all'
+                                            ? "bg-accent text-text-inverse shadow-sm"
+                                            : "text-text-muted hover:text-text-primary"
+                                    )}
+                                >
+                                    Yhteensä
+                                </button>
+                                {availableYears.map((y: string) => (
+                                    <button
+                                        key={y}
+                                        onClick={() => setSelectedYear(y)}
+                                        className={cn(
+                                            "text-xs px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer active:scale-95",
+                                            selectedYear === y
+                                                ? "bg-accent text-text-inverse shadow-sm"
+                                                : "text-text-muted hover:text-text-primary"
+                                        )}
+                                    >
+                                        {y}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
+                        {selectedYear !== 'all' && (
+                            <div className="flex items-center gap-1 bg-surface-2 p-1 rounded-lg border border-border-hairline">
+                                <button
+                                    onClick={() => setSelectedHalf('syksy')}
+                                    className={cn(
+                                        "text-xs px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer active:scale-95",
+                                        selectedHalf === 'syksy'
+                                            ? "bg-accent text-text-inverse shadow-sm"
+                                            : "text-text-muted hover:text-text-primary"
+                                    )}
+                                >
+                                    Syksy
+                                </button>
+                                <button
+                                    onClick={() => setSelectedHalf('kevät')}
+                                    className={cn(
+                                        "text-xs px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer active:scale-95",
+                                        selectedHalf === 'kevät'
+                                            ? "bg-accent text-text-inverse shadow-sm"
+                                            : "text-text-muted hover:text-text-primary"
+                                    )}
+                                >
+                                    Kevät
+                                </button>
+                                <button
+                                    onClick={() => setSelectedHalf('all')}
+                                    className={cn(
+                                        "text-xs px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer active:scale-95",
+                                        selectedHalf === 'all'
+                                            ? "bg-accent text-text-inverse shadow-sm"
+                                            : "text-text-muted hover:text-text-primary"
+                                    )}
+                                >
+                                    Koko kausi
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                 <div className="lg:col-span-1 space-y-6">
                     {teams.length > 0 && (
@@ -148,7 +249,7 @@ export function PlayerPage() {
                                     <button key={row.key} type="button" onClick={() => setSelectedTeamId(row.teamId)}
                                         className="w-full text-left p-3 rounded-lg border border-border-hairline hover:bg-surface-2">
                                         <p className="text-sm font-semibold text-text-primary truncate">{row.teamName}</p>
-                                        <p className="text-xs text-text-muted truncate">{row.categoryName}{row.competitionName ? ` · ${row.competitionName}` : ''}</p>
+                                        <p className="text-xs text-text-muted truncate">{row.categoryName}{row.half ? ` · ${row.half}` : ''}{row.competitionName ? ` · ${row.competitionName}` : ''}</p>
                                         <p className="text-xs text-text-secondary mt-1">
                                             {row.matches} ott. · {row.goals} maalia
                                             {row.assists ? ` · ${row.assists} syöttöä` : ''}

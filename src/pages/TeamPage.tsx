@@ -4,6 +4,7 @@ import { cn } from '../utils/cn'
 import { useTeamData } from '../hooks/useTeamData'
 import { usePlayerCardStats } from '../hooks/usePlayerCardStats'
 import { getTeamCategory } from '../utils/dataProcessors'
+import { formatSeasonLabel } from '../utils/dates'
 import { APP_CONFIG } from '../config'
 import { StatBadge, BackButton, PageLayout, Card, PlayerAvatar, TeamHeader, TeamMatchList } from '../components'
 import { TeamRoster } from '../components/TeamRoster'
@@ -31,6 +32,7 @@ export function TeamPage() {
 
     const {
         team, tab, setTab, selectedYear, setSelectedYear,
+        selectedHalf, setSelectedHalf,
         displayStats, performanceComparison, statsByYear, years,
         playerTransitions, categoriesByYear, rosterPlayers,
         rosterYear, loadingPlayers, historyError, historicalPlayersByYear,
@@ -47,6 +49,8 @@ export function TeamPage() {
             setTab={setTab}
             selectedYear={selectedYear}
             setSelectedYear={setSelectedYear}
+            selectedHalf={selectedHalf}
+            setSelectedHalf={setSelectedHalf}
             displayStats={displayStats}
             performanceComparison={performanceComparison}
             statsByYear={statsByYear}
@@ -75,13 +79,14 @@ function TeamPageReady(props: any) {
 
 function TeamPageBody({
     teamId, navigate, team, tab, setTab, selectedYear, setSelectedYear,
+    selectedHalf, setSelectedHalf,
     displayStats, performanceComparison, statsByYear, years,
     playerTransitions, categoriesByYear, rosterPlayers, rosterYear,
     loadingPlayers, historyError, historicalPlayersByYear,
     currentScorers, pastMatches, upcoming, last5Form, fav, toggle,
 }: any) {
 /* eslint-enable @typescript-eslint/no-explicit-any */
-    const cardStats = usePlayerCardStats(rosterPlayers.map((p: { player_id: string }) => p.player_id), rosterYear)
+    const cardStats = usePlayerCardStats(rosterPlayers.map((p: { player_id: string }) => p.player_id), rosterYear, selectedHalf)
     const prevYear = String(parseInt(rosterYear, 10) - 1)
     const lastSeasonById = Object.fromEntries(
         (historicalPlayersByYear[prevYear] || []).map((p: { player_id: string; matches?: number; goals?: number }) => [p.player_id, { matches: p.matches, goals: p.goals }]),
@@ -93,6 +98,7 @@ function TeamPageBody({
             teamName={team?.team_name}
             level={team ? getTeamCategory(team, rosterYear) || '' : ''}
             rosterYear={rosterYear}
+            rosterHalf={selectedHalf}
             loading={loadingPlayers}
             error={historyError}
             lastSeasonById={lastSeasonById}
@@ -235,39 +241,79 @@ function TeamPageBody({
             />
 
             <div className="space-y-4 pt-4 border-t border-border-hairline">
-                <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                     <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-text-secondary">
-                        {selectedYear === 'all' ? 'Kausitilastot: Kaikki kaudet (Yhteensä)' : `Kausitilastot: Kausi ${selectedYear}`}
+                        Kausitilastot: {formatSeasonLabel(selectedYear, selectedHalf)}
                     </span>
-                    {years.length > 0 && (
-                        <div className="flex items-center gap-1.5 bg-surface-2 p-1 rounded-lg border border-border-hairline">
-                            <button
-                                onClick={() => setSelectedYear('all')}
-                                className={cn(
-                                    "text-xs px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer active:scale-95",
-                                    selectedYear === 'all'
-                                        ? "bg-accent text-text-inverse shadow-sm"
-                                        : "text-text-muted hover:text-text-primary"
-                                )}
-                            >
-                                Yhteensä
-                            </button>
-                            {years.map((y: string) => (
+                    <div className="flex flex-wrap items-center gap-2">
+                        {years.length > 0 && (
+                            <div className="flex items-center gap-1.5 bg-surface-2 p-1 rounded-lg border border-border-hairline">
                                 <button
-                                    key={y}
-                                    onClick={() => setSelectedYear(y)}
+                                    onClick={() => setSelectedYear('all')}
                                     className={cn(
                                         "text-xs px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer active:scale-95",
-                                        selectedYear === y
+                                        selectedYear === 'all'
                                             ? "bg-accent text-text-inverse shadow-sm"
                                             : "text-text-muted hover:text-text-primary"
                                     )}
                                 >
-                                    {y}
+                                    Yhteensä
                                 </button>
-                            ))}
-                        </div>
-                    )}
+                                {years.map((y: string) => (
+                                    <button
+                                        key={y}
+                                        onClick={() => setSelectedYear(y)}
+                                        className={cn(
+                                            "text-xs px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer active:scale-95",
+                                            selectedYear === y
+                                                ? "bg-accent text-text-inverse shadow-sm"
+                                                : "text-text-muted hover:text-text-primary"
+                                        )}
+                                    >
+                                        {y}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
+                        {selectedYear !== 'all' && (
+                            <div className="flex items-center gap-1 bg-surface-2 p-1 rounded-lg border border-border-hairline">
+                                <button
+                                    onClick={() => setSelectedHalf('syksy')}
+                                    className={cn(
+                                        "text-xs px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer active:scale-95",
+                                        selectedHalf === 'syksy'
+                                            ? "bg-accent text-text-inverse shadow-sm"
+                                            : "text-text-muted hover:text-text-primary"
+                                    )}
+                                >
+                                    Syksy
+                                </button>
+                                <button
+                                    onClick={() => setSelectedHalf('kevät')}
+                                    className={cn(
+                                        "text-xs px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer active:scale-95",
+                                        selectedHalf === 'kevät'
+                                            ? "bg-accent text-text-inverse shadow-sm"
+                                            : "text-text-muted hover:text-text-primary"
+                                    )}
+                                >
+                                    Kevät
+                                </button>
+                                <button
+                                    onClick={() => setSelectedHalf('all')}
+                                    className={cn(
+                                        "text-xs px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer active:scale-95",
+                                        selectedHalf === 'all'
+                                            ? "bg-accent text-text-inverse shadow-sm"
+                                            : "text-text-muted hover:text-text-primary"
+                                    )}
+                                >
+                                    Koko kausi
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">

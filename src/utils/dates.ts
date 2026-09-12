@@ -35,3 +35,24 @@ export function todayISO(now = new Date()): string {
 export function isUpcomingDate(date?: string, now = new Date()): boolean {
     return !!date && date >= todayISO(now)
 }
+
+export function halfOf(date?: string): 'kevät' | 'syksy' | '' {
+    if (!date || date.length < 7) return ''
+    const month = parseInt(date.slice(5, 7), 10)
+    if (!month) return ''
+    return month <= 6 ? 'kevät' : 'syksy'
+}
+
+export function getCurrentSeason(now = new Date()): { year: string; half: 'kevät' | 'syksy' } {
+    const year = String(now.getFullYear())
+    const month = now.getMonth() + 1
+    const half = month <= 6 ? 'kevät' : 'syksy'
+    return { year, half }
+}
+
+export function formatSeasonLabel(year: string, half?: 'all' | 'kevät' | 'syksy'): string {
+    if (year === 'all') return 'Kaikki kaudet (Yhteensä)'
+    if (!half || half === 'all') return `Kausi ${year}`
+    const capitalized = half.charAt(0).toUpperCase() + half.slice(1)
+    return `${capitalized} ${year}`
+}

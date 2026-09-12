@@ -1,9 +1,11 @@
 import { MATCH_STATUS } from '../types'
 import type { PlayerAPIResponse, PlayerMatchEntry } from '../types'
+import { halfOf } from './dates'
 
 export interface SeriesRow {
     key: string
     seasonId: string
+    half: 'kevät' | 'syksy' | ''
     teamId: string
     teamName: string
     categoryName: string
@@ -35,19 +37,28 @@ function wld(m: PlayerMatchEntry): 'V' | 'T' | 'H' {
     return my > opp ? 'V' : my < opp ? 'H' : 'T'
 }
 
-export function buildSeriesFromMatches(matches: PlayerMatchEntry[] | undefined): SeasonBlock[] {
+export function buildSeriesFromMatches(
+    matches: PlayerMatchEntry[] | undefined,
+    filter?: { seasonId?: string; half?: 'all' | 'kevät' | 'syksy' },
+): SeasonBlock[] {
     const byKey = new Map<string, SeriesRow>()
     for (const m of matches || []) {
         if (m.status !== MATCH_STATUS.PLAYED) continue
-        const seasonId = m.season_id || 'unknown'
+        const seasonId = m.season_id || (m.date ? m.date.slice(0, 4) : 'unknown')
+        if (filter?.seasonId && filter.seasonId !== 'all' && seasonId !== filter.seasonId) continue
+
+        const half = halfOf(m.date)
+        if (filter?.half && filter.half !== 'all' && half !== filter.half) continue
+
         const teamId = m.team_id || ''
         const categoryName = m.category_name || ''
-        const key = `${seasonId}|${teamId}|${categoryName}`
+        const key = `${seasonId}|${teamId}|${categoryName}|${half}`
         let row = byKey.get(key)
         if (!row) {
             row = {
                 key,
                 seasonId,
+                half,
                 teamId,
                 teamName: m.team_name || (m.team_id === m.team_A_id ? m.team_A_name : m.team_B_name) || teamId,
                 categoryName,

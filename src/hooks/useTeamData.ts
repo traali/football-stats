@@ -6,6 +6,8 @@ import type { TeamResponse, DiscoveryMatch } from '../types'
 import { APP_CONFIG } from '../config'
 import { parsePlayerName } from '../utils/names'
 import { mergeRoster, type RosterPlayer } from './rosterMerge'
+import { getCurrentSeason, halfOf } from '../utils/dates'
+import { parseSeasonHalf } from '../domain/eligibility/seasonHalf'
 
 type PlayerEntry = RosterPlayer
 
@@ -34,16 +36,20 @@ interface PlayerTransitions {
 
 export function useTeamData(teamId: string | undefined) {
     const { isFavorite, toggle } = useFavorites()
+    const currentSeason = useMemo(() => getCurrentSeason(), [])
     const [team, setTeam] = useState<TeamResponse | null>(null)
     const [matches, setMatches] = useState<DiscoveryMatch[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [tab, setTab] = useState<'roster' | 'matches'>('matches')
-    const [selectedYear, setSelectedYear] = useState<string>('all')
+    const [selectedYear, setSelectedYear] = useState<string>(currentSeason.year)
+    const [selectedHalf, setSelectedHalf] = useState<'all' | 'kevät' | 'syksy'>(currentSeason.half)
     const [historicalPlayersByYear, setHistoricalPlayersByYear] = useState<Record<string, PlayerEntry[]>>({})
+    const [historicalPlayersByHalf, setHistoricalPlayersByHalf] = useState<Record<string, Record<'kevät' | 'syksy', PlayerEntry[]>>>({})
     const [loadingPlayers, setLoadingPlayers] = useState(false)
     const [historyError, setHistoryError] = useState<string | null>(null)
     const [teamTopScorers, setTeamTopScorers] = useState<Record<string, ScorerEntry[]>>({})
+    const [teamTopScorersByHalf, setTeamTopScorersByHalf] = useState<Record<string, Record<'kevät' | 'syksy', ScorerEntry[]>>>({})
 
     const fav = teamId ? isFavorite(teamId) : false
     const abortRef = useRef<AbortController | null>(null)
@@ -109,13 +115,22 @@ export function useTeamData(teamId: string | undefined) {
                 if (controller.signal.aborted) return
                 const playersBySeason: Record<string, Record<string, PlayerEntry>> = {}
                 const statsBySeason: Record<string, Record<string, ScorerEntry>> = {}
-                allowedYears.forEach(yr => { playersBySeason[yr] = {}; statsBySeason[yr] = {} })
+                const playersByHalf: Record<string, Record<'kevät' | 'syksy', Record<string, PlayerEntry>>> = {}
+                const statsByHalf: Record<string, Record<'kevät' | 'syksy', Record<string, ScorerEntry>>> = {}
+                allowedYears.forEach(yr => {
+                    playersBySeason[yr] = {}
+                    statsBySeason[yr] = {}
+                    playersByHalf[yr] = { kevät: {}, syksy: {} }
+                    statsByHalf[yr] = { kevät: {}, syksy: {} }
+                })
                 results.forEach((groupData, idx) => {
                     if (!groupData) return
                     const groupMeta = relevantGroups[idx]
                     if (!groupMeta) return
                     const season = groupMeta.competition_season ? String(groupMeta.competition_season) : ''
                     if (!season || !playersBySeason[season]) return
+                    const rawHalf = parseSeasonHalf(groupData.group_name || groupMeta.category_id)
+                    const halfKey: 'kevät' | 'syksy' | null = rawHalf === 'spring' ? 'kevät' : rawHalf === 'autumn' ? 'syksy' : null
                     for (const p of groupData.player_statistics || []) {
                         if (String(p.team_id) !== String(teamId) || !p.player_id) continue
                         const pid = String(p.player_id)
@@ -145,16 +160,57 @@ export function useTeamData(teamId: string | undefined) {
                                 goals: g, assists: a, img_url: p.img_url, matches: mcount, warnings: w,
                             }
                         }
+
+                        if (halfKey) {
+                            const prevHalfP = playersByHalf[season][halfKey][pid]
+                            playersByHalf[season][halfKey][pid] = {
+                                player_id: pid, first_name: parsed.first_name, last_name: parsed.last_name,
+                                img_url: p.img_url || prevHalfP?.img_url,
+                                matches: (prevHalfP?.matches || 0) + mcount,
+                                goals: (prevHalfP?.goals || 0) + g,
+                                assists: (prevHalfP?.assists || 0) + a,
+                                warnings: (prevHalfP?.warnings || 0) + w,
+                            }
+                            const existingHalf = statsByHalf[season][halfKey][pid]
+                            if (existingHalf) {
+                                existingHalf.goals += g; existingHalf.assists += a
+                                existingHalf.matches = (existingHalf.matches || 0) + mcount
+                                existingHalf.warnings = (existingHalf.warnings || 0) + w
+                            } else {
+                                statsByHalf[season][halfKey][pid] = {
+                                    player_id: pid, first_name: parsed.first_name, last_name: parsed.last_name,
+                                    goals: g, assists: a, img_url: p.img_url, matches: mcount, warnings: w,
+                                }
+                            }
+                        }
                     }
                 })
                 const finalPlayers: Record<string, PlayerEntry[]> = {}
                 Object.entries(playersBySeason).forEach(([yr, map]) => { finalPlayers[yr] = Object.values(map) })
+                const finalPlayersByHalf: Record<string, Record<'kevät' | 'syksy', PlayerEntry[]>> = {}
+                Object.entries(playersByHalf).forEach(([yr, halfMap]) => {
+                    finalPlayersByHalf[yr] = {
+                        kevät: Object.values(halfMap.kevät),
+                        syksy: Object.values(halfMap.syksy),
+                    }
+                })
+
                 const finalScorers: Record<string, ScorerEntry[]> = {}
                 Object.entries(statsBySeason).forEach(([yr, map]) => {
                     finalScorers[yr] = Object.values(map).sort((a, b) => b.goals - a.goals || b.assists - a.assists)
                 })
+                const finalScorersByHalf: Record<string, Record<'kevät' | 'syksy', ScorerEntry[]>> = {}
+                Object.entries(statsByHalf).forEach(([yr, halfMap]) => {
+                    finalScorersByHalf[yr] = {
+                        kevät: Object.values(halfMap.kevät).sort((a, b) => b.goals - a.goals || b.assists - a.assists),
+                        syksy: Object.values(halfMap.syksy).sort((a, b) => b.goals - a.goals || b.assists - a.assists),
+                    }
+                })
+
                 setHistoricalPlayersByYear(finalPlayers)
+                setHistoricalPlayersByHalf(finalPlayersByHalf)
                 setTeamTopScorers(finalScorers)
+                setTeamTopScorersByHalf(finalScorersByHalf)
             } catch (err) {
                 if (!controller.signal.aborted) setHistoryError(err instanceof Error ? err.message : 'Virhe')
             } finally {
@@ -164,6 +220,12 @@ export function useTeamData(teamId: string | undefined) {
         run()
         return () => { controller.abort() }
     }, [relevantGroups, teamId, allowedYears])
+
+    useEffect(() => {
+        if (years.length > 0 && selectedYear !== 'all' && !years.includes(selectedYear)) {
+            setSelectedYear(years[0])
+        }
+    }, [years, selectedYear])
 
     const statsByYear = useMemo(() => {
         const map = new Map<string, YearStats>()
@@ -198,7 +260,36 @@ export function useTeamData(teamId: string | undefined) {
         return map
     }, [filteredMatches, teamId])
 
-    const displayStats = useMemo(() => statsByYear.get(selectedYear) || emptyYear(), [statsByYear, selectedYear])
+    const displayStats = useMemo(() => {
+        const matchesForStats = filteredMatches.filter(m => {
+            if (m.status !== MATCH_STATUS.PLAYED || !m.date) return false
+            if (selectedYear !== 'all' && !m.date.startsWith(selectedYear)) return false
+            if (selectedYear !== 'all' && selectedHalf !== 'all' && halfOf(m.date) !== selectedHalf) return false
+            return true
+        })
+
+        const s: YearStats = { played: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, diffStr: '0', ppg: 0, goalsScoredPerMatch: 0, goalsConcededPerMatch: 0 }
+        matchesForStats.forEach(m => {
+            s.played++
+            const isA = m.team_A_id === teamId
+            const myScore = parseInt(isA ? m.fs_A || '0' : m.fs_B || '0', 10)
+            const oppScore = parseInt(isA ? m.fs_B || '0' : m.fs_A || '0', 10)
+            if (isNaN(myScore) || isNaN(oppScore)) return
+            s.goalsFor += myScore
+            s.goalsAgainst += oppScore
+            if (myScore > oppScore) s.wins++
+            else if (myScore < oppScore) s.losses++
+            else s.draws++
+        })
+        if (s.played > 0) {
+            s.ppg = (s.wins * 3 + s.draws) / s.played
+            s.goalsScoredPerMatch = s.goalsFor / s.played
+            s.goalsConcededPerMatch = s.goalsAgainst / s.played
+        }
+        const diff = s.goalsFor - s.goalsAgainst
+        s.diffStr = diff > 0 ? `+${diff}` : `${diff}`
+        return s
+    }, [filteredMatches, selectedYear, selectedHalf, teamId])
 
     const performanceComparison = useMemo((): PerformanceComparison | null => {
         const currentYear = years[0] || APP_CONFIG.CURRENT_YEAR
@@ -266,14 +357,16 @@ export function useTeamData(teamId: string | undefined) {
     const pastMatches = useMemo(() => {
         let filtered = filteredMatches.filter(m => m.status === MATCH_STATUS.PLAYED)
         if (selectedYear !== 'all') filtered = filtered.filter(m => m.date && m.date.startsWith(selectedYear))
+        if (selectedYear !== 'all' && selectedHalf !== 'all') filtered = filtered.filter(m => halfOf(m.date) === selectedHalf)
         return filtered.sort((a, b) => (b.date || '').localeCompare(a.date || ''))
-    }, [filteredMatches, selectedYear])
+    }, [filteredMatches, selectedYear, selectedHalf])
 
     const upcoming = useMemo(() => {
         let filtered = filteredMatches.filter(m => m.status === MATCH_STATUS.FIXTURE)
         if (selectedYear !== 'all') filtered = filtered.filter(m => m.date && m.date.startsWith(selectedYear))
+        if (selectedYear !== 'all' && selectedHalf !== 'all') filtered = filtered.filter(m => halfOf(m.date) === selectedHalf)
         return filtered.sort((a, b) => (a.date || '').localeCompare(b.date || '')).slice(0, 10)
-    }, [filteredMatches, selectedYear])
+    }, [filteredMatches, selectedYear, selectedHalf])
 
     const homeAwayStats = useMemo(() => {
         const home = { played: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0 }
@@ -304,22 +397,28 @@ export function useTeamData(teamId: string | undefined) {
 
     const currentScorers = useMemo(() => {
         const yr = selectedYear === 'all' ? (years[0] || APP_CONFIG.CURRENT_YEAR) : selectedYear
+        if (selectedHalf !== 'all' && teamTopScorersByHalf[yr]?.[selectedHalf]?.length) {
+            return teamTopScorersByHalf[yr][selectedHalf].filter(p => p.goals > 0 || p.assists > 0)
+        }
         return (teamTopScorers[yr] || []).filter(p => p.goals > 0 || p.assists > 0)
-    }, [teamTopScorers, selectedYear, years])
+    }, [teamTopScorers, teamTopScorersByHalf, selectedYear, selectedHalf, years])
 
     const rosterYear = selectedYear === 'all' ? (years[0] || APP_CONFIG.CURRENT_YEAR) : selectedYear
-    const rosterPlayers = mergeRoster(historicalPlayersByYear[rosterYear] || [], players, teamTopScorers[rosterYear] || [])
+    const rosterBase = (selectedHalf !== 'all' && historicalPlayersByHalf[rosterYear]?.[selectedHalf]?.length)
+        ? historicalPlayersByHalf[rosterYear][selectedHalf]
+        : (historicalPlayersByYear[rosterYear] || [])
+    const scorersForRoster = (selectedHalf !== 'all' && teamTopScorersByHalf[rosterYear]?.[selectedHalf]?.length)
+        ? teamTopScorersByHalf[rosterYear][selectedHalf]
+        : (teamTopScorers[rosterYear] || [])
+    const rosterPlayers = mergeRoster(rosterBase, players, scorersForRoster)
 
     return {
         team, matches, loading, error, tab, setTab, selectedYear, setSelectedYear,
+        selectedHalf, setSelectedHalf,
         players, allowedYears, years, statsByYear, displayStats, performanceComparison,
         playerTransitions, categoriesByYear, pastMatches, upcoming, homeAwayStats, last5Form,
         currentScorers, rosterPlayers, rosterYear, loadingPlayers, historyError,
-        historicalPlayersByYear, teamTopScorers, fav, isFavorite, toggle,
+        historicalPlayersByYear, historicalPlayersByHalf, teamTopScorers, teamTopScorersByHalf, fav, isFavorite, toggle,
         filteredMatches, relevantGroups,
     }
-}
-
-function emptyYear() {
-    return { played: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, diffStr: '0', ppg: 0, goalsScoredPerMatch: 0, goalsConcededPerMatch: 0 }
 }

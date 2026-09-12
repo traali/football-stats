@@ -1,5 +1,6 @@
 import { MATCH_STATUS } from '../types'
 import type { PlayerMatchEntry } from '../types'
+import { halfOf } from './dates'
 
 export interface CardSeriesRow {
     category: string
@@ -13,6 +14,8 @@ export interface CardSeriesRow {
     losses: number
     gf: number
     ga: number
+    latestDate?: string
+    results?: Array<{ result: 'V' | 'T' | 'H'; date: string }>
 }
 
 export interface CardSeasonStats {
@@ -31,13 +34,6 @@ function seasonYear(seasonId?: string, date?: string): string {
     return ''
 }
 
-function halfOf(date?: string): 'kevät' | 'syksy' | '' {
-    if (!date || date.length < 7) return ''
-    const month = parseInt(date.slice(5, 7), 10)
-    if (!month) return ''
-    return month <= 6 ? 'kevät' : 'syksy'
-}
-
 function scorePair(m: PlayerMatchEntry): { my: number; opp: number } | null {
     const isA = m.team_id === m.team_A_id
     const my = parseInt((isA ? m.fs_A : m.fs_B) || '', 10)
@@ -48,7 +44,13 @@ function scorePair(m: PlayerMatchEntry): { my: number; opp: number } | null {
 
 export function cardStatsAsOf(
     matches: PlayerMatchEntry[] | undefined,
-    opts: { seasonYear: string; asOfDate?: string; refDate?: string },
+    opts: {
+        seasonYear: string
+        seasonHalf?: 'kevät' | 'syksy' | 'all'
+        preferredHalf?: 'kevät' | 'syksy'
+        asOfDate?: string
+        refDate?: string
+    },
 ): CardSeasonStats {
     const out: CardSeasonStats = {
         gamesPlayedThisYear: 0,
@@ -78,10 +80,13 @@ export function cardStatsAsOf(
         const goals = parseInt(m.player_goals || '0', 10) || 0
         const warnings = parseInt(m.player_warnings || '0', 10) || 0
         if (y === opts.seasonYear) {
+            const half = halfOf(m.date)
+            if (opts.seasonHalf && opts.seasonHalf !== 'all' && half !== opts.seasonHalf) {
+                continue
+            }
             out.gamesPlayedThisYear++
             out.goalsThisYear += goals
             out.warningsThisYear += warnings
-            const half = halfOf(m.date)
             const category = m.category_name || 'Sarja'
             const teamName = m.team_name || (m.team_id === m.team_A_id ? m.team_A_name : m.team_B_name) || ''
             const key = `${category}|${half}|${teamName}`
@@ -91,13 +96,20 @@ export function cardStatsAsOf(
             row.matches++
             row.goals += goals
             row.warnings += warnings
+            const mDate = m.date || ''
+            if (mDate && (!row.latestDate || mDate > row.latestDate)) {
+                row.latestDate = mDate
+            }
             const pair = scorePair(m)
             if (pair) {
                 row.gf += pair.my
                 row.ga += pair.opp
-                if (pair.my > pair.opp) row.wins++
-                else if (pair.my < pair.opp) row.losses++
+                const res: 'V' | 'T' | 'H' = pair.my > pair.opp ? 'V' : pair.my < pair.opp ? 'H' : 'T'
+                if (res === 'V') row.wins++
+                else if (res === 'H') row.losses++
                 else row.draws++
+                row.results = row.results || []
+                row.results.push({ result: res, date: mDate })
             }
             byKey.set(key, row)
         } else if (y === prev) {
@@ -105,6 +117,29 @@ export function cardStatsAsOf(
             out.goalsScoredLastSeason += goals
         }
     }
-    out.seriesThisYear = [...byKey.values()].sort((a, b) => b.matches - a.matches || a.category.localeCompare(b.category))
+
+    for (const row of byKey.values()) {
+        if (row.results) {
+            row.results.sort((a, b) => b.date.localeCompare(a.date))
+        }
+    }
+
+    const prefHalf = opts.preferredHalf || (opts.seasonHalf && opts.seasonHalf !== 'all' ? opts.seasonHalf : undefined)
+
+    out.seriesThisYear = [...byKey.values()].sort((a, b) => {
+        if (prefHalf) {
+            const aIsPref = a.half === prefHalf ? 1 : 0
+            const bIsPref = b.half === prefHalf ? 1 : 0
+            if (aIsPref !== bIsPref) {
+                return bIsPref - aIsPref
+            }
+        }
+        const dateA = a.latestDate || ''
+        const dateB = b.latestDate || ''
+        if (dateA !== dateB) {
+            return dateB.localeCompare(dateA)
+        }
+        return b.matches - a.matches || a.category.localeCompare(b.category)
+    })
     return out
 }

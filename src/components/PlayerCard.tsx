@@ -21,12 +21,24 @@ const LEVEL_FI: Record<string, string> = {
     harraste: 'Harraste',
 }
 
-function WdlDots({ wins = 0, draws = 0, losses = 0 }: { wins?: number; draws?: number; losses?: number }) {
-    const dots: Array<'V' | 'T' | 'H'> = [
-        ...Array.from({ length: wins }, () => 'V' as const),
-        ...Array.from({ length: draws }, () => 'T' as const),
-        ...Array.from({ length: losses }, () => 'H' as const),
-    ]
+function WdlDots({
+    results,
+    wins = 0,
+    draws = 0,
+    losses = 0,
+}: {
+    results?: Array<'V' | 'T' | 'H'>
+    wins?: number
+    draws?: number
+    losses?: number
+}) {
+    const dots: Array<'V' | 'T' | 'H'> = results && results.length > 0
+        ? results
+        : [
+            ...Array.from({ length: wins }, () => 'V' as const),
+            ...Array.from({ length: draws }, () => 'T' as const),
+            ...Array.from({ length: losses }, () => 'H' as const),
+        ]
     if (!dots.length) return null
     return (
         <span className="inline-flex items-center gap-0.5 shrink-0" aria-label={`${wins}V ${draws}T ${losses}H`}>
@@ -118,7 +130,7 @@ export function PlayerCard({ stats, eligibility }: { stats: PlayerStats; eligibi
                                 </span>
                             </div>
                             <div className="flex items-center justify-between gap-2">
-                                <WdlDots wins={row.wins} draws={row.draws} losses={row.losses} />
+                                <WdlDots results={row.results?.map(r => r.result)} wins={row.wins} draws={row.draws} losses={row.losses} />
                                 <span className="text-[10px] text-text-muted font-mono">
                                     {row.wins ?? 0}V {row.draws ?? 0}T {row.losses ?? 0}H · {row.matches} ott
                                 </span>

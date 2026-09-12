@@ -88,6 +88,8 @@ export interface PlayerSeriesSlice {
     losses?: number
     gf?: number
     ga?: number
+    latestDate?: string
+    results?: Array<{ result: 'V' | 'T' | 'H'; date: string }>
 }
 
 export interface PlayerStats {
