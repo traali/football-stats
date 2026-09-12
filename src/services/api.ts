@@ -127,9 +127,21 @@ export async function fetchAPIData<T>(
             const response = await fetch(url, { headers, signal: controller.signal })
             clearTimeout(timeoutId)
             signal?.removeEventListener('abort', onAbort)
-            if (!response.ok) {
+            if (!response.ok || response.status === 403) {
+                // Torneopal origin CF cache sometimes stores empty 403s. Bust once, then origin.
+                if (response.status === 403 || response.status === 429) {
+                    const origin = `${APP_CONFIG.API_BASE_URL}${endpoint}?${new URLSearchParams({ ...cleanParams, _cb: String(Date.now()) })}`
+                    const bust = await fetch(origin, { headers: APP_CONFIG.API_HEADERS, signal: controller.signal })
+                    if (bust.ok) {
+                        const raw = await bust.text()
+                        const data = parseTasoPayload(raw) as { call?: { status?: string } }
+                        if (data?.call?.status?.toLowerCase() === 'ok') return data as T
+                    }
+                }
                 if (response.status === 404) throw new APINotFoundError(`Tietoja ei löydy (${endpoint} 404)`)
-                if (response.status >= 400 && response.status < 500) throw new APIHttpError(`API-virhe ${endpoint}: ${response.status}`)
+                if (response.status >= 400 && response.status < 500 && response.status !== 403) {
+                    throw new APIHttpError(`API-virhe ${endpoint}: ${response.status}`)
+                }
                 lastError = new APIHttpError(`Palvelinvirhe ${endpoint}: ${response.status}`)
                 continue
             }
