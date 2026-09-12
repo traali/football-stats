@@ -27,8 +27,20 @@ describe('persist cache', () => {
         expect(calls.n).toBe(0)
     })
 
-    it('does not persist fixtures', () => {
+    it('does not persist fixtures, but keeps a short memory cache', () => {
         setCached('getMatch', { match_id: '2' }, { match_id: '2', status: MATCH_STATUS.FIXTURE }, MATCH_STATUS.FIXTURE)
-        expect(getCached('getMatch', { match_id: '2' })).toBeUndefined()
+        expect(getCached('getMatch', { match_id: '2' })).toEqual({ match_id: '2', status: MATCH_STATUS.FIXTURE })
+        expect(localStorage.getItem('fs.apiPersist.v1') || '{}').not.toContain('"2"')
+    })
+
+    it('does not cache live matches at all', () => {
+        setCached('getMatch', { match_id: '3' }, { match_id: '3', status: 'Live' }, 'Live')
+        expect(getCached('getMatch', { match_id: '3' })).toBeUndefined()
+    })
+
+    it('does not persist team rosters (player changes on upcoming games)', () => {
+        setCached('getTeam', { team_id: '9' }, { team_id: '9', players: [] })
+        expect(getCached('getTeam', { team_id: '9' })).toBeTruthy()
+        expect(localStorage.getItem('fs.apiPersist.v1') || '{}').not.toContain('team_id')
     })
 })

@@ -35,3 +35,8 @@ Append-only record of architectural decisions, dispensations, rule amendments, a
 - **Office / Author:** Legate
 - **Verdict:** PASS
 - **Summary:** Vendored check-neighbors.mjs into visit. Graph: federation.neighbors.json. 5-point HOUSE_TEST_SPEC.md. SupportedSport includes weather. Future contract/rule breaks fail closed.
+
+## 2026-09-12 — Match-state cache
+- **Office / Author:** Cellarer / Master of Works
+- **Verdict:** PASS
+- **Summary:** Live matches never cached. Upcoming max-age 30s (lineups). Played immutable. Roster 60s. Worker Cache API only store-played.

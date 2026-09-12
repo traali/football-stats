@@ -1,33 +1,50 @@
 import { MATCH_STATUS } from '../types/matches'
 
 const MEMORY_TTL_MS: Record<string, number> = {
-    getMatch: 30 * 60 * 1000,
-    getGroup: 15 * 60 * 1000,
-    getGroups: 15 * 60 * 1000,
-    getTeam: 30 * 60 * 1000,
-    getPlayer: 30 * 60 * 1000,
-    getCompetitions: 60 * 60 * 1000,
-    getCategories: 60 * 60 * 1000,
-    getSeasons: 60 * 60 * 1000,
-    getMatches: 10 * 60 * 1000,
+    getMatch: 30 * 1000, // upcoming default; live skips; played uses PLAYED_MEMORY_TTL
+    getGroup: 60 * 1000,
+    getGroups: 60 * 1000,
+    getTeam: 60 * 1000,
+    getPlayer: 60 * 1000,
+    getCompetitions: 5 * 60 * 1000,
+    getCategories: 5 * 60 * 1000,
+    getSeasons: 5 * 60 * 1000,
+    getMatches: 30 * 1000,
 }
+
+const PLAYED_MEMORY_TTL_MS = 30 * 60 * 1000
+const UPCOMING_MEMORY_TTL_MS = 30 * 1000
 
 const PERSIST_TTL_MS: Record<string, number> = {
     getMatch: 7 * 24 * 60 * 60 * 1000,
-    getGroup: 30 * 60 * 1000,
-    getGroups: 30 * 60 * 1000,
-    getTeam: 12 * 60 * 60 * 1000,
-    getPlayer: 12 * 60 * 60 * 1000,
+    getGroup: 60 * 1000,
+    getGroups: 60 * 1000,
+    getTeam: 60 * 1000,
+    getPlayer: 60 * 1000,
     getCompetitions: 24 * 60 * 60 * 1000,
     getCategories: 24 * 60 * 60 * 1000,
     getSeasons: 24 * 60 * 60 * 1000,
-    getMatches: 15 * 60 * 1000,
+    getMatches: 30 * 1000,
 }
 
-const DEFAULT_TTL_MS = 10 * 60 * 1000
+const DEFAULT_TTL_MS = 30 * 1000
 const MAX_MEMORY = 500
 const MAX_PERSIST = 80
 const PERSIST_KEY = 'fs.apiPersist.v1'
+
+const LIVE_STATUSES = new Set(['live', 'started', 'playing', 'inplay', 'in_play', 'ongoing', '2', 'interrupted'])
+
+export type MatchPhase = 'live' | 'upcoming' | 'played'
+
+export function matchPhaseOf(value: unknown, explicit?: string): MatchPhase {
+    const st = String(explicit || matchStatusOf(value) || '').toLowerCase().trim()
+    if (LIVE_STATUSES.has(st) || st.includes('live') || st.includes('inplay')) return 'live'
+    if (value && typeof value === 'object' && 'time' in value && String((value as { time?: string }).time || '').includes("'")) {
+        return 'live'
+    }
+    if (st === MATCH_STATUS.PLAYED.toLowerCase() || st === 'played' || st === '1' || st === 'finished') return 'played'
+    return 'upcoming'
+}
 
 interface CacheEntry<T> {
     value: T
@@ -57,11 +74,21 @@ function matchStatusOf(value: unknown): string | undefined {
 }
 
 function allowPersist(endpoint: string, value: unknown, matchStatus?: string): boolean {
-    if (endpoint === 'getMatch') {
-        const st = matchStatus || matchStatusOf(value)
-        return st === MATCH_STATUS.PLAYED
+    if (endpoint === 'getMatch') return matchPhaseOf(value, matchStatus) === 'played'
+    if (endpoint === 'getTeam' || endpoint === 'getPlayer' || endpoint === 'getMatches' || endpoint === 'getGroup') {
+        return false
     }
     return true
+}
+
+function memoryTtlMs(endpoint: string, value: unknown, matchStatus?: string): number {
+    if (endpoint === 'getMatch') {
+        const phase = matchPhaseOf(value, matchStatus)
+        if (phase === 'live') return 0
+        if (phase === 'played') return PLAYED_MEMORY_TTL_MS
+        return UPCOMING_MEMORY_TTL_MS
+    }
+    return MEMORY_TTL_MS[endpoint] ?? DEFAULT_TTL_MS
 }
 
 function readPersist(): PersistFile {
@@ -116,9 +143,9 @@ export function setCached<T>(
     value: T,
     matchStatus?: string,
 ): void {
-    if (!allowPersist(endpoint, value, matchStatus) && endpoint === 'getMatch') return
+    const ttl = memoryTtlMs(endpoint, value, matchStatus)
+    if (ttl <= 0) return
 
-    const ttl = MEMORY_TTL_MS[endpoint] ?? DEFAULT_TTL_MS
     const key = makeCacheKey(endpoint, params)
     if (cache.size >= MAX_MEMORY) {
         const oldest = cache.keys().next().value
@@ -141,7 +168,7 @@ export async function withCache<T>(
 
     const disk = getPersisted<T>(key)
     if (disk) {
-        cache.set(key, { value: disk.value, expiresAt: Date.now() + (MEMORY_TTL_MS[endpoint] ?? DEFAULT_TTL_MS) })
+        cache.set(key, { value: disk.value, expiresAt: Date.now() + memoryTtlMs(endpoint, disk.value) })
         if (Date.now() < disk.expiresAt) return disk.value
         if (inFlight.has(key)) return disk.value
         const bg = fetchFn().then(value => {

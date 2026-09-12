@@ -13,7 +13,60 @@ const ALLOWED = new Set([
   'tournamentWidget',
 ])
 
-const PLAYED = new Set(['Played', 'played', '1'])
+const PLAYED = new Set(['played', 'finished', '1', 'abandoned'])
+const LIVE = new Set(['live', 'started', 'playing', 'inplay', 'in_play', 'ongoing', '2', 'interrupted'])
+const UPCOMING = new Set(['fixture', 'upcoming', 'scheduled', 'planned', '0', 'not started', 'not_started'])
+
+type MatchPhase = 'live' | 'upcoming' | 'played'
+
+function normalizeStatus(status: unknown): string {
+  return String(status || '').toLowerCase().trim()
+}
+
+function phaseOfMatch(match: { status?: unknown; time?: unknown } | undefined): MatchPhase {
+  const st = normalizeStatus(match?.status)
+  if (LIVE.has(st) || st.includes('live') || st.includes('inplay')) return 'live'
+  if (String(match?.time || '').includes("'")) return 'live'
+  if (PLAYED.has(st)) return 'played'
+  if (UPCOMING.has(st) || !st) return 'upcoming'
+  return 'upcoming'
+}
+
+function parsePayload(raw: string): {
+  match?: { status?: unknown; time?: unknown }
+  matches?: Array<{ status?: unknown; time?: unknown }>
+} | null {
+  const start = raw.indexOf('{')
+  if (start < 0) return null
+  try {
+    return JSON.parse(raw.slice(start)) as {
+      match?: { status?: unknown; time?: unknown }
+      matches?: Array<{ status?: unknown; time?: unknown }>
+    }
+  } catch {
+    return null
+  }
+}
+
+/** Live: never. Upcoming: 30s (lineups). Played: immutable. Roster: 60s. */
+function cachePolicy(endpoint: string, raw: string): { cc: string; name: string; store: boolean } {
+  const data = parsePayload(raw)
+  if (endpoint === 'getMatch') {
+    const phase = phaseOfMatch(data?.match)
+    if (phase === 'live') return { cc: 'no-store', name: 'live', store: false }
+    if (phase === 'played') return { cc: 'public, max-age=31536000, immutable', name: 'store-played', store: true }
+    return { cc: 'public, max-age=30', name: 'upcoming', store: false }
+  }
+  if (endpoint === 'getMatches') {
+    const list = data?.matches || []
+    if (list.some((m) => phaseOfMatch(m) === 'live')) return { cc: 'no-store', name: 'live-list', store: false }
+    return { cc: 'public, max-age=30', name: 'upcoming-list', store: false }
+  }
+  if (endpoint === 'getTeam' || endpoint === 'getPlayer' || endpoint === 'getGroup' || endpoint === 'getGroups') {
+    return { cc: 'public, max-age=60', name: 'roster', store: false }
+  }
+  return { cc: 'public, max-age=300, stale-while-revalidate=600', name: 'catalog', store: false }
+}
 
 type Sport = 'spl' | 'ssbl' | 'basket' | 'volley'
 
@@ -65,17 +118,6 @@ function cors(res: Response): Response {
   h.set('Access-Control-Allow-Headers', 'Accept, Content-Type')
   h.set('Vary', 'Accept')
   return new Response(res.body, { status: res.status, headers: h })
-}
-
-function jsonStatus(raw: string): { played: boolean } {
-  const start = raw.indexOf('{')
-  if (start < 0) return { played: false }
-  try {
-    const data = JSON.parse(raw.slice(start)) as { match?: { status?: string } }
-    return { played: PLAYED.has(String(data.match?.status || '')) }
-  } catch {
-    return { played: false }
-  }
 }
 
 function sportConfig(sport: Sport, env: Env) {
@@ -178,7 +220,7 @@ export default {
     const cacheKey = new Request(taso.toString(), { method: 'GET' })
     if (endpoint === 'getMatch') {
       const hit = await cache.match(cacheKey)
-      if (hit) return cors(hit)
+      if (hit && hit.headers.get('X-Taso-Cache') === 'store-played') return cors(hit)
     }
 
     let { status, raw } = await tasoFetch(taso, cfg.referer, cfg.accept)
@@ -193,23 +235,19 @@ export default {
     }
 
     const ok = status >= 200 && status < 300 && raw.indexOf('{') >= 0
-    const played = ok && endpoint === 'getMatch' && jsonStatus(raw).played
-    const ttl = !ok
-      ? 'no-store'
-      : played
-        ? 'public, max-age=31536000, immutable'
-        : 'public, max-age=120, stale-while-revalidate=600'
+    const policy = ok ? cachePolicy(endpoint, raw) : { cc: 'no-store', name: 'bypass-403', store: false }
 
     const out = new Response(raw, {
       status,
       headers: {
         'Content-Type': 'application/json; charset=utf-8',
-        'Cache-Control': ttl,
-        'X-Taso-Cache': !ok ? 'bypass-403' : played ? 'store-played' : 'short',
+        'Cache-Control': policy.cc,
+        'CDN-Cache-Control': policy.cc,
+        'X-Taso-Cache': policy.name,
         'X-Taso-Sport': sport,
       },
     })
-    if (played && ok) {
+    if (policy.store && ok) {
       await cache.put(cacheKey, out.clone())
     }
     return cors(out)
