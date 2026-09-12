@@ -53,31 +53,3 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy dist --project-name=football-stats --commit-dirty=true
 
-  worker:
-    name: Deploy taso-proxy (Torneopal cache)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Token present?
-        id: token
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: |
-          if [ -n "$CLOUDFLARE_API_TOKEN" ]; then
-            echo "present=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "present=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::CLOUDFLARE_API_TOKEN missing — skipping taso-proxy deploy (Cellarer)"
-          fi
-
-      - name: Checkout Code
-        if: steps.token.outputs.present == 'true'
-        uses: actions/checkout@v4
-
-      - name: Deploy taso-proxy worker
-        if: steps.token.outputs.present == 'true'
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: workers/taso-proxy
-          command: deploy
