@@ -3,7 +3,7 @@ import { batchFetch, getPlayerData, getTeamMatches } from '../services/api'
 import { MATCH_STATUS } from '../types'
 import type { MatchDetails } from '../types'
 import { cardStatsAsOf, type CardSeasonStats } from '../utils/cardStatsAsOf'
-import { getCurrentSeason, halfOf } from '../utils/dates'
+import { getCurrentSeason, halfOf, resolveActiveSeason } from '../utils/dates'
 
 export function useMatchCardStats(match: MatchDetails | undefined) {
     const [byPlayer, setByPlayer] = useState<Record<string, CardSeasonStats>>({})
@@ -48,9 +48,12 @@ export function useMatchCardStats(match: MatchDetails | undefined) {
             })
             const next: Record<string, CardSeasonStats> = {}
             ids.forEach((id, i) => {
-                next[id] = cardStatsAsOf(players[i]?.matches, {
+                const ms = players[i]?.matches
+                const inYear = (ms || []).filter(m => (m.season_id || m.date || '').startsWith(seasonYear))
+                const inferred = resolveActiveSeason(inYear.length ? inYear : ms)
+                next[id] = cardStatsAsOf(ms, {
                     seasonYear,
-                    preferredHalf,
+                    preferredHalf: inferred.half || preferredHalf,
                     asOfDate,
                     teamMatchesByTeamId,
                 })

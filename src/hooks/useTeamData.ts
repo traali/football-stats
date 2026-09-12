@@ -6,7 +6,7 @@ import type { TeamResponse, DiscoveryMatch } from '../types'
 import { APP_CONFIG } from '../config'
 import { parsePlayerName } from '../utils/names'
 import { mergeRoster, type RosterPlayer } from './rosterMerge'
-import { getCurrentSeason, halfOf } from '../utils/dates'
+import { getCurrentSeason, halfOf, resolveActiveSeason } from '../utils/dates'
 import { parseSeasonHalf } from '../domain/eligibility/seasonHalf'
 
 type PlayerEntry = RosterPlayer
@@ -42,8 +42,11 @@ export function useTeamData(teamId: string | undefined) {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [tab, setTab] = useState<'roster' | 'matches'>('matches')
-    const [selectedYear, setSelectedYear] = useState<string>(currentSeason.year)
-    const [selectedHalf, setSelectedHalf] = useState<'all' | 'kevät' | 'syksy'>(currentSeason.half)
+    const [selectedYear, setSelectedYearState] = useState<string>(currentSeason.year)
+    const [selectedHalf, setSelectedHalfState] = useState<'all' | 'kevät' | 'syksy'>(currentSeason.half)
+    const seasonTouched = useRef(false)
+    const setSelectedYear = (y: string) => { seasonTouched.current = true; setSelectedYearState(y) }
+    const setSelectedHalf = (h: 'all' | 'kevät' | 'syksy') => { seasonTouched.current = true; setSelectedHalfState(h) }
     const [historicalPlayersByYear, setHistoricalPlayersByYear] = useState<Record<string, PlayerEntry[]>>({})
     const [historicalPlayersByHalf, setHistoricalPlayersByHalf] = useState<Record<string, Record<'kevät' | 'syksy', PlayerEntry[]>>>({})
     const [loadingPlayers, setLoadingPlayers] = useState(false)
@@ -74,6 +77,13 @@ export function useTeamData(teamId: string | undefined) {
             })
         return () => { controller.abort() }
     }, [teamId])
+
+    useEffect(() => {
+        if (seasonTouched.current || !matches.length) return
+        const s = resolveActiveSeason(matches)
+        setSelectedYearState(s.year)
+        setSelectedHalfState(s.half)
+    }, [matches])
 
     const players = team?.players || []
     const allowedYears = useMemo(() => {

@@ -63,4 +63,13 @@ describe('cardStatsAsOf', () => {
         expect(dnp[0].opponent).toBe('Honka')
         expect(nel.results![0].date).toBe('2026-05-15')
     })
+
+    it('without preferredHalf, uses upcoming/latest from the match list', () => {
+        const withFixture = [
+            ...matches,
+            { match_id: '4', status: 'Fixture', season_id: '2026', date: '2026-09-20', category_name: 'P13 Kolmonen', team_id: 'a', team_A_id: 'a', team_B_id: 'e', fs_A: '', fs_B: '', team_name: 'PPJ' },
+        ]
+        const s = cardStatsAsOf(withFixture, { seasonYear: '2026', refDate: '2026-09-12' })
+        expect(s.seriesThisYear[0].half).toBe('syksy')
+    })
 })

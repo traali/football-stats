@@ -1,6 +1,6 @@
 import { MATCH_STATUS } from '../types'
 import type { DiscoveryMatch, PlayerMatchEntry } from '../types'
-import { getCurrentSeason, halfOf } from './dates'
+import { getCurrentSeason, halfOf, resolveActiveSeason } from './dates'
 
 export type CardGameResult = 'V' | 'T' | 'H' | 'DNP'
 
@@ -167,10 +167,10 @@ export function cardStatsAsOf(
         }
     }
 
-    const current = getCurrentSeason()
     const prefHalf = opts.preferredHalf
         || (opts.seasonHalf && opts.seasonHalf !== 'all' ? opts.seasonHalf : undefined)
-        || current.half
+        || resolveActiveSeason(matches || []).half
+        || getCurrentSeason().half
 
     for (const row of byKey.values()) {
         if (opts.teamMatchesByTeamId && row.teamId) {

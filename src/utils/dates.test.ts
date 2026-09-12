@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatDate, formatTime, formatDayName, halfOf, getCurrentSeason, formatSeasonLabel } from './dates'
+import { formatDate, formatTime, formatDayName, halfOf, getCurrentSeason, formatSeasonLabel, resolveActiveSeason } from './dates'
 
 describe('dates utils', () => {
     describe('formatDate', () => {
@@ -58,6 +58,31 @@ describe('dates utils', () => {
             expect(formatSeasonLabel('2026', 'all')).toBe('Kausi 2026')
             expect(formatSeasonLabel('2026', 'syksy')).toBe('Syksy 2026')
             expect(formatSeasonLabel('2026', 'kevät')).toBe('Kevät 2026')
+        })
+
+        it('resolveActiveSeason prefers live/upcoming over latest played', () => {
+            const now = new Date('2026-09-12T12:00:00Z')
+            const upcoming = resolveActiveSeason([
+                { date: '2026-05-10', status: 'Played', season_id: '2026' },
+                { date: '2026-08-20', status: 'Played', season_id: '2026' },
+                { date: '2026-09-20', status: 'Fixture', season_id: '2026' },
+            ], now)
+            expect(upcoming).toEqual({ year: '2026', half: 'syksy' })
+
+            const liveToday = resolveActiveSeason([
+                { date: '2026-05-10', status: 'Played' },
+                { date: '2026-09-12', status: 'Live' },
+            ], now)
+            expect(liveToday).toEqual({ year: '2026', half: 'syksy' })
+
+            const onlySpring = resolveActiveSeason([
+                { date: '2026-04-01', status: 'Played' },
+                { date: '2026-05-20', status: 'Played' },
+            ], now)
+            expect(onlySpring).toEqual({ year: '2026', half: 'kevät' })
+
+            const empty = resolveActiveSeason([], now)
+            expect(empty).toEqual({ year: '2026', half: 'syksy' })
         })
     })
 })

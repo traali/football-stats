@@ -1,6 +1,6 @@
 import { MATCH_STATUS } from '../types'
 import type { PlayerAPIResponse, PlayerMatchEntry } from '../types'
-import { getCurrentSeason, halfOf } from './dates'
+import { getCurrentSeason, halfOf, resolveActiveSeason } from './dates'
 
 export interface SeriesRow {
     key: string
@@ -98,7 +98,7 @@ export function buildSeriesFromMatches(
         s.draws += row.draws
         s.losses += row.losses
     }
-    const pref = getCurrentSeason().half
+    const pref = resolveActiveSeason(matches).half || getCurrentSeason().half
     for (const s of bySeason.values()) {
         s.series.sort((a, b) => {
             const aPref = a.half === pref ? 1 : 0

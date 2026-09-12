@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { User, TrendingDown, Calendar, ExternalLink, Heart } from 'lucide-react'
 import { cn } from '../utils/cn'
-import { formatDate, getCurrentSeason, halfOf, formatSeasonLabel } from '../utils/dates'
+import { formatDate, getCurrentSeason, halfOf, formatSeasonLabel, resolveActiveSeason } from '../utils/dates'
 import { WLD_CONFIG } from '../utils/wld'
 import { loadPlayer } from '../services/playerStore'
 import { MATCH_STATUS } from '../types'
@@ -22,6 +22,7 @@ export function PlayerPage() {
     const currentSeason = useMemo(() => getCurrentSeason(), [])
     const [selectedYear, setSelectedYear] = useState<string>(currentSeason.year)
     const [selectedHalf, setSelectedHalf] = useState<'all' | 'kevät' | 'syksy'>(currentSeason.half)
+    const seasonTouched = useRef(false)
     const abortRef = useRef<AbortController | null>(null)
 
     useEffect(() => {
@@ -61,6 +62,14 @@ export function PlayerPage() {
     }, [safeMatches])
 
     useEffect(() => {
+        if (seasonTouched.current || !safeMatches.length) return
+        const s = resolveActiveSeason(safeMatches)
+        setSelectedYear(s.year)
+        setSelectedHalf(s.half)
+    }, [safeMatches])
+
+    useEffect(() => {
+        if (seasonTouched.current) return
         if (availableYears.length > 0 && selectedYear !== 'all' && !availableYears.includes(selectedYear)) {
             setSelectedYear(availableYears[0])
         }
@@ -149,7 +158,7 @@ export function PlayerPage() {
                         {availableYears.length > 0 && (
                             <div className="flex items-center gap-1.5 bg-surface-2 p-1 rounded-lg border border-border-hairline">
                                 <button
-                                    onClick={() => setSelectedYear('all')}
+                                    onClick={() => { seasonTouched.current = true; setSelectedYear('all') }}
                                     className={cn(
                                         "text-xs px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer active:scale-95",
                                         selectedYear === 'all'
@@ -162,7 +171,7 @@ export function PlayerPage() {
                                 {availableYears.map((y: string) => (
                                     <button
                                         key={y}
-                                        onClick={() => setSelectedYear(y)}
+                                        onClick={() => { seasonTouched.current = true; setSelectedYear(y) }}
                                         className={cn(
                                             "text-xs px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer active:scale-95",
                                             selectedYear === y
@@ -179,7 +188,7 @@ export function PlayerPage() {
                         {selectedYear !== 'all' && (
                             <div className="flex items-center gap-1 bg-surface-2 p-1 rounded-lg border border-border-hairline">
                                 <button
-                                    onClick={() => setSelectedHalf('syksy')}
+                                    onClick={() => { seasonTouched.current = true; setSelectedHalf('syksy') }}
                                     className={cn(
                                         "text-xs px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer active:scale-95",
                                         selectedHalf === 'syksy'
@@ -190,7 +199,7 @@ export function PlayerPage() {
                                     Syksy
                                 </button>
                                 <button
-                                    onClick={() => setSelectedHalf('kevät')}
+                                    onClick={() => { seasonTouched.current = true; setSelectedHalf('kevät') }}
                                     className={cn(
                                         "text-xs px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer active:scale-95",
                                         selectedHalf === 'kevät'
@@ -201,7 +210,7 @@ export function PlayerPage() {
                                     Kevät
                                 </button>
                                 <button
-                                    onClick={() => setSelectedHalf('all')}
+                                    onClick={() => { seasonTouched.current = true; setSelectedHalf('all') }}
                                     className={cn(
                                         "text-xs px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer active:scale-95",
                                         selectedHalf === 'all'
