@@ -1,0 +1,9 @@
+{
+  "tool": "federation-understand",
+  "compatibleWith": "Egonex-AI/Understand-Anything 1.0.0",
+  "generatedAt": "2026-09-12T10:44:07.469Z",
+  "repo": "football-stats",
+  "commit": "3461b1a6ff2cf86376c6434b7b18410ef8ca4101",
+  "nodeCount": 379,
+  "edgeCount": 483
+}
