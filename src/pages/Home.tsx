@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Search, Trophy, Heart, Shield, ChevronRight, Calendar, MapPin, User } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Button } from '../components'
 import { getTeamMatches, getTeamProfile } from '../services/api'
 import { listViewedMatches, type ViewedMatch } from '../services/viewedCache'
@@ -15,6 +15,7 @@ import { formatDate, formatTime } from '../utils/dates'
 import { isMatchLive, pickHeroMatch } from '../utils/matchLive'
 
 import { getSavedTournaments, saveTournamentFromUrl, type SavedTournament } from '../services/tournamentStorage'
+import { getLastSelectedTeamId, normalizeTeamId, setLastSelectedTeamId, sortFavoritesByLastSelected } from '../services/teamSelection'
 import { parseTournamentUrl } from '../utils/tournamentUrl'
 
 export function Home() {
@@ -26,7 +27,12 @@ export function Home() {
     const [viewed, setViewed] = useState<ViewedMatch[]>([])
     const [loadingNext, setLoadingNext] = useState(true)
     const navigate = useNavigate()
+    const [searchParams] = useSearchParams()
     const { favorites, updateName, favoritePlayers } = useFavorites()
+    const orderedFavorites = useMemo(
+        () => sortFavoritesByLastSelected(favorites, getLastSelectedTeamId()),
+        [favorites],
+    )
 
     useEffect(() => {
         setSavedTournaments(getSavedTournaments())
@@ -41,6 +47,13 @@ export function Home() {
             .finally(() => setLoadingNext(false))
         return () => ctrl.abort()
     }, [])
+
+    useEffect(() => {
+        const teamFromUrl = normalizeTeamId(searchParams.get('team'))
+        if (!teamFromUrl) return
+        setLastSelectedTeamId(teamFromUrl)
+        navigate(`/team/${teamFromUrl}`, { replace: true })
+    }, [navigate, searchParams])
 
     useEffect(() => {
         if (favorites.length === 0) return
@@ -103,6 +116,27 @@ export function Home() {
                 <h1 className="text-3xl font-bold tracking-tight text-text-primary">{APP_NAME}</h1>
                 <p className="text-text-secondary text-sm">PPJ/Laru sin · P13 Kolmonen · Etelä</p>
             </motion.div>
+
+            {orderedFavorites.length > 0 && (
+                <section className="space-y-2">
+                    <h2 className="text-sm font-bold text-text-primary uppercase tracking-wider">Suosikkijoukkueet</h2>
+                    <div className="flex gap-2 overflow-x-auto pb-1 -mx-0.5 px-0.5">
+                        {orderedFavorites.map(fav => (
+                            <button
+                                key={`fav-chip-${fav.id}`}
+                                type="button"
+                                onClick={() => {
+                                    setLastSelectedTeamId(fav.id)
+                                    navigate(`/team/${fav.id}`)
+                                }}
+                                className="shrink-0 min-h-[44px] rounded-full border border-border-hairline bg-surface-1 hover:bg-surface-2 px-4 text-sm text-text-primary font-semibold transition-colors"
+                            >
+                                {fav.name}
+                            </button>
+                        ))}
+                    </div>
+                </section>
+            )}
 
             <section>
                 {loadingNext && <div className="animate-pulse bg-surface-1 rounded-xl h-28" />}
@@ -195,12 +229,12 @@ export function Home() {
                     )}
 
                     {/* Favorite Teams */}
-                    {favorites.length > 0 && (
+                    {orderedFavorites.length > 0 && (
                         <div className="space-y-1.5">
                             {favoritePlayers.length > 0 && <p className="text-[11px] font-bold uppercase tracking-wider text-text-muted">Joukkueet</p>}
                             <div className="grid grid-cols-2 gap-2">
-                                {favorites.map(fav => (
-                                    <div key={fav.id} onClick={() => navigate(`/team/${fav.id}`)}
+                                {orderedFavorites.map(fav => (
+                                    <div key={fav.id} onClick={() => { setLastSelectedTeamId(fav.id); navigate(`/team/${fav.id}`) }}
                                         className="bg-surface-1 border border-border-hairline rounded-xl p-3 flex items-center gap-3 cursor-pointer hover:bg-surface-2 min-h-[52px] transition-colors">
                                         <Shield className="w-5 h-5 text-accent shrink-0" />
                                         <div className="min-w-0">

@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
+import { normalizeTeamId } from '../services/teamSelection'
 
 export interface FavoriteTeam {
     id: string
@@ -23,11 +24,13 @@ function loadFavorites(): FavoriteTeam[] {
         if (!Array.isArray(parsed)) return []
         return parsed.map((item: unknown) => {
             if (typeof item === 'string') {
-                return { id: item, name: item }
+                const id = normalizeTeamId(item)
+                return id ? { id, name: id } : null
             }
             if (item && typeof item === 'object' && 'id' in item && typeof (item as { id: unknown }).id === 'string') {
                 const obj = item as { id: string; name?: string; category?: string };
-                return { id: obj.id, name: obj.name || obj.id, category: obj.category }
+                const id = normalizeTeamId(obj.id)
+                return id ? { id, name: obj.name || id, category: obj.category } : null
             }
             return null
         }).filter((item): item is FavoriteTeam => item !== null)
@@ -82,23 +85,31 @@ export function useFavorites() {
     }, [favoritePlayers])
 
     const toggle = useCallback((teamId: string, teamName?: string, category?: string) => {
+        const normalizedId = normalizeTeamId(teamId)
+        if (!normalizedId) return
         setFavorites(prev => {
-            const exists = prev.some(f => f.id === teamId)
+            const exists = prev.some(f => f.id === normalizedId)
             return exists
-                ? prev.filter(f => f.id !== teamId)
-                : [...prev, { id: teamId, name: teamName || teamId, category }]
+                ? prev.filter(f => f.id !== normalizedId)
+                : [...prev, { id: normalizedId, name: teamName || normalizedId, category }]
         })
     }, [])
 
-    const isFavorite = useCallback((teamId: string) => favorites.some(f => f.id === teamId), [favorites])
+    const isFavorite = useCallback((teamId: string) => {
+        const normalizedId = normalizeTeamId(teamId)
+        if (!normalizedId) return false
+        return favorites.some(f => f.id === normalizedId)
+    }, [favorites])
 
     const clear = useCallback(() => {
         setFavorites([])
     }, [])
 
     const updateName = useCallback((teamId: string, teamName: string, category?: string) => {
+        const normalizedId = normalizeTeamId(teamId)
+        if (!normalizedId) return
         setFavorites(prev => {
-            const index = prev.findIndex(f => f.id === teamId)
+            const index = prev.findIndex(f => f.id === normalizedId)
             if (index === -1 || (prev[index].name === teamName && prev[index].category === category)) return prev
             const next = [...prev]
             next[index] = { ...next[index], name: teamName, category }
