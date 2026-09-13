@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { Users, Calendar, TrendingUp } from 'lucide-react'
 import { cn } from '../utils/cn'
@@ -9,11 +10,16 @@ import { APP_CONFIG } from '../config'
 import { StatBadge, BackButton, PageLayout, Card, PlayerAvatar, TeamHeader, TeamMatchList } from '../components'
 import { TeamRoster } from '../components/TeamRoster'
 import { useNavigate } from 'react-router-dom'
+import { setLastSelectedTeamId } from '../services/teamSelection'
 
 export function TeamPage() {
     const { teamId = '' } = useParams()
     const navigate = useNavigate()
     const data = useTeamData(teamId)
+
+    useEffect(() => {
+        setLastSelectedTeamId(teamId)
+    }, [teamId])
 
     if (data.loading) return (
         <div className="min-h-screen px-4 py-8">
