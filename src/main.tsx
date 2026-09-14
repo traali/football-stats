@@ -15,7 +15,7 @@ registerSW({
         // Tarkista päivitys kun käyttäjä palaa sovellukseen (esim. mobiilissa taustalta)
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') {
-                r.update().catch(() => {})
+                r.update().catch((err) => console.warn('[SW] Update check failed:', err))
             }
         })
     },
