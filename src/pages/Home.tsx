@@ -69,7 +69,7 @@ export function Home() {
                             updateName(f.id, profile.team_name || f.id, category)
                         }
                     })
-                    .catch(() => {}),
+                    .catch((err) => console.warn('[Home] getTeamProfile failed for favorite:', err)),
             ),
         )
         return () => { cancelled = true }

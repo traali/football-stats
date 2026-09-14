@@ -56,7 +56,7 @@ export function MatchPreviewExport({
             `🏆 ${group?.group_name || match.category_name || 'Sarjaottelu'}\n` +
             `🔗 Katso tilastot: ${window.location.href}`
         if (typeof navigator !== 'undefined' && navigator.share) {
-            navigator.share({ title: `Ottelu: ${match.team_A_name} vs ${match.team_B_name}`, text }).catch(() => {})
+            navigator.share({ title: `Ottelu: ${match.team_A_name} vs ${match.team_B_name}`, text }).catch((err) => console.info('[Share] Share cancelled or failed:', err))
         } else {
             window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank')
         }

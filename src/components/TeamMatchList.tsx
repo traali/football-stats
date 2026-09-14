@@ -19,7 +19,7 @@ export function TeamMatchList({ upcoming, pastMatches, teamId, team, year }: {
     useEffect(() => {
         if (team) { setResolved(team); return }
         let cancelled = false
-        getTeamProfile(teamId).then(t => { if (!cancelled) setResolved(t) }).catch(() => {})
+        getTeamProfile(teamId).then(t => { if (!cancelled) setResolved(t) }).catch((err) => console.warn('[TeamMatchList] getTeamProfile failed:', err))
         return () => { cancelled = true }
     }, [team, teamId])
 
