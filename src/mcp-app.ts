@@ -96,6 +96,8 @@ declare global {
     }
 }
 
+let _footballMessageHandler: ((event: MessageEvent) => void) | null = null
+
 export function registerFootballWebMCP(): ModelContextRegistry | undefined {
     if (typeof window === 'undefined') return
 
@@ -178,7 +180,10 @@ export function registerFootballWebMCP(): ModelContextRegistry | undefined {
     if (typeof window !== 'undefined') {
         ;(window as unknown as { modelContext?: ModelContextRegistry }).modelContext = registry
 
-        window.addEventListener('message', async (event: MessageEvent) => {
+        if (_footballMessageHandler) {
+            window.removeEventListener('message', _footballMessageHandler)
+        }
+        const messageHandler = async (event: MessageEvent) => {
             const data = event.data
             if (!data || data.type !== 'webmcp:request' || !data.id) return
 
@@ -198,7 +203,9 @@ export function registerFootballWebMCP(): ModelContextRegistry | undefined {
                     error: { message: errorMessage },
                 }, '*')
             }
-        })
+        }
+        _footballMessageHandler = messageHandler
+        window.addEventListener('message', messageHandler)
 
         window.dispatchEvent(
             new CustomEvent('webmcp:ready', { detail: { location: 'navigator.modelContext & document.modelContext' } })
