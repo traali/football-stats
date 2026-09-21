@@ -14,7 +14,7 @@ const commitHash = (() => {
 const buildTime = new Date().toISOString()
 
 export default defineConfig({
-    base: '/',
+    base: process.env.GITHUB_PAGES === '1' ? '/football-stats/' : '/',
     define: {
         __APP_VERSION__: JSON.stringify('1.0.0'),
         __COMMIT_HASH__: JSON.stringify(commitHash),
