@@ -5,8 +5,8 @@ import { registerFootballWebMCP } from './mcp-app'
 import App from './App'
 import './index.css'
 
-// Register WebMCP browser tools for Chrome AI agents
-registerFootballWebMCP()
+// Register WebMCP browser tools for Chrome / ChatGPT Desktop
+void registerFootballWebMCP()
 
 registerSW({
     immediate: true,
