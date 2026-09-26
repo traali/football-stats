@@ -5,6 +5,7 @@ Live: https://football-stats-agk.pages.dev
 Job: Palloliitto TASO for the teams this family actually follows, plus a way to open one match or import a Torneopal tournament. This is **not** the basketball/floorball discovery app.
 
 If this doc and the code disagree, the code wins. Update this file in the same commit.
+Every component file: [UI_COMPONENTS.md](./UI_COMPONENTS.md).
 
 ## 0. Sign-off
 
