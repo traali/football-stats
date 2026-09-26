@@ -1,5 +1,7 @@
 # Football Stats Modernization Project
 
+UI contract for other models: `docs/UI_SPEC.md` (signed off 2026-09-26). Read section 0 before copying basketball/floorball navigation onto this app.
+
 ## Project Summary
 This repository contains a modern React 19 application for viewing Finnish football statistics. It replaces a legacy vanilla JavaScript application. The primary goal is to provide a premium, high-performance user interface using the "Night Captain" design system (OLED-optimized dark mode) while maintaining strict type safety and code modularity. Target audience includes developers looking for modern React/Vite examples and football enthusiasts wanting a better UX for stats.
 
