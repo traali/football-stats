@@ -49,7 +49,7 @@ export function nonNumericMatchRefusal(matchId: string): string | null {
         raw = matchId;
     }
     if (/^\d+$/.test(raw.trim())) return null;
-    return 'Ottelutunnus puuttuu. Tulosta tai taulukkoa ei keksitä joukkueen nimestä.';
+    return 'Anna ottelun numero. Nimestä ei näytetä tulosta eikä taulukkoa.';
 }
 
 export function useMatchData() {

@@ -3,8 +3,8 @@ import { nonNumericMatchRefusal } from './useMatchData'
 
 describe('nonNumericMatchRefusal', () => {
   it('refuses a team slug so a table is not invented', () => {
-    expect(nonNumericMatchRefusal('HJK-KäPa')).toMatch(/ei keksitä/)
-    expect(nonNumericMatchRefusal('PPJ%2FLaru')).toMatch(/ei keksitä/)
+    expect(nonNumericMatchRefusal('HJK-KäPa')).toMatch(/ottelun numero/)
+    expect(nonNumericMatchRefusal('PPJ%2FLaru')).toMatch(/ottelun numero/)
   })
 
   it('allows a TASO match id', () => {
