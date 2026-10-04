@@ -39,7 +39,7 @@ export async function getH2HCardTool(args: {
   const awayTeam = String(args.awayTeam || '').trim()
   if (!homeTeam || !awayTeam) {
     return {
-      content: [{ type: 'text', text: 'homeTeam and awayTeam are required. Dummy H2H is not allowed.' }],
+      content: [{ type: 'text', text: 'homeTeam and awayTeam are required.' }],
     }
   }
 
@@ -49,7 +49,7 @@ export async function getH2HCardTool(args: {
     leagueName: args.leagueName || 'Sarjaottelu',
   })
 
-  const summary = `Ei keksittyä keskinäistä historiaa: ${homeTeam} vs ${awayTeam}. Haku: ${stats.deepLinkUrl}`
+  const summary = `Ei keskinäistä historiaa: ${homeTeam} vs ${awayTeam}. Haku: ${stats.deepLinkUrl}`
 
   return {
     content: [{ type: 'text', text: summary }],
@@ -153,7 +153,7 @@ const TOOLS: ModelContextTool[] = [
     name: 'get_tournament_standings',
     title: 'Football tournament standings',
     description:
-      'Finnish junior tournament standings. Requires a live turnaus id from TASO. Dummy Vierumäki tables are forbidden.',
+      'Standings for one Finnish junior tournament. Pass the TASO turnaus id. This tool does not fill in a table.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -168,10 +168,10 @@ const TOOLS: ModelContextTool[] = [
       const id = String(turnaus || '').trim()
       if (!id) {
         return {
-          content: [{ type: 'text' as const, text: 'turnaus is required. Dummy standings are not allowed.' }],
+          content: [{ type: 'text' as const, text: 'turnaus is required.' }],
         }
       }
-      const summary = `Open /turnaukset/${id}/${String(sarja || '')} in the app for the live TASO table. No dummy rows.`
+      const summary = `Taulukko on turnaussivulla /turnaukset/${id}/${String(sarja || '')}.`
       return { content: [{ type: 'text' as const, text: summary }], turnaus: id, sarja: sarja || null }
     },
   },
