@@ -9,6 +9,6 @@ describe('isMatchLive', () => {
         expect(isMatchLive({ status: 'Played', date: '2026-08-29', time: '15:00:00' })).toBe(false)
     })
     it('parses kickoff', () => {
-        expect(parseKickoffMs('2026-08-29', '15:00:00')).toBe(new Date('2026-08-29T15:00:00').getTime())
+        expect(parseKickoffMs('2026-08-29', '15:00:00')).toBe(new Date('2026-08-29T15:00:00+03:00').getTime())
     })
 })

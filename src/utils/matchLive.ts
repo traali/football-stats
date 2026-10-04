@@ -1,10 +1,24 @@
 import { MATCH_STATUS } from '../types'
 
+function helsinkiOffset(dateISO: string): string {
+    const [y, m, d] = dateISO.split('-').map(Number)
+    if (!y || !m || !d) return '+02:00'
+    const probe = new Date(Date.UTC(y, m - 1, d, 12, 0, 0))
+    const tz = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Europe/Helsinki',
+        timeZoneName: 'shortOffset',
+    }).formatToParts(probe).find((part) => part.type === 'timeZoneName')?.value || 'GMT+2'
+    const match = tz.match(/GMT([+-])(\d{1,2})(?::(\d{2}))?/)
+    if (!match) return '+02:00'
+    return `${match[1]}${match[2].padStart(2, '0')}:${match[3] || '00'}`
+}
+
+/** Kickoff strings from Torneopal are Helsinki wall time, not the browser zone. */
 export function parseKickoffMs(date?: string, time?: string): number | null {
     if (!date) return null
     const clock = (time && !time.includes("'") ? time : '00:00:00').slice(0, 8)
-    const iso = `${date}T${clock.length === 5 ? clock + ':00' : clock}`
-    const ms = new Date(iso).getTime()
+    const hhmmss = clock.length === 5 ? clock + ':00' : clock
+    const ms = new Date(`${date}T${hhmmss}${helsinkiOffset(date)}`).getTime()
     return Number.isFinite(ms) ? ms : null
 }
 
