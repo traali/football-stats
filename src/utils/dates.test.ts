@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatDate, formatTime, formatDayName, halfOf, getCurrentSeason, formatSeasonLabel, resolveActiveSeason } from './dates'
+import { formatDate, formatTime, formatDayName, halfOf, getCurrentSeason, formatSeasonLabel, resolveActiveSeason, todayISO } from './dates'
 
 describe('dates utils', () => {
     describe('formatDate', () => {
@@ -37,6 +37,10 @@ describe('dates utils', () => {
     })
 
     describe('season helpers', () => {
+        it('todayISO is the Helsinki date, not UTC', () => {
+            expect(todayISO(new Date('2026-10-04T22:30:00Z'))).toBe('2026-10-05')
+        })
+
         it('halfOf correctly identifies spring and autumn', () => {
             expect(halfOf('2026-05-15')).toBe('kevät')
             expect(halfOf('2026-06-30')).toBe('kevät')

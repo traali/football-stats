@@ -1,5 +1,6 @@
 import type { PastMatchDetail, PlayerMatchEntry } from '../types';
 import { seasonMatchesYear } from './names';
+import { todayISO } from './dates';
 
 interface ProcessedStats {
     gamesPlayedThisYear: number;
@@ -41,8 +42,8 @@ export function processPlayerMatchHistory(
     if (!matches) return { ...stats, teamsThisYear: "" };
 
     const now = new Date();
-    const todayStr = now.toISOString().slice(0, 10);
-    const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const todayStr = todayISO(now);
+    const fourteenDaysAgo = todayISO(new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000));
 
     matches.forEach((match) => {
         const goals = parseInt(match.player_goals ?? "") || 0;

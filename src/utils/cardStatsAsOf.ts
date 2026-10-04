@@ -1,6 +1,6 @@
 import { MATCH_STATUS } from '../types'
 import type { DiscoveryMatch, PlayerMatchEntry } from '../types'
-import { getCurrentSeason, halfOf, resolveActiveSeason } from './dates'
+import { getCurrentSeason, halfOf, resolveActiveSeason, todayISO } from './dates'
 
 export type CardGameResult = 'V' | 'T' | 'H' | 'DNP'
 
@@ -106,9 +106,9 @@ export function cardStatsAsOf(
         gamesLast14Days: 0,
         seriesThisYear: [],
     }
-    const refDate = opts.refDate || new Date().toISOString().slice(0, 10)
-    const refTime = new Date(refDate).getTime()
-    const fourteenDaysAgo = new Date(refTime - 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+    const refDate = opts.refDate || todayISO()
+    const refTime = new Date(`${refDate}T12:00:00+03:00`).getTime()
+    const fourteenDaysAgo = todayISO(new Date(refTime - 14 * 24 * 60 * 60 * 1000))
 
     const prev = opts.seasonYear ? String(parseInt(opts.seasonYear, 10) - 1) : ''
     const byKey = new Map<string, CardSeriesRow>()

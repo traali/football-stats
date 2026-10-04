@@ -11,7 +11,7 @@ import { APP_CONFIG, APP_NAME, FEATURED } from '../config'
 import type { DiscoveryMatch } from '../types'
 import { MATCH_STATUS } from '../types'
 import { PageLayout } from '../components'
-import { formatDate, formatTime } from '../utils/dates'
+import { formatDate, formatTime, todayISO } from '../utils/dates'
 import { isMatchLive, pickHeroMatch } from '../utils/matchLive'
 
 import { getSavedTournaments, saveTournamentFromUrl, type SavedTournament } from '../services/tournamentStorage'
@@ -40,7 +40,7 @@ export function Home() {
         const ctrl = new AbortController()
         getTeamMatches(FEATURED.teamId, ctrl.signal)
             .then(matches => {
-                const today = new Date().toISOString().slice(0, 10)
+                const today = todayISO()
                 setHero(pickHeroMatch(matches, today))
             })
             .catch(() => setHero(null))
