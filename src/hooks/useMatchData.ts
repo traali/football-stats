@@ -42,7 +42,7 @@ function lineupToStats(p: PlayerLineupInfo, match: MatchDetails, group: GroupDet
 }
 
 export function nonNumericMatchRefusal(matchId: string): string | null {
-    let raw = matchId;
+    let raw: string;
     try {
         raw = decodeURIComponent(matchId);
     } catch {
