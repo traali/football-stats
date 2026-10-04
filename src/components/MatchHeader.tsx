@@ -26,6 +26,7 @@ function LiveBadge() {
 
 export function MatchHeader({ match, group, teamA, teamB }: { match: MatchDetails; group: GroupDetails | null; teamA?: TeamResponse | null; teamB?: TeamResponse | null }) {
     const isLive = isMatchLive(match)
+    const showResult = isLive || match.status === MATCH_STATUS.PLAYED
     const crestA = resolveCrest(teamA || {})
     const crestB = resolveCrest(teamB || {})
     const clock = String(match.time || '').includes("'") ? match.time : null
@@ -61,7 +62,13 @@ export function MatchHeader({ match, group, teamA, teamB }: { match: MatchDetail
 
                     <div className="flex flex-col items-center shrink-0">
                         <div className="text-4xl md:text-6xl lg:text-7xl font-bold tabular-nums tracking-tighter text-text-primary font-mono leading-none">
-                            {match.fs_A ?? '-'} <span className="text-accent opacity-80 mx-1">:</span> {match.fs_B ?? '-'}
+                            {showResult ? (
+                                <>
+                                    {match.fs_A ?? '-'} <span className="text-accent opacity-80 mx-1">:</span> {match.fs_B ?? '-'}
+                                </>
+                            ) : (
+                                <span>vs</span>
+                            )}
                         </div>
                         {isLive && clock && <div className="text-xs font-mono text-semantic-red mt-1">{clock}</div>}
                         {match.hts_A !== undefined && match.hts_B !== undefined && match.status === MATCH_STATUS.PLAYED && (
