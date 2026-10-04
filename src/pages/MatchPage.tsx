@@ -19,6 +19,7 @@ import { resolveCrest } from '../utils/crest'
 import { MATCH_STATUS } from '../types'
 import type { PlayerStats } from '../types'
 import { halfOf, getCurrentSeason, formatSeasonLabel } from '../utils/dates'
+import { isMatchLive } from '../utils/matchLive'
 import { cn } from '../utils/cn'
 
 export function MatchPage() {
@@ -99,6 +100,7 @@ export function MatchPage() {
     const teamBYellows = teamBPlayers.reduce((sum, p) => sum + (p.warningsThisYear || 0), 0)
 
     const played = data?.match.status === MATCH_STATUS.PLAYED
+    const showResult = Boolean(data && (played || isMatchLive(data.match)))
 
     return (
         <div className="min-h-screen px-4 py-4 md:py-8">
@@ -114,7 +116,7 @@ export function MatchPage() {
                             <button onClick={() => navigate(-1)} className="text-xs text-text-muted hover:text-text-primary px-2 py-1">← Takaisin</button>
                             <div className="flex items-center gap-3">
                                 <Link to={`/team/${data.match.team_A_id}`} className="text-xs font-bold truncate max-w-[120px]">{data.match.team_A_name}</Link>
-                                <span className="font-mono font-bold">{data.match.fs_A ?? '-'} : {data.match.fs_B ?? '-'}</span>
+                                <span className="font-mono font-bold">{showResult ? `${data.match.fs_A ?? '-'} : ${data.match.fs_B ?? '-'}` : 'vs'}</span>
                                 <Link to={`/team/${data.match.team_B_id}`} className="text-xs font-bold truncate max-w-[120px]">{data.match.team_B_name}</Link>
                             </div>
                             {resolveCrest(data.teamA || {}) ? <span /> : <span />}

@@ -179,7 +179,7 @@ export function Home() {
                             className="w-full text-left bg-surface-1 border border-border-hairline rounded-xl px-3 py-2.5 flex items-center justify-between hover:bg-surface-2">
                             <span className="text-xs text-text-muted w-20 shrink-0">{formatDate(match.date, 'with-year')}</span>
                             <span className="text-sm text-text-primary truncate flex-1 px-2">{match.team_A_name} – {match.team_B_name}</span>
-                            <span className="font-mono text-xs shrink-0">{match.fs_A}–{match.fs_B}</span>
+                            <span className="font-mono text-xs shrink-0">{match.status === MATCH_STATUS.PLAYED || isMatchLive(match) ? `${match.fs_A ?? '–'}–${match.fs_B ?? '–'}` : 'vs'}</span>
                         </button>
                     ))}
                 </section>
