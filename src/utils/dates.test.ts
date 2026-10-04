@@ -55,6 +55,9 @@ describe('dates utils', () => {
 
             const autumnDate = new Date('2026-09-12T12:00:00Z')
             expect(getCurrentSeason(autumnDate)).toEqual({ year: '2026', half: 'syksy' })
+
+            // 22:30 UTC is already 1 Jan 00:30 in Helsinki (EET). UTC month is still December.
+            expect(getCurrentSeason(new Date('2025-12-31T22:30:00Z'))).toEqual({ year: '2026', half: 'kevät' })
         })
 
         it('formatSeasonLabel formats labels properly', () => {
