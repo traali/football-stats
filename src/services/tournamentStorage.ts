@@ -1,4 +1,5 @@
 import { parseTournamentUrl } from '../utils/tournamentUrl'
+import { todayISO } from '../utils/dates'
 
 export interface SavedTournament {
     id: string
@@ -67,7 +68,7 @@ export function saveTournamentFromUrl(inputUrl: string, customTitle?: string): S
         sarja: parsed.sarja,
         teamId: parsed.teamId,
         host: parsed.host,
-        dateAdded: new Date().toISOString().slice(0, 10),
+        dateAdded: todayISO(),
     }
 
     const updated = [newTournament, ...existing]
