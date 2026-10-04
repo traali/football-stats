@@ -46,8 +46,9 @@ export function halfOf(date?: string): 'kevät' | 'syksy' | '' {
 }
 
 export function getCurrentSeason(now = new Date()): { year: string; half: 'kevät' | 'syksy' } {
-    const year = String(now.getFullYear())
-    const month = now.getMonth() + 1
+    const iso = todayISO(now)
+    const year = iso.slice(0, 4)
+    const month = parseInt(iso.slice(5, 7), 10)
     const half = month <= 6 ? 'kevät' : 'syksy'
     return { year, half }
 }
