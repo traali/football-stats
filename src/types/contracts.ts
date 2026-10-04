@@ -74,26 +74,24 @@ export function buildMatchStatsContract(data: {
     matchId?: string
 }): SportStatsContract {
     const id = data.matchId || `${data.homeTeam}-${data.awayTeam}`
+    const numeric = !!data.matchId && /^\d+$/.test(data.matchId)
+    const deepLinkUrl = numeric
+        ? `https://football-stats-agk.pages.dev/#/match/${encodeURIComponent(data.matchId!)}`
+        : `https://football-stats-agk.pages.dev/#/search?q=${encodeURIComponent(`${data.homeTeam} ${data.awayTeam}`)}`
     return {
         sport: 'football',
         matchOrTeamId: id,
-        recentForm: ['W', 'W', 'D', 'W', 'L'],
+        recentForm: [],
         recentFormStrings: {
-            home: ['W', 'W', 'D'],
-            away: ['W', 'L', 'W'],
+            home: [],
+            away: [],
         },
         headToHeadSummary: {
-            matchesPlayed: 4,
-            homeWins: 2,
-            awayWins: 1,
-            draws: 1,
+            matchesPlayed: 0,
+            homeWins: 0,
+            awayWins: 0,
+            draws: 0,
         },
-        standingsSummary: {
-            rank: 1,
-            totalTeams: 12,
-            points: 28,
-            playedMatches: 10,
-        },
-        deepLinkUrl: `https://football-stats.pages.dev/match/${encodeURIComponent(id)}?theme=night-captain`,
+        deepLinkUrl,
     }
 }

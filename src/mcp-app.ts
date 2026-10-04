@@ -49,9 +49,7 @@ export async function getH2HCardTool(args: {
     leagueName: args.leagueName || 'Sarjaottelu',
   })
 
-  const summary = `Head-to-head ${homeTeam} vs ${awayTeam}: form home [${(stats.recentFormStrings?.home || []).join(
-    '-',
-  )}], away [${(stats.recentFormStrings?.away || []).join('-')}]. Meetings: ${stats.headToHeadSummary.matchesPlayed}.`
+  const summary = `Ei keksittyä keskinäistä historiaa: ${homeTeam} vs ${awayTeam}. Haku: ${stats.deepLinkUrl}`
 
   return {
     content: [{ type: 'text', text: summary }],
