@@ -1,0 +1,10 @@
+{
+ "call": {
+  "status": "error",
+  "error": "Not allowed",
+  "result_time": 0.025,
+  "time_stamp": 1791431843,
+  "xip": "127.0.1.1",
+  "apilevel": "1"
+ }
+}

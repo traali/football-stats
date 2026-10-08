@@ -10,6 +10,8 @@ const MEMORY_TTL_MS: Record<string, number> = {
     getCategories: 5 * 60 * 1000,
     getSeasons: 5 * 60 * 1000,
     getMatches: 30 * 1000,
+    search: 5 * 60 * 1000,
+    getClub: 10 * 60 * 1000,
 }
 
 const PLAYED_MEMORY_TTL_MS = 30 * 60 * 1000
@@ -42,7 +44,7 @@ export function matchPhaseOf(value: unknown, explicit?: string): MatchPhase {
     if (value && typeof value === 'object' && 'time' in value && String((value as { time?: string }).time || '').includes("'")) {
         return 'live'
     }
-    if (st === MATCH_STATUS.PLAYED.toLowerCase() || st === 'played' || st === '1' || st === 'finished') return 'played'
+    if (st === MATCH_STATUS.PLAYED.toLowerCase() || st === MATCH_STATUS.FORFEITED.toLowerCase() || st === 'played' || st === '1' || st === 'finished') return 'played'
     return 'upcoming'
 }
 

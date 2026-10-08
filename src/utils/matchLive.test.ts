@@ -8,7 +8,7 @@ describe('isMatchLive', () => {
     it('does not treat finished Played as live', () => {
         expect(isMatchLive({ status: 'Played', date: '2026-08-29', time: '15:00:00' })).toBe(false)
     })
-    it('parses kickoff', () => {
-        expect(parseKickoffMs('2026-08-29', '15:00:00')).toBe(new Date('2026-08-29T15:00:00').getTime())
+    it('parses kickoff as Helsinki time (UTC+3 in summer)', () => {
+        expect(parseKickoffMs('2026-08-29', '15:00:00')).toBe(Date.parse('2026-08-29T12:00:00Z'))
     })
 })

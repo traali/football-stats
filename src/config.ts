@@ -14,7 +14,7 @@ export const APP_CONFIG: APIConfig = {
         MAX_CALLS_PER_MINUTE: 120,
         MAX_CALLS_PER_ENDPOINT: {
             getMatch: 30,
-            getGroup: 20,
+            getGroup: 45,
             getPlayer: 80,
             getCompetitions: 10,
             getCategories: 10,
@@ -25,7 +25,7 @@ export const APP_CONFIG: APIConfig = {
     },
 }
 
-export const APP_NAME = 'Pelaajatilastot'
+export const APP_NAME = 'Jalkapallo'
 
 export const FEATURED = {
     teamId: '185085',
@@ -33,5 +33,4 @@ export const FEATURED = {
     competitionId: 'etejp26',
     categoryId: 'P133',
     groupId: '4',
-    calendarNote: 'Vierumäki 4.–6.9.2026',
 }

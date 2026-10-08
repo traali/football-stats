@@ -12,9 +12,10 @@ const commitHash = (() => {
   }
 })()
 const buildTime = new Date().toISOString()
+const base = process.env.GITHUB_PAGES === '1' ? '/football-stats/' : '/'
 
 export default defineConfig({
-    base: process.env.GITHUB_PAGES === '1' ? '/football-stats/' : '/',
+    base,
     define: {
         __APP_VERSION__: JSON.stringify('1.0.0'),
         __COMMIT_HASH__: JSON.stringify(commitHash),
@@ -27,15 +28,15 @@ export default defineConfig({
             registerType: 'autoUpdate',
             includeAssets: ['favicon.svg'],
             manifest: {
-                name: 'Pelaajatilastot',
-                short_name: 'Tilastot',
-                description: 'Juniorijalkapallon ottelu- ja pelaajatilastot',
+                name: 'Jalkapallo',
+                short_name: 'Jalkapallo',
+                description: 'Junioriottelut, tulokset ja sarjataulukot Palloliiton tulospalvelusta',
                 theme_color: '#111111',
                 background_color: '#111111',
                 display: 'standalone',
                 orientation: 'portrait',
-                start_url: '/',
-                scope: '/',
+                start_url: base,
+                scope: base,
                 lang: 'fi',
                 icons: [
                     { src: 'favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
@@ -43,7 +44,7 @@ export default defineConfig({
                 ],
             },
             workbox: {
-                navigateFallback: '/index.html',
+                navigateFallback: `${base}index.html`,
                 globPatterns: ['**/*.{js,css,html,svg,woff2,png,ico}'],
                 runtimeCaching: [
                     {

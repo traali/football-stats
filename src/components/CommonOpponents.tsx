@@ -4,15 +4,14 @@ import { ChevronDown, ChevronUp, Users, Loader2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { cn } from '../utils/cn'
 import { getMatchDetails } from '../services/api'
-import { MATCH_STATUS } from '../types'
+import { isResult, outcomeFor } from '../domain/matchState'
 import type { MatchDetails, GroupDetails, MatchSummary, PlayerLineupInfo } from '../types'
 
 function scoreOf(m: MatchSummary, teamId: string): { my: number; opp: number; wld: 'V' | 'T' | 'H' } | null {
+    const wld = outcomeFor(m, teamId)
+    if (!wld) return null
     const isA = m.team_A_id === teamId
-    const my = parseInt(String((isA ? m.fs_A : m.fs_B) ?? ''), 10)
-    const opp = parseInt(String((isA ? m.fs_B : m.fs_A) ?? ''), 10)
-    if (Number.isNaN(my) || Number.isNaN(opp)) return null
-    return { my, opp, wld: my > opp ? 'V' : my < opp ? 'H' : 'T' }
+    return { my: Number(isA ? m.fs_A : m.fs_B), opp: Number(isA ? m.fs_B : m.fs_A), wld }
 }
 
 function Wld({ v }: { v: 'V' | 'T' | 'H' }) {
@@ -41,7 +40,7 @@ export function CommonOpponents({
     const [details, setDetails] = useState<Record<string, { a: MatchDetails; b: MatchDetails }>>({})
 
     const rows = useMemo(() => {
-        const played = (group?.matches || []).filter(m => m.status === MATCH_STATUS.PLAYED)
+        const played = (group?.matches || []).filter(m => isResult(m))
         const lastA = new Map<string, MatchSummary>()
         const lastB = new Map<string, MatchSummary>()
         const nameOf = new Map<string, string>()

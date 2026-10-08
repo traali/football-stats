@@ -2,10 +2,15 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../utils/cn'
 import { WLD_CONFIG } from '../utils/wld'
-import { MATCH_STATUS } from '../types'
+import { byKickoffAsc, matchPhase, outcomeFor } from '../domain/matchState'
+import { FormLegend } from './FormLegend'
 import type { StandingTeam, MatchSummary } from '../types'
+import { formatPpm as ppm, inTasoOrder } from '../utils/standings'
 
-export function StandingsTable({ teams, matches = [], teamAId, teamBId, selectedTeam, onSelectTeam, compact }: {
+
+export function StandingsTable({ teams, matches = [], teamAId, teamBId, selectedTeam, onSelectTeam, compact, showPointsPerMatch }: {
+    /** Taso ranks by points per match when teams have played unequal numbers of games. */
+    showPointsPerMatch?: boolean
     teams: StandingTeam[]
     matches?: MatchSummary[]
     teamAId?: string
@@ -17,7 +22,7 @@ export function StandingsTable({ teams, matches = [], teamAId, teamBId, selected
     const navigate = useNavigate()
     const [hoveredTeam, setHoveredTeam] = useState<string | null>(null)
 
-    const sorted = [...teams].sort((a, b) => (parseInt(String(a.current_standing)) || 999) - (parseInt(String(b.current_standing)) || 999))
+    const sorted = inTasoOrder(teams)
 
     const activeTeamId = hoveredTeam || selectedTeam
 
@@ -30,20 +35,14 @@ export function StandingsTable({ teams, matches = [], teamAId, teamBId, selected
             const isA = m.team_A_id === activeTeamId
             const opponentTeamId = isA ? m.team_B_id : m.team_A_id
             if (!opponentTeamId) continue
-            const myScore = parseInt(String(isA ? m.fs_A ?? '' : m.fs_B ?? ''))
-            const oppScore = parseInt(String(isA ? m.fs_B ?? '' : m.fs_A ?? ''))
+            const phase = matchPhase(m)
+            const outcome = outcomeFor(m, activeTeamId)
             let result: 'win' | 'draw' | 'loss' | 'upcoming'
-            if (m.status === MATCH_STATUS.FIXTURE) {
-                result = 'upcoming'
-            } else if (isNaN(myScore) || isNaN(oppScore)) {
-                continue
-            } else if (myScore > oppScore) {
-                result = 'win'
-            } else if (myScore < oppScore) {
-                result = 'loss'
-            } else {
-                result = 'draw'
-            }
+            if (outcome === 'V') result = 'win'
+            else if (outcome === 'H') result = 'loss'
+            else if (outcome === 'T') result = 'draw'
+            else if (phase === 'upcoming' || phase === 'live' || phase === 'awaiting') result = 'upcoming'
+            else continue
             const existing = map.get(opponentTeamId) || []
             existing.push({ result, matchId: m.match_id })
             map.set(opponentTeamId, existing)
@@ -61,21 +60,14 @@ export function StandingsTable({ teams, matches = [], teamAId, teamBId, selected
     // Compute last 5 results per team
     const teamForm = useMemo(() => {
         const map = new Map<string, string[]>()
-        for (const m of matches) {
-            if (m.status !== MATCH_STATUS.PLAYED) continue
-            const myScoreA = parseInt(String(m.fs_A ?? ''))
-            const oppScoreA = parseInt(String(m.fs_B ?? ''))
-            if (isNaN(myScoreA) || isNaN(oppScoreA)) continue
-
-            const aResult = myScoreA > oppScoreA ? 'V' : myScoreA < oppScoreA ? 'H' : 'T'
-            const arrA = map.get(m.team_A_id) || []
-            arrA.push(aResult)
-            map.set(m.team_A_id, arrA)
-
-            const bResult = oppScoreA > myScoreA ? 'V' : oppScoreA < myScoreA ? 'H' : 'T'
-            const arrB = map.get(m.team_B_id) || []
-            arrB.push(bResult)
-            map.set(m.team_B_id, arrB)
+        for (const m of [...matches].sort(byKickoffAsc)) {
+            for (const id of [m.team_A_id, m.team_B_id]) {
+                const r = id ? outcomeFor(m, id) : null
+                if (!r) continue
+                const arr = map.get(id) || []
+                arr.push(r)
+                map.set(id, arr)
+            }
         }
         const result = new Map<string, string[]>()
         for (const [id, arr] of map) {
@@ -121,6 +113,7 @@ export function StandingsTable({ teams, matches = [], teamAId, teamBId, selected
                             <th className="w-10 px-2 py-3 font-bold text-center">T</th>
                             <th className="w-10 px-2 py-3 font-bold text-center">H</th>
                             <th className="w-12 px-3 py-3 font-bold text-center text-text-primary">P</th>
+                            {showPointsPerMatch && <th className="w-14 px-2 py-3 font-bold text-center text-text-primary" title="Pisteitä per ottelu">P/O</th>}
                             {!compact && <th className="w-12 px-2 py-3 font-bold text-right">TM</th>}
                             {!compact && <th className="w-12 px-2 py-3 font-bold text-right">PM</th>}
                             <th className="w-28 px-3 py-3 font-bold text-center text-xs">Kunto</th>
@@ -128,7 +121,7 @@ export function StandingsTable({ teams, matches = [], teamAId, teamBId, selected
                     </thead>
                     <tbody className="divide-y divide-border-hairline">
                         {sorted.map((team) => {
-                            const isMatchTeam = teamAId && teamBId && (team.team_id === teamAId || team.team_id === teamBId)
+                            const isMatchTeam = Boolean((teamAId && team.team_id === teamAId) || (teamBId && team.team_id === teamBId))
                             const isSelected = team.team_id === selectedTeam
                             const isHovered = hoveredTeam === team.team_id
                             const results = opponentResults.get(team.team_id) || []
@@ -183,12 +176,13 @@ export function StandingsTable({ teams, matches = [], teamAId, teamBId, selected
                                     <td className="w-10 px-2 py-3 text-center text-text-secondary font-mono text-sm">{team.matches_tied}</td>
                                     <td className="w-10 px-2 py-3 text-center text-text-secondary font-mono text-sm">{team.matches_lost}</td>
                                     <td className="w-12 px-3 py-3 text-center font-bold text-text-primary font-mono text-sm">{team.points}</td>
+                                    {showPointsPerMatch && <td className="w-14 px-2 py-3 text-center font-bold text-text-primary font-mono text-sm">{ppm(team.points_per_match)}</td>}
                                     {!compact && <td className="w-12 px-2 py-3 text-right text-text-secondary font-mono text-sm">{team.goals_for}</td>}
                                     {!compact && <td className="w-12 px-2 py-3 text-right text-text-secondary font-mono text-sm">{team.goals_against}</td>}
                                     <td className="w-28 px-3 py-3 text-center">
                                         <div className="flex items-center justify-center gap-0.5">
                                             {(teamForm.get(team.team_id) || []).map((r, i) => (
-                                                <span key={`${team.team_id}-form-${i}`} className={cn('w-2 h-2 rounded-full', r === 'V' ? 'bg-semantic-green' : r === 'H' ? 'bg-semantic-red' : 'bg-accent')} />
+                                                <span key={`${team.team_id}-form-${i}`} title={r === 'V' ? 'Voitto' : r === 'H' ? 'Häviö' : 'Tasapeli'} className={cn('w-2 h-2 rounded-full', r === 'V' ? 'bg-semantic-green' : r === 'H' ? 'bg-semantic-red' : 'bg-accent')} />
                                             ))}
                                         </div>
                                     </td>
@@ -197,6 +191,15 @@ export function StandingsTable({ teams, matches = [], teamAId, teamBId, selected
                         })}
                     </tbody>
                 </table>
+            </div>
+            <div className="px-4 py-2.5 border-t border-border-hairline space-y-1 text-[11px] text-text-muted">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <span className="font-semibold">Kunto (5 viimeisintä, uusin oikealla):</span>
+                    <FormLegend />
+                </div>
+                {showPointsPerMatch && (
+                    <p>Järjestys on Tulospalvelun: joukkueilla on eri määrä pelejä, joten sijoitus ratkeaa pisteistä per ottelu (P/O).</p>
+                )}
             </div>
         </div>
     )

@@ -63,14 +63,32 @@ export interface PlayerMatchEntry {
     category_id?: string
     category_name?: string
     competition_name?: string
+    competition_id?: string
+    group_id?: string
+    group_name?: string
+    time_end?: string
+    playing_time_min?: string
+    venue_name?: string
+}
+
+export interface PlayerTeamEntry {
+    team_id: string
+    team_name?: string
+    shirt_number?: string
+    primary_category?: { competition_id?: string; category_id?: string; category_name?: string; competition_name?: string } | null
 }
 
 export interface PlayerAPIResponse {
+    player_id?: string
     birthyear: string
     first_name: string
     last_name: string
     img_url?: string
+    club_name?: string
     matches: PlayerMatchEntry[]
+    /** Taso keeps the next games here, not in matches. */
+    upcoming?: PlayerMatchEntry[]
+    teams?: PlayerTeamEntry[]
     [key: string]: unknown
 }
 

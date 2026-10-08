@@ -2,7 +2,7 @@
 
 Status: **component catalog 2026-09-26**. Every file under `src/components/`, including `tournament/`. Screen contract: [UI_SPEC.md](./UI_SPEC.md). If a row and the file disagree, the file wins.
 
-This app is not basketball. There is no `WebMcpBadge`. Tools still register from `src/mcp-app.ts`.
+This app is not basketball. There is no `WebMcpBadge`. Tools register from `src/webmcp/WebMcpTools.tsx`.
 
 ## Shell
 
@@ -22,16 +22,17 @@ This app is not basketball. There is no `WebMcpBadge`. Tools still register from
 | File | Mounted by | What the parent sees | Why |
 |---|---|---|---|
 | `MatchHeader.tsx` | Match | Teams, KÄYNNISSÄ, score, Maalit, Varoitukset | The game. Score only when TASO has one |
-| `MatchLineups.tsx` | Match | Two lineups | Who dressed. Hosts `PlayerCard` and `EligibilityChip` |
+| `MatchLineups.tsx` | Match | Two lineups from getMatch only | Who dressed. Hidden for walkovers. Pre-match it says "Ilmoitetut pelaajat" |
 | `PlayerCard.tsx` | Lineups, roster, tournament | One player, stats | Tap opens `/player/:id` |
 | `PlayerAvatar.tsx` | Team | Photo or initial | No photo is not an error |
-| `EligibilityChip.tsx` | Lineups | Age/level chip, `SquadQuotaBar` | Over-age or wrong level must be visible |
-| `DualStatBar.tsx` | Match | Home vs away bar | Pre-match comparison of dressed players, goals, cards. Not a result |
+| `DualStatBar.tsx` | Match | Home vs away bar | Taso table numbers (points, goals) side by side. Not a result |
 | `CommonOpponents.tsx` | Match | Ei kokoonpanoa, or Yhteisiä vastaan | Shared opponents. Empty lineup must say so |
 | `StandingsTable.tsx` | Group, match, `TeamStandingsBlock` | Joukkue, Kunto, opponent note | Group table. Row selects a team |
 | `TeamStandingsBlock.tsx` | `TeamMatchList` | The same table, scoped | So the team list can show the group without a third tab |
-| `PitchWeatherCard.tsx` | Match | FMI, Avaa sadetutka, temperature, grip, wind, rain, 30/30 | Outdoor only. No coordinates means no invented weather |
-| `MatchPreviewExport.tsx` | Match | Jaa WhatsAppiin | Share text. Do not invent a message if the template is empty |
+| `MatchRow.tsx` | Every match list | Date+year, teams, score or vs, Käynnissä / Tulosta odotetaan / Luovutus, V/T/H | One row everywhere. Taps to `/match/:id` |
+| `SearchBox.tsx` | Home, `/haku` | Taso search for teams, players, clubs + favourite hearts | The front door |
+| `TasoLink.tsx` | Match, team, player, tournament | Avaa tulospalvelussa | Exact page in tulospalvelu.palloliitto.fi |
+| `ErrorState.tsx` | Every page | Hups! + Yritä uudelleen | Friendly Finnish, never raw API text |
 | `StatBadge.tsx` | Player card, team | One number with a label | Ottelut, goals, and the rest. A badge without a feed value should not show 0 as fact |
 
 ## Team and rows

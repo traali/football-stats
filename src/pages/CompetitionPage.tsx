@@ -1,30 +1,40 @@
-import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useParams } from 'react-router-dom'
 import { Layers } from 'lucide-react'
-import { getCategories, getSeasons } from '../services/api'
-import type { Category, Season } from '../types'
-import { BackButton, PageLayout, Button } from '../components'
+import { getCategories } from '../services/api'
+import type { Category } from '../types'
+import { BackButton, ErrorState, PageLayout } from '../components'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { friendlyError } from '../utils/friendlyError'
+import { FEATURED } from '../config'
 
+/** "Selaa": the competition's categories, filterable. */
 export function CompetitionPage() {
-    const { compId } = useParams()
-    const navigate = useNavigate()
+    const { compId = '' } = useParams()
     const [categories, setCategories] = useState<Category[]>([])
-    const [seasons, setSeasons] = useState<Season[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [tick, setTick] = useState(0)
+    const [filter, setFilter] = useState('')
+    const title = compId === 'etejp26' ? 'Etelä Jalkapallo 2026' : compId
+    useDocumentTitle(title)
 
     useEffect(() => {
         if (!compId) return
+        let cancelled = false
         setLoading(true)
         setError(null)
-        Promise.all([getCategories(compId), getSeasons(compId)])
-            .then(([c, s]) => { setCategories(c); setSeasons(s); setLoading(false) })
-            .catch(() => {
-                setError('Sarjoja ei voitu ladata. Tarkista yhteys ja yritä uudelleen.')
-                setLoading(false)
-            })
+        getCategories(compId)
+            .then(c => { if (!cancelled) setCategories(c) })
+            .catch(err => { if (!cancelled) setError(friendlyError(err, 'Sarjoja')) })
+            .finally(() => { if (!cancelled) setLoading(false) })
+        return () => { cancelled = true }
     }, [compId, tick])
+
+    const shown = useMemo(() => {
+        const f = filter.trim().toLowerCase()
+        return f ? categories.filter(c => `${c.category_name} ${c.category_id}`.toLowerCase().includes(f)) : categories
+    }, [categories, filter])
 
     if (loading) return (
         <PageLayout>
@@ -32,41 +42,26 @@ export function CompetitionPage() {
             <div className="animate-pulse bg-surface-1 rounded-xl h-64" />
         </PageLayout>
     )
-
-    if (error) return (
-        <PageLayout>
-            <BackButton to="/" label="Etusivu" className="mb-2" />
-            <p className="text-center text-semantic-red">{error}</p>
-            <div className="flex justify-center">
-                <Button onClick={() => setTick(t => t + 1)}>Yritä uudelleen</Button>
-            </div>
-        </PageLayout>
-    )
+    if (error) return <ErrorState message={error} onRetry={() => setTick(t => t + 1)} />
 
     return (
         <PageLayout>
-            <BackButton to="/" label="Etusivu" className="mb-2" />
-            <h1 className="text-2xl font-bold text-text-primary">
-                {compId === 'etejp26' ? 'Etelä Jalkapallo 2026' : compId}
-            </h1>
-            {seasons.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                    {seasons.map(s => (
-                        <span key={s.season_id} className="text-xs bg-surface-2 text-text-muted px-2.5 py-1 rounded-full">{s.season_name}</span>
-                    ))}
-                </div>
-            )}
-            {categories.length === 0 && <p className="text-text-muted text-sm text-center py-8">Ei sarjatasoja</p>}
+            <BackButton fallbackTo="/" />
+            <h1 className="text-2xl font-bold text-text-primary">{title}</h1>
+            <input type="search" value={filter} onChange={e => setFilter(e.target.value)} aria-label="Rajaa sarjoja"
+                placeholder="Rajaa sarjoja, esim. P13"
+                className="w-full min-h-[48px] bg-surface-1 border border-border-hairline rounded-xl px-4 text-base text-text-primary placeholder:text-text-muted" />
+            {shown.length === 0 && <p className="text-text-muted text-sm text-center py-8">Ei sarjoja{filter ? ' tällä rajauksella' : ''}.</p>}
             <div className="space-y-2">
-                {categories.map(cat => (
-                    <div
-                        key={cat.category_id}
-                        onClick={() => navigate(`/competition/${compId}/category/${cat.category_id}`)}
-                        className="bg-surface-1 border border-border-hairline rounded-xl p-4 flex items-center gap-3 cursor-pointer hover:bg-surface-2 transition-colors"
-                    >
+                {shown.map(cat => (
+                    <Link key={cat.category_id} to={`/competition/${compId}/category/${cat.category_id}`}
+                        className="bg-surface-1 border border-border-hairline rounded-xl px-4 min-h-[52px] flex items-center gap-3 hover:bg-surface-2 transition-colors">
                         <Layers className="w-5 h-5 text-accent shrink-0" />
-                        <p className="text-text-primary font-medium truncate">{cat.category_name}</p>
-                    </div>
+                        <span className="text-text-primary font-medium truncate">{cat.category_name}</span>
+                        {compId === FEATURED.competitionId && cat.category_id === FEATURED.categoryId && (
+                            <span className="ml-auto text-[10px] font-bold uppercase text-accent shrink-0">{FEATURED.teamName}</span>
+                        )}
+                    </Link>
                 ))}
             </div>
         </PageLayout>

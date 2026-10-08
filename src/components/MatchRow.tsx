@@ -1,12 +1,21 @@
-import { useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { cn } from '../utils/cn'
-import { formatDate } from '../utils/dates'
+import { formatDate, formatTime } from '../utils/dates'
 import { WLD_CONFIG } from '../utils/wld'
+import { displayScore, isForfeit, matchPhase, outcomeFor, penaltyScore, type MatchLike } from '../domain/matchState'
+import { teamLabel, isPlaceholderTeam } from '../utils/teamLabel'
+import { LiveBadge } from './LiveBadge'
 
-interface MatchRowBase {
-    matchId: string
-    date: string
-    className?: string
+export interface RowMatch extends MatchLike {
+    match_id: string
+    team_A_id?: string
+    team_B_id?: string
+    team_A_name?: string
+    team_B_name?: string
+    team_A_description?: string
+    team_B_description?: string
+    ps_A?: string
+    ps_B?: string
 }
 
 function Pos({ n }: { n?: string | number }) {
@@ -14,108 +23,84 @@ function Pos({ n }: { n?: string | number }) {
     return <span className="text-text-muted font-mono text-[10px] shrink-0">#{n}</span>
 }
 
-export function MatchRowPast({ matchId, date, opponentName, myScore, oppScore, resultIndicator, opponentStanding, className }: MatchRowBase & {
-    opponentName: string
-    myScore?: string | null
-    oppScore?: string | null
-    resultIndicator?: 'V' | 'H' | 'T'
-    opponentStanding?: string | number
+function TeamName({ id, name, desc, mine }: { id?: string; name?: string; desc?: string; mine?: boolean }) {
+    const label = teamLabel(id, name, desc)
+    return (
+        <span className={cn('truncate', isPlaceholderTeam(id) && 'italic text-text-muted', mine && 'text-accent font-semibold')}>
+            {label}
+        </span>
+    )
+}
+
+/**
+ * One row for any match list. Taps through to /match/:id.
+ * Score only for results or a running game; otherwise "vs".
+ */
+export function MatchRow({ match: m, teamId, standings, subtitle, now, className }: {
+    match: RowMatch
+    /** Perspective team: shows V/T/H and highlights the team. */
+    teamId?: string
+    standings?: Record<string, string | number>
+    subtitle?: string
+    now?: Date
     className?: string
 }) {
-    const navigate = useNavigate()
-    const wldConfig = resultIndicator ? WLD_CONFIG[resultIndicator] : null
+    const phase = matchPhase(m, now)
+    const score = displayScore(m, now)
+    const outcome = teamId ? outcomeFor(m, teamId) : null
+    const forfeit = phase === 'result' && isForfeit(m)
+    const wld = outcome ? WLD_CONFIG[outcome] : null
+    const linkable = /^\d+$/.test(String(m.match_id || ''))
+    const pens = phase === 'result' ? penaltyScore(m) : null
 
-    return (
-        <div
-            onClick={() => navigate(`/match/${matchId}`)}
-            className={cn(
-                'flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-surface-2 border border-transparent hover:border-border-hairline cursor-pointer transition-all active:scale-[0.99] text-sm min-h-[44px]',
-                className,
-            )}
-        >
-            <span className="text-text-muted w-16 shrink-0 text-xs">{formatDate(date, 'with-year')}</span>
-            <span className="text-text-primary truncate flex-1 text-right pr-2 flex items-center justify-end gap-1.5 min-w-0">
-                <span className="truncate">{opponentName}</span>
-                <Pos n={opponentStanding} />
+    const body = (
+        <>
+            <span className="w-16 shrink-0 text-xs text-text-muted leading-tight">
+                <span className="block">{formatDate(m.date || undefined, 'with-year')}</span>
+                {m.time && !String(m.time).includes("'") && <span className="block font-mono text-[10px]">{formatTime(m.time || undefined)}</span>}
             </span>
-            <span className="font-mono font-bold mx-2 shrink-0 flex items-center gap-1.5">
-                <span className="text-text-primary">
-                    {myScore !== undefined && oppScore !== undefined ? `${myScore}–${oppScore}` : '–'}
+            <span className="flex-1 min-w-0">
+                <span className="flex items-center gap-1.5 min-w-0">
+                    <span className="flex-1 min-w-0 flex items-center justify-end gap-1 text-right">
+                        <TeamName id={m.team_A_id} name={m.team_A_name} desc={m.team_A_description} mine={!!teamId && m.team_A_id === teamId} />
+                        <Pos n={m.team_A_id ? standings?.[m.team_A_id] : undefined} />
+                    </span>
+                    <span className={cn('shrink-0 font-mono font-bold px-1.5 text-center min-w-[3.5ch]', score ? 'text-text-primary' : 'text-text-muted text-xs')}>
+                        {score ? `${score.a}–${score.b}` : 'vs'}
+                    </span>
+                    <span className="flex-1 min-w-0 flex items-center gap-1">
+                        <Pos n={m.team_B_id ? standings?.[m.team_B_id] : undefined} />
+                        <TeamName id={m.team_B_id} name={m.team_B_name} desc={m.team_B_description} mine={!!teamId && m.team_B_id === teamId} />
+                    </span>
                 </span>
-                {wldConfig && (
-                    <span className={cn(
-                        'text-[10px] font-bold px-1 py-0.5 rounded leading-none',
-                        wldConfig.bg + ' ' + wldConfig.color + ' border border-' + wldConfig.dot.replace('bg-', '') + '/20'
-                    )}>
-                        {resultIndicator}
+                {(subtitle || phase === 'live' || phase === 'awaiting' || forfeit || pens) && (
+                    <span className="flex items-center justify-center gap-2 mt-1 text-[11px] text-text-muted">
+                        {phase === 'live' && <LiveBadge />}
+                        {phase === 'awaiting' && <LiveBadge awaiting />}
+                        {forfeit && (
+                            <span className="px-1.5 py-0.5 rounded bg-surface-3 border border-border-hairline text-[10px] font-bold uppercase tracking-wide text-text-secondary">Luovutus</span>
+                        )}
+                        {pens && <span className="font-mono">rp {pens.a}–{pens.b}</span>}
+                        {subtitle && <span className="truncate">{subtitle}</span>}
                     </span>
                 )}
             </span>
-        </div>
-    )
-}
-
-export function MatchRowSymmetric({ matchId, date, teamAName, teamBName, scoreA, scoreB, winnerId, className }: MatchRowBase & {
-    teamAName: string
-    teamBName: string
-    scoreA?: string | number | null
-    scoreB?: string | number | null
-    winnerId?: string | null
-    className?: string
-}) {
-    const navigate = useNavigate()
-
-    const wld = winnerId && winnerId !== '0' && winnerId !== '-'
-        ? (winnerId === 'draw' ? 'T' as const : null)
-        : (scoreA && scoreB ? 'T' as const : null)
-    const wldColor = wld ? (WLD_CONFIG[wld]?.color || 'text-accent') : null
-
-    return (
-        <div
-            onClick={() => navigate(`/match/${matchId}`)}
-            className={cn(
-                'flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-surface-2 border border-transparent hover:border-border-hairline cursor-pointer transition-all active:scale-[0.99] text-sm min-h-[44px]',
-                className,
-            )}
-        >
-            <span className="text-text-muted text-xs w-16 shrink-0">{formatDate(date, 'with-year')}</span>
-            <span className="text-text-primary truncate text-right min-w-0 flex-1">{teamAName}</span>
-            <span className="font-mono font-bold text-text-primary mx-2 shrink-0 flex items-center gap-1">
-                {scoreA !== undefined && scoreB !== undefined ? `${scoreA}–${scoreB}` : '–'}
-                {wld && wldColor && <span className={cn('text-xs font-bold', wldColor)}>{wld}</span>}
+            <span className="w-6 shrink-0 text-right">
+                {wld && (
+                    <span className={cn('text-[10px] font-bold px-1 py-0.5 rounded leading-none', wld.bg, wld.color)} title={outcome === 'V' ? 'Voitto' : outcome === 'H' ? 'Häviö' : 'Tasapeli'}>
+                        {outcome}
+                    </span>
+                )}
             </span>
-            <span className="text-text-primary truncate min-w-0 flex-1">{teamBName}</span>
-        </div>
+        </>
     )
-}
 
-export function MatchRowFixture({ matchId, date, teamAName, teamBName, standingA, standingB, className }: MatchRowBase & {
-    teamAName: string
-    teamBName: string
-    standingA?: string | number
-    standingB?: string | number
-    className?: string
-}) {
-    const navigate = useNavigate()
-
-    return (
-        <div
-            onClick={() => navigate(`/match/${matchId}`)}
-            className={cn(
-                'flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-surface-2 border border-transparent hover:border-border-hairline cursor-pointer transition-all active:scale-[0.99] text-sm min-h-[44px]',
-                className,
-            )}
-        >
-            <span className="text-text-muted w-16 shrink-0 text-xs">{formatDate(date, 'with-year')}</span>
-            <span className="text-text-primary truncate text-right flex-1 pr-2 flex items-center justify-end gap-1 min-w-0">
-                <span className="truncate">{teamAName}</span>
-                <Pos n={standingA} />
-            </span>
-            <span className="text-text-muted mx-1 shrink-0 font-mono text-xs">vs</span>
-            <span className="text-text-primary truncate flex-1 pl-2 flex items-center gap-1 min-w-0">
-                <Pos n={standingB} />
-                <span className="truncate">{teamBName}</span>
-            </span>
-        </div>
+    const cls = cn(
+        'flex items-center gap-2 py-2.5 px-3 rounded-lg border border-transparent text-sm min-h-[48px]',
+        linkable && 'hover:bg-surface-2 hover:border-border-hairline active:scale-[0.99] transition-all',
+        (phase === 'live') && 'bg-semantic-red/5 border-semantic-red/20',
+        className,
     )
+    if (!linkable) return <div className={cls}>{body}</div>
+    return <Link to={`/match/${m.match_id}`} className={cls}>{body}</Link>
 }

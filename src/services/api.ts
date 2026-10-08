@@ -138,7 +138,8 @@ export async function fetchAPIData<T>(
                         if (data?.call?.status?.toLowerCase() === 'ok') return data as T
                     }
                 }
-                if (response.status === 404) throw new APINotFoundError(`Tietoja ei löydy (${endpoint} 404)`)
+                // Taso answers an unknown id with 403 (seen for getMatch). After the cache-bust retry, that means "not found".
+                if (response.status === 404 || response.status === 403) throw new APINotFoundError(`Tietoja ei löydy (${endpoint} ${response.status})`)
                 if (response.status >= 400 && response.status < 500 && response.status !== 403) {
                     throw new APIHttpError(`API-virhe ${endpoint}: ${response.status}`)
                 }
@@ -289,5 +290,106 @@ export async function getGroupFull(competitionId: string, categoryId: string, gr
     return withCache('getGroup', params, async () => {
         const data = await fetchAPIData<{ group: GroupResponse }>('getGroup', { ...params, matches: 1 }, signal)
         return data.group || null
+    })
+}
+
+export interface SearchResult {
+    type: 'team' | 'player' | 'club' | string
+    id: string
+    text: string
+    data?: Record<string, string | undefined>
+}
+
+/** Taso search: players need first + last name, teams and clubs match on part of the name. */
+export async function searchTaso(text: string, signal?: AbortSignal): Promise<SearchResult[]> {
+    const q = text.trim()
+    if (q.length < 2) return []
+    const params = { text: q }
+    return withCache('search', params, async () => {
+        const data = await fetchAPIData<{ results?: SearchResult[] }>('search', params, signal)
+        return (data.results || []).filter(r => r && r.id && (r.type === 'team' || r.type === 'player' || r.type === 'club'))
+    })
+}
+
+export interface ClubTeam {
+    team_id: string
+    team_name: string
+    sport_id?: string
+    category_name?: string
+    season?: string
+}
+
+export interface ClubInfo {
+    club_id: string
+    name: string
+    city_name?: string
+    crest?: string
+    teams: ClubTeam[]
+}
+
+/** A club and its teams. Contact names, emails and phone numbers are dropped here on purpose. */
+export async function getClubInfo(clubId: string, signal?: AbortSignal): Promise<ClubInfo | null> {
+    const params = { club_id: clubId }
+    return withCache('getClub', params, async () => {
+        type RawTeam = { team_id?: string; team_name?: string; status?: string; sport_id?: string; primary_category?: { category_name?: string; competition_season?: string } | null }
+        const data = await fetchAPIData<{ club?: { club_id?: string; name?: string; city_name?: string; crest?: string; teams?: RawTeam[] } }>('getClub', params, signal)
+        const c = data.club
+        if (!c?.club_id) return null
+        return {
+            club_id: String(c.club_id),
+            name: String(c.name || ''),
+            city_name: c.city_name || undefined,
+            crest: c.crest || undefined,
+            teams: (c.teams || [])
+                .filter(t => t.team_id && t.status === 'active')
+                .map(t => ({
+                    team_id: String(t.team_id),
+                    team_name: String(t.team_name || ''),
+                    sport_id: t.sport_id || undefined,
+                    category_name: t.primary_category?.category_name || undefined,
+                    season: t.primary_category?.competition_season || undefined,
+                })),
+        }
+    })
+}
+
+export interface CategoryGroupInfo {
+    group_id: string
+    group_name: string
+    group_type?: string
+    current?: boolean
+    teams_count: number
+    notice?: string
+}
+
+export interface CategoryInfo {
+    competition_id: string
+    competition_name: string
+    category_id: string
+    category_name: string
+    groups: CategoryGroupInfo[]
+}
+
+/** Category with its group list. Works for leagues; cups often answer "not published". */
+export async function getCategoryInfo(competitionId: string, categoryId: string, signal?: AbortSignal): Promise<CategoryInfo> {
+    const params = { competition_id: competitionId, category_id: categoryId }
+    return withCache('getCategory', params, async () => {
+        type RawGroup = { group_id?: string; group_name?: string; group_type?: string; current?: string; teams?: unknown[]; group_notice?: string }
+        const data = await fetchAPIData<{ category?: { competition_name?: string; category_name?: string; groups?: RawGroup[] } }>('getCategory', params, signal)
+        const c = data.category || {}
+        return {
+            competition_id: competitionId,
+            competition_name: String(c.competition_name || ''),
+            category_id: categoryId,
+            category_name: String(c.category_name || ''),
+            groups: (c.groups || []).filter(g => g.group_id).map(g => ({
+                group_id: String(g.group_id),
+                group_name: String(g.group_name || g.group_id),
+                group_type: g.group_type || undefined,
+                current: g.current === '1',
+                teams_count: Array.isArray(g.teams) ? g.teams.length : 0,
+                notice: g.group_notice || undefined,
+            })),
+        }
     })
 }

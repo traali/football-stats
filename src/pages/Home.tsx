@@ -1,52 +1,109 @@
 import { useEffect, useMemo, useState } from 'react'
-import { motion } from 'framer-motion'
-import { Search, Trophy, Heart, Shield, ChevronRight, Calendar, MapPin, User } from 'lucide-react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Button } from '../components'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Trophy, Heart, Shield, ChevronRight, Calendar, MapPin, User, Trash2 } from 'lucide-react'
+import { Button, LiveBadge, MatchRow, PageLayout, SearchBox } from '../components'
 import { getTeamMatches, getTeamProfile } from '../services/api'
 import { listViewedMatches, type ViewedMatch } from '../services/viewedCache'
 import { useFavorites } from '../hooks/useFavorites'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { getTeamCategory } from '../utils/dataProcessors'
 import { APP_CONFIG, APP_NAME, FEATURED } from '../config'
 import type { DiscoveryMatch } from '../types'
-import { MATCH_STATUS } from '../types'
-import { PageLayout } from '../components'
-import { formatDate, formatTime, todayISO } from '../utils/dates'
-import { isMatchLive, pickHeroMatch } from '../utils/matchLive'
-
-import { getSavedTournaments, saveTournamentFromUrl, type SavedTournament } from '../services/tournamentStorage'
+import { formatDate, formatTime } from '../utils/dates'
+import { pickHeroMatch } from '../utils/matchLive'
+import { displayScore, helsinkiToday, isForfeit, matchPhase, byKickoffAsc } from '../domain/matchState'
+import { teamLabel } from '../utils/teamLabel'
+import { getSavedTournaments, removeTournament, saveTournament, tournamentPath, type SavedTournament } from '../services/tournamentStorage'
 import { getLastSelectedTeamId, normalizeTeamId, setLastSelectedTeamId, sortFavoritesByLastSelected } from '../services/teamSelection'
 import { parseTournamentUrl } from '../utils/tournamentUrl'
+
+const MAX_TODAY_TEAMS = 6
+
+function HeroCard({ match, teamName }: { match: DiscoveryMatch; teamName: string }) {
+    const navigate = useNavigate()
+    const phase = matchPhase(match)
+    const score = displayScore(match)
+    const forfeit = phase === 'result' && isForfeit(match)
+    const label = phase === 'live' ? null
+        : phase === 'awaiting' ? null
+            : phase === 'result' ? (forfeit ? 'Viimeisin ottelu · Luovutus' : 'Viimeisin ottelu')
+                : 'Seuraava ottelu'
+    const venue = String(match.venue_name || match.venue || match.venue_city_name || '')
+    return (
+        <button type="button" onClick={() => navigate(`/match/${match.match_id}`)} data-testid="hero-match"
+            className="w-full h-full text-left bg-surface-1 border border-border-hairline rounded-2xl p-4 hover:bg-surface-2 transition-colors">
+            <p className="text-[10px] font-bold uppercase tracking-widest mb-2 text-accent flex items-center gap-2">
+                {teamName}
+                {phase === 'live' && <LiveBadge />}
+                {phase === 'awaiting' && <LiveBadge awaiting />}
+                {label && <span className="text-text-muted">· {label}</span>}
+            </p>
+            <p className="text-lg font-bold text-text-primary">
+                {teamLabel(match.team_A_id, match.team_A_name, match.team_A_description as string | undefined)} – {teamLabel(match.team_B_id, match.team_B_name, match.team_B_description as string | undefined)}
+            </p>
+            <p className="font-mono text-2xl font-bold mt-1">{score ? `${score.a}–${score.b}` : 'vs'}</p>
+            <p className="text-sm text-text-secondary mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span className="flex items-center gap-1">
+                    <Calendar className="w-3.5 h-3.5" />
+                    {formatDate(match.date, 'with-year')} {formatTime(match.time)}
+                </span>
+                {venue && !forfeit && <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{venue}</span>}
+            </p>
+        </button>
+    )
+}
 
 export function Home() {
     const [matchId, setMatchId] = useState('')
     const [tournamentUrlInput, setTournamentUrlInput] = useState('')
     const [tournamentError, setTournamentError] = useState<string | null>(null)
-    const [savedTournaments, setSavedTournaments] = useState<SavedTournament[]>([])
+    const [savedTournaments, setSavedTournaments] = useState<SavedTournament[]>(() => getSavedTournaments())
     const [hero, setHero] = useState<DiscoveryMatch | null>(null)
-    const [viewed, setViewed] = useState<ViewedMatch[]>([])
-    const [loadingNext, setLoadingNext] = useState(true)
+    const [heroFailed, setHeroFailed] = useState(false)
+    const [todayMatches, setTodayMatches] = useState<{ teamId: string; teamName: string; match: DiscoveryMatch }[]>([])
+    const [viewed] = useState<ViewedMatch[]>(() => listViewedMatches().slice(0, 8))
+    const [loadingHero, setLoadingHero] = useState(true)
     const navigate = useNavigate()
     const [searchParams] = useSearchParams()
     const { favorites, updateName, favoritePlayers } = useFavorites()
+    useDocumentTitle('')
     const orderedFavorites = useMemo(
         () => sortFavoritesByLastSelected(favorites, getLastSelectedTeamId()),
         [favorites],
     )
 
+    // Featured team's hero game + today's games (Helsinki date) for the featured and favourite teams.
+    const todayTeamKey = useMemo(() => {
+        const ids = [FEATURED.teamId, ...orderedFavorites.map(f => f.id)]
+        return [...new Set(ids)].slice(0, MAX_TODAY_TEAMS).join(',')
+    }, [orderedFavorites])
     useEffect(() => {
-        setSavedTournaments(getSavedTournaments())
-        setViewed(listViewedMatches().slice(0, 8))
         const ctrl = new AbortController()
-        getTeamMatches(FEATURED.teamId, ctrl.signal)
-            .then(matches => {
-                const today = todayISO()
-                setHero(pickHeroMatch(matches, today))
+        const ids = todayTeamKey.split(',').filter(Boolean)
+        const today = helsinkiToday()
+        Promise.all(ids.map(id => getTeamMatches(id, ctrl.signal).then(ms => ({ id, ms, ok: true })).catch(() => ({ id, ms: [] as DiscoveryMatch[], ok: false }))))
+            .then(rows => {
+                if (ctrl.signal.aborted) return
+                const featured = rows.find(r => r.id === FEATURED.teamId)
+                setHero(featured?.ok ? pickHeroMatch(featured.ms) : null)
+                setHeroFailed(!featured?.ok)
+                setLoadingHero(false)
+                const seen = new Set<string>()
+                const out: { teamId: string; teamName: string; match: DiscoveryMatch }[] = []
+                for (const { id, ms } of rows) {
+                    for (const m of ms) {
+                        if (m.date !== today || seen.has(m.match_id)) continue
+                        if (matchPhase(m) === 'stale') continue
+                        seen.add(m.match_id)
+                        const name = String(m.team_A_id) === id ? m.team_A_name : m.team_B_name
+                        out.push({ teamId: id, teamName: name, match: m })
+                    }
+                }
+                out.sort((a, b) => byKickoffAsc(a.match, b.match))
+                setTodayMatches(out)
             })
-            .catch(() => setHero(null))
-            .finally(() => setLoadingNext(false))
         return () => ctrl.abort()
-    }, [])
+    }, [todayTeamKey])
 
     useEffect(() => {
         const teamFromUrl = normalizeTeamId(searchParams.get('team'))
@@ -55,259 +112,168 @@ export function Home() {
         navigate(`/team/${teamFromUrl}`, { replace: true })
     }, [navigate, searchParams])
 
+    // Older favourites were saved with only an id: fill in the real name once.
     useEffect(() => {
-        if (favorites.length === 0) return
+        const legacy = favorites.filter(f => f.name === f.id || !f.category)
+        if (legacy.length === 0) return
         let cancelled = false
-        const legacyFavorites = favorites.filter(f => f.name === f.id || !f.category)
-        if (legacyFavorites.length === 0) return
-        Promise.all(
-            legacyFavorites.map(f =>
-                getTeamProfile(f.id)
-                    .then(profile => {
-                        if (profile && !cancelled) {
-                            const category = getTeamCategory(profile, APP_CONFIG.CURRENT_YEAR)
-                            updateName(f.id, profile.team_name || f.id, category)
-                        }
-                    })
-                    .catch((err) => console.warn('[Home] getTeamProfile failed for favorite:', err)),
-            ),
-        )
+        legacy.forEach(f => {
+            getTeamProfile(f.id)
+                .then(profile => {
+                    if (profile && !cancelled) updateName(f.id, profile.team_name || f.id, getTeamCategory(profile, APP_CONFIG.CURRENT_YEAR))
+                })
+                .catch(() => { /* keep the saved name */ })
+        })
         return () => { cancelled = true }
     }, [favorites, updateName])
 
     const handleSubmit = (e?: React.FormEvent) => {
-        if (e) e.preventDefault()
+        e?.preventDefault()
         const trimmed = matchId.trim()
-        if (!trimmed) return
+        if (!/^\d+$/.test(trimmed)) return
         navigate(`/match/${trimmed}`)
     }
 
     const handleImportTournament = (e: React.FormEvent) => {
         e.preventDefault()
         setTournamentError(null)
-        const trimmed = tournamentUrlInput.trim()
-        if (!trimmed) return
-
-        const parsed = parseTournamentUrl(trimmed)
+        const parsed = parseTournamentUrl(tournamentUrlInput.trim())
         if (!parsed) {
-            setTournamentError('Virheellinen osoite. Liitä Torneopal-turnauksen joukkue- tai sarjasivun linkki.')
+            setTournamentError('Linkki ei kelpaa. Liitä tulospalvelu.palloliitto.fi-sarjan linkki tai Torneopal-linkki, jossa on turnaus ja sarja.')
             return
         }
-
-        saveTournamentFromUrl(trimmed)
+        saveTournament(parsed)
         setSavedTournaments(getSavedTournaments())
         setTournamentUrlInput('')
-
-        const hostParam = parsed.host ? `?host=${parsed.host}` : ''
-        navigate(`/turnaukset/${parsed.turnaus || 'turnaus'}/${parsed.sarja || 'sarja'}/${parsed.teamId || '0'}${hostParam}`)
+        navigate(`${tournamentPath(parsed)}${parsed.groupId ? `?lohko=${parsed.groupId}` : ''}`)
     }
-
-    const venue = hero ? String(hero.venue_name || hero.venue || hero.venue_city_name || '') : ''
-    const live = hero ? isMatchLive(hero) : false
-    const justPlayed = hero?.status === MATCH_STATUS.PLAYED
-    const label = live ? 'Käynnissä' : justPlayed ? 'Viimeisin ottelu' : 'Seuraava ottelu'
-    const score = justPlayed || live
-        ? `${hero?.fs_A ?? hero?.live_A ?? '-'} – ${hero?.fs_B ?? hero?.live_B ?? '-'}`
-        : null
 
     return (
         <PageLayout>
-            <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} className="space-y-1">
+            <div className="space-y-1">
                 <h1 className="text-3xl font-bold tracking-tight text-text-primary">{APP_NAME}</h1>
-                <p className="text-text-secondary text-sm">PPJ/Laru sin · P13 Kolmonen · Etelä</p>
-            </motion.div>
+                <p className="text-text-secondary text-sm">Ottelut, tulokset ja sarjataulukot suoraan Palloliiton tulospalvelusta.</p>
+            </div>
 
-            {orderedFavorites.length > 0 && (
+            <div className="grid gap-4 md:grid-cols-2 md:items-start">
+                <section aria-label="Haku">
+                    <SearchBox />
+                </section>
+                <section aria-label="Esittelyjoukkue" className="space-y-2">
+                    {loadingHero && <div className="animate-pulse bg-surface-1 rounded-2xl h-36" />}
+                    {hero && <HeroCard match={hero} teamName={FEATURED.teamName} />}
+                    {!loadingHero && !hero && heroFailed && (
+                        <p className="text-sm text-text-secondary bg-surface-1 border border-border-hairline rounded-2xl p-4">Otteluita ei saatu ladattua juuri nyt.</p>
+                    )}
+                    <Link to={`/team/${FEATURED.teamId}`}
+                        className="w-full bg-surface-1 border border-border-hairline rounded-xl px-4 min-h-[52px] flex items-center justify-between hover:bg-surface-2 transition-colors">
+                        <span className="flex items-center gap-3 min-w-0">
+                            <Shield className="w-5 h-5 text-accent shrink-0" />
+                            <span className="text-text-primary font-semibold truncate">{FEATURED.teamName} · joukkueen sivu</span>
+                        </span>
+                        <ChevronRight className="w-5 h-5 text-text-muted shrink-0" />
+                    </Link>
+                </section>
+            </div>
+
+            {todayMatches.length > 0 && (
+                <section className="bg-surface-1 border border-border-hairline rounded-xl p-3 space-y-1" data-testid="today-section">
+                    <h2 className="text-sm font-bold text-text-primary uppercase tracking-wider px-1">Tänään</h2>
+                    {todayMatches.map(({ teamId, match }) => (
+                        <MatchRow key={match.match_id} match={match} teamId={teamId} subtitle={String(match.category_name || '')} />
+                    ))}
+                </section>
+            )}
+
+            {(orderedFavorites.length > 0 || favoritePlayers.length > 0) && (
                 <section className="space-y-2">
-                    <h2 className="text-sm font-bold text-text-primary uppercase tracking-wider">Suosikkijoukkueet</h2>
-                    <div className="flex gap-2 overflow-x-auto pb-1 -mx-0.5 px-0.5">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
+                            <Heart className="w-4 h-4 text-semantic-red fill-semantic-red" /> Suosikit
+                        </h2>
+                        <Link to="/favorites" className="text-xs text-text-muted hover:text-accent min-h-[44px] leading-[44px]">
+                            Kaikki ({favorites.length + favoritePlayers.length})
+                        </Link>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
                         {orderedFavorites.map(fav => (
-                            <button
-                                key={`fav-chip-${fav.id}`}
-                                type="button"
-                                onClick={() => {
-                                    setLastSelectedTeamId(fav.id)
-                                    navigate(`/team/${fav.id}`)
-                                }}
-                                className="shrink-0 min-h-[44px] rounded-full border border-border-hairline bg-surface-1 hover:bg-surface-2 px-4 text-sm text-text-primary font-semibold transition-colors"
-                            >
-                                {fav.name}
-                            </button>
+                            <Link key={`t${fav.id}`} to={`/team/${fav.id}`} onClick={() => setLastSelectedTeamId(fav.id)}
+                                className="bg-surface-1 border border-border-hairline rounded-xl p-3 flex items-center gap-3 hover:bg-surface-2 min-h-[52px]">
+                                <Shield className="w-5 h-5 text-accent shrink-0" />
+                                <span className="min-w-0">
+                                    <span className="block text-text-primary text-sm font-semibold truncate">{fav.name}</span>
+                                    {fav.category && <span className="block text-text-muted text-xs truncate">{fav.category}</span>}
+                                </span>
+                            </Link>
+                        ))}
+                        {favoritePlayers.map(p => (
+                            <Link key={`p${p.id}`} to={`/player/${p.id}`}
+                                className="bg-surface-1 border border-border-hairline rounded-xl p-3 flex items-center gap-3 hover:bg-surface-2 min-h-[52px]">
+                                {p.img_url ? <img src={p.img_url} alt="" className="w-7 h-7 rounded-full object-cover shrink-0" /> : <User className="w-5 h-5 text-accent shrink-0" />}
+                                <span className="min-w-0">
+                                    <span className="block text-text-primary text-sm font-semibold truncate">{p.name}</span>
+                                    <span className="block text-text-muted text-xs truncate">{p.teamName || 'Pelaaja'}</span>
+                                </span>
+                            </Link>
                         ))}
                     </div>
                 </section>
             )}
 
-            <section>
-                {loadingNext && <div className="animate-pulse bg-surface-1 rounded-xl h-28" />}
-                {hero && (
-                    <button type="button" onClick={() => navigate(`/match/${hero.match_id}`)}
-                        className="w-full text-left bg-surface-1 border border-border-hairline rounded-2xl p-4 hover:bg-surface-2 transition-colors">
-                        <p className={`text-[10px] font-bold uppercase tracking-widest mb-2 ${live ? 'text-semantic-red' : 'text-accent'}`}>{label}</p>
-                        <p className="text-lg font-bold text-text-primary">{hero.team_A_name} – {hero.team_B_name}</p>
-                        {score && <p className="font-mono text-xl font-bold mt-1">{score}</p>}
-                        <p className="text-sm text-text-secondary mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
-                            <span className="flex items-center gap-1">
-                                <Calendar className="w-3.5 h-3.5" />
-                                {formatDate(hero.date, 'with-year')} {live && String(hero.time || '').includes("'") ? hero.time : formatTime(hero.time)}
-                            </span>
-                            {venue && <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{venue}</span>}
-                        </p>
-                    </button>
-                )}
-            </section>
-
-            <section>
-                <button type="button" onClick={() => navigate(`/team/${FEATURED.teamId}`)}
-                    className="w-full bg-surface-1 border border-border-hairline rounded-xl p-4 flex items-center justify-between hover:bg-surface-2 transition-colors">
-                    <div className="flex items-center gap-3 min-w-0">
-                        <Shield className="w-6 h-6 text-accent shrink-0" />
-                        <div className="min-w-0 text-left">
-                            <p className="text-text-primary font-semibold truncate">{FEATURED.teamName}</p>
-                            <p className="text-text-muted text-xs">Joukkue · Syksy 1 · {FEATURED.calendarNote}</p>
-                        </div>
-                    </div>
-                    <ChevronRight className="w-5 h-5 text-text-muted shrink-0" />
-                </button>
-            </section>
-
             {viewed.length > 0 && (
+                <section className="bg-surface-1 border border-border-hairline rounded-xl p-3 space-y-1">
+                    <h2 className="text-sm font-bold text-text-primary uppercase tracking-wider px-1">Viimeksi avatut ottelut</h2>
+                    {viewed.map(({ match }) => <MatchRow key={match.match_id} match={match} />)}
+                </section>
+            )}
+
+            {savedTournaments.length > 0 && (
                 <section className="space-y-2">
-                    <h2 className="text-sm font-bold text-text-primary uppercase tracking-wider">Avatut ottelut</h2>
-                    {viewed.map(({ match }) => (
-                        <button key={match.match_id} type="button" onClick={() => navigate(`/match/${match.match_id}`)}
-                            className="w-full text-left bg-surface-1 border border-border-hairline rounded-xl px-3 py-2.5 flex items-center justify-between hover:bg-surface-2">
-                            <span className="text-xs text-text-muted w-20 shrink-0">{formatDate(match.date, 'with-year')}</span>
-                            <span className="text-sm text-text-primary truncate flex-1 px-2">{match.team_A_name} – {match.team_B_name}</span>
-                            <span className="font-mono text-xs shrink-0">{match.status === MATCH_STATUS.PLAYED || isMatchLive(match) ? `${match.fs_A ?? '–'}–${match.fs_B ?? '–'}` : 'vs'}</span>
-                        </button>
+                    <h2 className="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
+                        <Trophy className="w-4 h-4 text-accent" /> Tallennetut turnaukset
+                    </h2>
+                    {savedTournaments.map(t => (
+                        <div key={t.id} className="bg-surface-1 border border-border-hairline rounded-xl flex items-center">
+                            <Link to={tournamentPath(t)} className="flex-1 min-w-0 p-4 min-h-[52px] hover:bg-surface-2 rounded-l-xl">
+                                <span className="block text-text-primary font-semibold text-sm truncate">{t.title}</span>
+                                <span className="block text-text-muted text-xs mt-0.5 truncate">{[t.teamName, t.category].filter(Boolean).join(' · ')}</span>
+                            </Link>
+                            <button type="button" aria-label={`Poista ${t.title}`}
+                                onClick={() => { removeTournament(t.id); setSavedTournaments(getSavedTournaments()) }}
+                                className="shrink-0 w-12 h-12 flex items-center justify-center text-text-muted hover:text-semantic-red">
+                                <Trash2 className="w-4 h-4" />
+                            </button>
+                        </div>
                     ))}
                 </section>
             )}
 
-            {(favorites.length > 0 || favoritePlayers.length > 0) && (
-                <section className="space-y-3">
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
-                            <Heart className="w-4 h-4 text-semantic-red fill-semantic-red" /> Suosikit
-                        </h2>
-                        <button
-                            type="button"
-                            onClick={() => navigate('/favorites')}
-                            className="text-xs text-text-muted hover:text-accent transition-colors"
-                        >
-                            Kaikki ({favorites.length + favoritePlayers.length})
-                        </button>
-                    </div>
-
-                    {/* Favorite Players */}
-                    {favoritePlayers.length > 0 && (
-                        <div className="space-y-1.5">
-                            <p className="text-[11px] font-bold uppercase tracking-wider text-text-muted">Pelaajat</p>
-                            <div className="grid grid-cols-2 gap-2">
-                                {favoritePlayers.map(p => (
-                                    <div
-                                        key={p.id}
-                                        onClick={() => navigate(`/player/${p.id}`)}
-                                        className="bg-surface-1 border border-border-hairline rounded-xl p-3 flex items-center gap-2.5 cursor-pointer hover:bg-surface-2 min-h-[52px] transition-colors"
-                                    >
-                                        <div className="w-8 h-8 rounded-full bg-surface-3 border border-border-hairline flex items-center justify-center shrink-0">
-                                            {p.img_url ? (
-                                                <img src={p.img_url} alt="" className="w-full h-full rounded-full object-cover" />
-                                            ) : (
-                                                <User className="w-4 h-4 text-text-muted" />
-                                            )}
-                                        </div>
-                                        <div className="min-w-0">
-                                            <p className="text-text-primary text-xs font-semibold truncate">{p.name}</p>
-                                            <p className="text-text-muted text-[10px] truncate">{p.teamName || 'Pelaaja'}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Favorite Teams */}
-                    {orderedFavorites.length > 0 && (
-                        <div className="space-y-1.5">
-                            {favoritePlayers.length > 0 && <p className="text-[11px] font-bold uppercase tracking-wider text-text-muted">Joukkueet</p>}
-                            <div className="grid grid-cols-2 gap-2">
-                                {orderedFavorites.map(fav => (
-                                    <div key={fav.id} onClick={() => { setLastSelectedTeamId(fav.id); navigate(`/team/${fav.id}`) }}
-                                        className="bg-surface-1 border border-border-hairline rounded-xl p-3 flex items-center gap-3 cursor-pointer hover:bg-surface-2 min-h-[52px] transition-colors">
-                                        <Shield className="w-5 h-5 text-accent shrink-0" />
-                                        <div className="min-w-0">
-                                            <p className="text-text-primary text-sm font-semibold truncate">{fav.name}</p>
-                                            {fav.category && <p className="text-text-muted text-xs truncate">{fav.category}</p>}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </section>
-            )}
-
-            <section className="space-y-3">
-                <div className="flex items-center justify-between">
-                    <h2 className="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
-                        <Trophy className="w-4 h-4 text-accent" /> Turnaukset ja Cupit
-                    </h2>
-                </div>
-                <div className="space-y-2">
-                    {savedTournaments.map(t => {
-                        const hostParam = t.host ? `?host=${t.host}` : ''
-                        const link = `/turnaukset/${t.turnaus}/${t.sarja}/${t.teamId}${hostParam}`
-                        return (
-                            <div
-                                key={t.id}
-                                onClick={() => navigate(link)}
-                                className="bg-surface-1 border border-border-hairline rounded-xl p-4 flex items-center justify-between cursor-pointer hover:bg-surface-2 transition-colors min-h-[44px]"
-                            >
-                                <div>
-                                    <p className="text-text-primary font-semibold text-sm">{t.title}</p>
-                                    <p className="text-text-muted text-xs mt-0.5">{t.teamName} · {t.category}</p>
-                                </div>
-                                <ChevronRight className="w-5 h-5 text-text-muted" />
-                            </div>
-                        )
-                    })}
-                </div>
-            </section>
-
             <details className="bg-surface-1 border border-border-hairline rounded-xl p-4">
-                <summary className="cursor-pointer text-sm font-semibold text-text-primary flex items-center gap-2">
-                    <Trophy className="w-4 h-4 text-accent" /> Tuo turnaus linkillä
+                <summary className="cursor-pointer text-sm font-semibold text-text-primary flex items-center gap-2 min-h-[28px]">
+                    <Trophy className="w-4 h-4 text-accent" /> Lisää turnaus linkillä
                 </summary>
                 <form onSubmit={handleImportTournament} className="mt-3 space-y-2">
                     <p className="text-xs text-text-secondary">
-                        Liitä Torneopal-turnauksen joukkue- tai sarjasivun osoite (esim. vierumaki-turnaus, helsinkicup jne.):
+                        Liitä turnauksen sarjan linkki Palloliiton tulospalvelusta, esim. tulospalvelu.palloliitto.fi/category/B13-8!hc2026.
                     </p>
                     <div className="flex gap-2">
-                        <input
-                            type="url"
-                            value={tournamentUrlInput}
-                            onChange={(e) => { setTournamentUrlInput(e.target.value); setTournamentError(null) }}
-                            placeholder="https://vierumaki-turnaus5-2026.torneopal.fi/taso/joukkue.php?..."
-                            className="flex-1 bg-surface-2 border border-border-hairline rounded-lg px-3 py-2 text-text-primary text-xs font-mono"
-                        />
-                        <Button type="submit">Tuo</Button>
+                        <input type="url" inputMode="url" value={tournamentUrlInput}
+                            onChange={e => { setTournamentUrlInput(e.target.value); setTournamentError(null) }}
+                            aria-label="Turnauksen linkki"
+                            placeholder="https://tulospalvelu.palloliitto.fi/category/…"
+                            className="flex-1 min-w-0 bg-surface-2 border border-border-hairline rounded-lg px-3 py-2 text-text-primary text-sm" />
+                        <Button type="submit">Lisää</Button>
                     </div>
-                    {tournamentError && (
-                        <p className="text-xs text-semantic-red font-medium">{tournamentError}</p>
-                    )}
+                    {tournamentError && <p className="text-xs text-semantic-red font-medium">{tournamentError}</p>}
                 </form>
             </details>
 
             <details className="bg-surface-1 border border-border-hairline rounded-xl p-4">
-                <summary className="cursor-pointer text-sm font-semibold text-text-primary flex items-center gap-2">
-                    <Search className="w-4 h-4 text-accent" /> Hae ottelu tunnuksella
-                </summary>
+                <summary className="cursor-pointer text-sm font-semibold text-text-secondary min-h-[28px]">Avaa ottelu tunnuksella</summary>
                 <form onSubmit={handleSubmit} className="mt-3 flex gap-2">
-                    <input type="text" value={matchId} onChange={(e) => setMatchId(e.target.value)}
-                        placeholder="Ottelun tunnus"
-                        className="flex-1 bg-surface-2 border border-border-hairline rounded-lg px-3 py-2 text-text-primary text-sm" />
+                    <input type="text" inputMode="numeric" pattern="[0-9]*" value={matchId} onChange={e => setMatchId(e.target.value)}
+                        aria-label="Ottelun tunnus" placeholder="esim. 4208631"
+                        className="flex-1 min-w-0 bg-surface-2 border border-border-hairline rounded-lg px-3 py-2 text-text-primary text-sm" />
                     <Button type="submit">Avaa</Button>
                 </form>
             </details>

@@ -48,6 +48,7 @@ export interface StandingTeam {
     goals_against: string | number
     goals_diff: string | number
     points: string | number
+    points_per_match?: string | number
 }
 
 export interface GroupDetails {
@@ -55,6 +56,10 @@ export interface GroupDetails {
     group_name: string
     category_name: string
     competition_name: string
+    competition_id?: string
+    category_id?: string
+    group_type?: string
+    show_points_per_match?: string | number
     teams: StandingTeam[]
     matches: MatchSummary[]
 }
@@ -66,6 +71,8 @@ export interface GroupResponse {
     category_name?: string
     group_id?: string
     group_name?: string
+    group_type?: string
+    show_points_per_match?: string | number
     teams?: StandingTeam[]
     matches?: MatchSummary[]
     player_statistics?: PlayerStatsEntry[]

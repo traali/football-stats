@@ -1,0 +1,28 @@
+{
+ "call": {
+  "parameters": {},
+  "logged_in": false,
+  "method": "search",
+  "status": "ok",
+  "text": "Simo Oinonen",
+  "result_count": 1,
+  "debug_count": 1,
+  "result_time": 0.225,
+  "apilevel": "1",
+  "time_stamp": 1791431803
+ },
+ "results": [
+  {
+   "type": "player",
+   "id": "535740",
+   "text": "Simo Oinonen",
+   "data": {
+    "club_id_football": "52",
+    "club_name_football": "Pallo-Pojat Juniorit",
+    "club_id_futsal": "52",
+    "club_name_futsal": "Pallo-Pojat Juniorit",
+    "shirt_name": ""
+   }
+  }
+ ]
+}
