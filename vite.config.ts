@@ -1,8 +1,11 @@
-import { defineConfig } from 'vite'
+import { copyFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import { execSync } from 'child_process'
+import { pathFormTarget } from './src/utils/pathForm'
 
 const commitHash = (() => {
   try {
@@ -12,7 +15,32 @@ const commitHash = (() => {
   }
 })()
 const buildTime = new Date().toISOString()
-const base = process.env.GITHUB_PAGES === '1' ? '/football-stats/' : '/'
+const isGitHubPages = process.env.GITHUB_PAGES === '1'
+const base = isGitHubPages ? '/football-stats/' : '/'
+
+/**
+ * Path-form links (/match/<id>, /team/<id>, /player/<id>) open the hash route.
+ * - Runs inline in <head>, before the bundle, with the build's base path.
+ * - Cloudflare Pages: no 404.html, so every deep path gets index.html (SPA fallback).
+ * - GitHub Pages: 404.html is a copy of index.html, so deep paths get the same page.
+ * Asset URLs stay absolute (base), so a deep path never resolves a script to index.html.
+ */
+function pathFormForward(): Plugin {
+    let outDir = 'dist'
+    return {
+        name: 'path-form-forward',
+        configResolved(config) {
+            outDir = resolve(config.root, config.build.outDir)
+        },
+        transformIndexHtml() {
+            const code = `(function(){var t=(${pathFormTarget.toString()})(location.pathname,location.search,location.hash,${JSON.stringify(base)});if(t)location.replace(t)})()`
+            return [{ tag: 'script', children: code, injectTo: 'head' }]
+        },
+        writeBundle() {
+            if (isGitHubPages) copyFileSync(resolve(outDir, 'index.html'), resolve(outDir, '404.html'))
+        },
+    }
+}
 
 export default defineConfig({
     base,
@@ -22,6 +50,7 @@ export default defineConfig({
         __BUILD_TIME__: JSON.stringify(buildTime),
     },
     plugins: [
+        pathFormForward(),
         react(),
         tailwindcss(),
         VitePWA({
