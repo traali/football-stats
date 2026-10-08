@@ -32,9 +32,15 @@ function pathFormForward(): Plugin {
         configResolved(config) {
             outDir = resolve(config.root, config.build.outDir)
         },
-        transformIndexHtml() {
-            const code = `(function(){var t=(${pathFormTarget.toString()})(location.pathname,location.search,location.hash,${JSON.stringify(base)});if(t)location.replace(t)})()`
-            return [{ tag: 'script', children: code, injectTo: 'head' }]
+        // Replaces the <!-- path-form-forward --> marker at the top of <head>, before any
+        // module script, so the redirect happens before the router ever starts.
+        transformIndexHtml: {
+            order: 'pre',
+            handler(html) {
+                const code = `(function(){var t=(${pathFormTarget.toString()})(location.pathname,location.search,location.hash,${JSON.stringify(base)});if(t)location.replace(t)})()`
+                if (!html.includes('<!-- path-form-forward -->')) throw new Error('index.html lost the <!-- path-form-forward --> marker')
+                return html.replace('<!-- path-form-forward -->', `<script>${code}</script>`)
+            },
         },
         writeBundle() {
             if (isGitHubPages) copyFileSync(resolve(outDir, 'index.html'), resolve(outDir, '404.html'))
