@@ -1,25 +1,32 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Calendar } from 'lucide-react'
+import { Calendar, Radio } from 'lucide-react'
 import type { DiscoveryMatch, TeamResponse } from '../types'
-import { Card, MatchRowPast, MatchRowFixture } from '.'
-import { isUpcomingDate } from '../utils/dates'
+import { Card } from './Card'
+import { MatchRow } from './MatchRow'
 import { TeamStandingsBlock } from './TeamStandingsBlock'
 import { useTeamStandings } from '../hooks/useTeamStandings'
 import { getTeamProfile } from '../services/api'
 import { APP_CONFIG } from '../config'
 
-export function TeamMatchList({ upcoming, pastMatches, teamId, team, year }: {
+function subtitleOf(m: DiscoveryMatch): string | undefined {
+    const bits = [m.category_name, m.group_name].filter(Boolean) as string[]
+    return bits.length ? bits.join(' · ') : undefined
+}
+
+export function TeamMatchList({ onNow, upcoming, pastMatches, teamId, team, year, pastLabel }: {
+    onNow: DiscoveryMatch[]
     upcoming: DiscoveryMatch[]
     pastMatches: DiscoveryMatch[]
     teamId: string
     team?: TeamResponse | null
     year?: string
+    pastLabel?: string
 }) {
     const [resolved, setResolved] = useState<TeamResponse | null>(team || null)
     useEffect(() => {
         if (team) { setResolved(team); return }
         let cancelled = false
-        getTeamProfile(teamId).then(t => { if (!cancelled) setResolved(t) }).catch((err) => console.warn('[TeamMatchList] getTeamProfile failed:', err))
+        getTeamProfile(teamId).then(t => { if (!cancelled) setResolved(t) }).catch(() => { /* table is optional */ })
         return () => { cancelled = true }
     }, [team, teamId])
 
@@ -33,66 +40,52 @@ export function TeamMatchList({ upcoming, pastMatches, teamId, team, year }: {
         return map
     }, [group])
 
-    const future = upcoming.filter(m => isUpcomingDate(m.date))
     return (
         <div className="space-y-6">
-            <TeamStandingsBlock team={resolved} teamId={teamId} year={tableYear} />
-
-            {future.length > 0 && (
-                <Card className="space-y-3">
+            {onNow.length > 0 && (
+                <Card className="space-y-3 border-semantic-red/30">
                     <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-accent animate-pulse" /> Tulevat ottelut
+                        <Radio className="w-4 h-4 text-semantic-red" /> Nyt käynnissä
                     </h3>
                     <div className="space-y-1">
-                        {future.map(m => (
-                            <MatchRowFixture
-                                key={m.match_id}
-                                matchId={m.match_id}
-                                date={m.date}
-                                teamAName={m.team_A_name}
-                                teamBName={m.team_B_name}
-                                standingA={pos[m.team_A_id]}
-                                standingB={pos[m.team_B_id]}
-                            />
+                        {onNow.map(m => (
+                            <MatchRow key={m.match_id} match={m} teamId={teamId} standings={pos} subtitle={subtitleOf(m)} />
                         ))}
                     </div>
                 </Card>
             )}
 
-            {pastMatches.length > 0 && (
+            {upcoming.length > 0 && (
                 <Card className="space-y-3">
                     <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-accent" /> Pelatut ottelut
+                        <Calendar className="w-4 h-4 text-accent" /> Tulevat ottelut
                     </h3>
                     <div className="space-y-1">
-                        {pastMatches.map(m => {
-                            const isA = m.team_A_id === teamId
-                            const myScore = isA ? m.fs_A : m.fs_B
-                            const oppScore = isA ? m.fs_B : m.fs_A
-                            const oppId = isA ? m.team_B_id : m.team_A_id
-                            const wld: 'V' | 'H' | 'T' | undefined = m.fs_A && m.fs_B
-                                ? (Number(isA ? m.fs_A : m.fs_B) > Number(isA ? m.fs_B : m.fs_A) ? 'V' : Number(isA ? m.fs_A : m.fs_B) < Number(isA ? m.fs_B : m.fs_A) ? 'H' : 'T')
-                                : undefined
-                            return (
-                                <MatchRowPast
-                                    key={m.match_id}
-                                    matchId={m.match_id}
-                                    date={m.date}
-                                    opponentName={isA ? m.team_B_name : m.team_A_name}
-                                    myScore={myScore}
-                                    oppScore={oppScore}
-                                    resultIndicator={wld}
-                                    opponentStanding={pos[oppId]}
-                                />
-                            )
-                        })}
+                        {upcoming.map(m => (
+                            <MatchRow key={m.match_id} match={m} teamId={teamId} standings={pos} subtitle={subtitleOf(m)} />
+                        ))}
                     </div>
                 </Card>
             )}
 
-            {pastMatches.length === 0 && future.length === 0 && (
+            <TeamStandingsBlock team={resolved} teamId={teamId} year={tableYear} />
+
+            {pastMatches.length > 0 && (
+                <Card className="space-y-3">
+                    <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-accent" /> Pelatut ottelut{pastLabel ? ` · ${pastLabel}` : ''}
+                    </h3>
+                    <div className="space-y-1">
+                        {pastMatches.map(m => (
+                            <MatchRow key={m.match_id} match={m} teamId={teamId} standings={pos} subtitle={subtitleOf(m)} />
+                        ))}
+                    </div>
+                </Card>
+            )}
+
+            {pastMatches.length === 0 && upcoming.length === 0 && onNow.length === 0 && (
                 <Card className="py-8 text-center">
-                    <p className="text-text-muted text-sm">Ei otteluita</p>
+                    <p className="text-text-muted text-sm">Ei otteluita tällä rajauksella.</p>
                 </Card>
             )}
         </div>

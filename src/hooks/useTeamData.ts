@@ -1,13 +1,14 @@
 import { useEffect, useState, useMemo, useRef } from 'react'
 import { getTeamProfile, getTeamMatches, getGroupFull, batchFetch } from '../services/api'
 import { useFavorites } from './useFavorites'
-import { MATCH_STATUS } from '../types'
+import { isResult, outcomeFor, splitMatches } from '../domain/matchState'
 import type { TeamResponse, DiscoveryMatch } from '../types'
 import { APP_CONFIG } from '../config'
+import { friendlyError } from '../utils/friendlyError'
 import { parsePlayerName } from '../utils/names'
 import { mergeRoster, type RosterPlayer } from './rosterMerge'
 import { getCurrentSeason, halfOf, resolveActiveSeason } from '../utils/dates'
-import { parseSeasonHalf } from '../domain/eligibility/seasonHalf'
+import { parseSeasonHalf } from '../utils/seasonHalf'
 
 type PlayerEntry = RosterPlayer
 
@@ -22,12 +23,6 @@ interface YearStats {
     ppg: number; goalsScoredPerMatch: number; goalsConcededPerMatch: number
 }
 
-interface PerformanceComparison {
-    targetYear: string; prevYear: string; currentPPG: number; prevPPG: number | null
-    trend: 'better' | 'worse' | 'neutral'; ppgDiff: number | null; ppgDiffStr: string
-    currentGoalsScored: number; prevGoalsScored: number | null
-    currentGoalsConceded: number; prevGoalsConceded: number | null
-}
 
 interface PlayerTransitions {
     targetYear: string; prevYear: string; hasComparisonData: boolean
@@ -41,6 +36,8 @@ export function useTeamData(teamId: string | undefined) {
     const [matches, setMatches] = useState<DiscoveryMatch[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const [reloadTick, setReloadTick] = useState(0)
+    const reload = () => { setError(null); setReloadTick(t => t + 1) }
     const [tab, setTab] = useState<'roster' | 'matches'>('matches')
     const [selectedYear, setSelectedYearState] = useState<string>(currentSeason.year)
     const [selectedHalf, setSelectedHalfState] = useState<'all' | 'kevät' | 'syksy'>(currentSeason.half)
@@ -63,6 +60,7 @@ export function useTeamData(teamId: string | undefined) {
         const controller = new AbortController()
         abortRef.current = controller
         setLoading(true)
+        setError(null)
         Promise.all([
             getTeamProfile(teamId, controller.signal),
             getTeamMatches(teamId, controller.signal),
@@ -73,10 +71,10 @@ export function useTeamData(teamId: string | undefined) {
             })
             .catch(e => {
                 if (controller.signal.aborted) return
-                setError(e.message); setLoading(false)
+                setError(friendlyError(e, 'Joukkueen tietoja')); setLoading(false)
             })
         return () => { controller.abort() }
-    }, [teamId])
+    }, [teamId, reloadTick])
 
     useEffect(() => {
         if (seasonTouched.current || !matches.length) return
@@ -87,9 +85,9 @@ export function useTeamData(teamId: string | undefined) {
 
     const players = team?.players || []
     const allowedYears = useMemo(() => {
-        const currentYear = new Date().getFullYear()
+        const currentYear = Number(currentSeason.year)
         return [currentYear, currentYear - 1, currentYear - 2, currentYear - 3].map(String)
-    }, [])
+    }, [currentSeason.year])
 
     const filteredMatches = useMemo(() => matches.filter(m => {
         if (!m.date) return false
@@ -104,11 +102,14 @@ export function useTeamData(teamId: string | undefined) {
 
     const relevantGroups = useMemo(() => {
         if (!team?.groups) return []
-        return (team.groups as Array<{ competition_season?: string | number; competition_id?: string; category_id?: string; group_id?: string }>).filter(g => {
-            const season = g.competition_season ? String(g.competition_season) : ''
-            return !!season && allowedYears.includes(season)
-        })
-    }, [team, allowedYears])
+        const yearOfComp = new Map<string, string>()
+        for (const m of matches) {
+            if (m.competition_id && m.date && !yearOfComp.has(String(m.competition_id))) yearOfComp.set(String(m.competition_id), m.date.slice(0, 4))
+        }
+        return (team.groups as Array<{ competition_season?: string | number; competition_id?: string; category_id?: string; group_id?: string }>)
+            .map(g => ({ ...g, competition_season: g.competition_season ? String(g.competition_season) : (yearOfComp.get(String(g.competition_id || '')) || '') }))
+            .filter(g => !!g.competition_season && allowedYears.includes(String(g.competition_season)))
+    }, [team, allowedYears, matches])
 
     useEffect(() => {
         if (!teamId || relevantGroups.length === 0) return
@@ -242,21 +243,23 @@ export function useTeamData(teamId: string | undefined) {
         const empty = (): YearStats => ({ played: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, diffStr: '0', ppg: 0, goalsScoredPerMatch: 0, goalsConcededPerMatch: 0 })
         map.set('all', empty())
         filteredMatches.forEach(m => {
-            if (m.status !== MATCH_STATUS.PLAYED || !m.date) return
+            if (!m.date || !teamId) return
+            const outcome = outcomeFor(m, teamId)
+            if (!outcome) return
             const year = m.date.slice(0, 4)
             let s = map.get(year)
             if (!s) { s = empty(); map.set(year, s) }
-            s.played++; map.get('all')!.played++
-            const isA = m.team_A_id === teamId
-            const myScore = parseInt(isA ? m.fs_A || '0' : m.fs_B || '0', 10)
-            const oppScore = parseInt(isA ? m.fs_B || '0' : m.fs_A || '0', 10)
-            if (isNaN(myScore) || isNaN(oppScore)) return
-            s.goalsFor += myScore; s.goalsAgainst += oppScore
             const all = map.get('all')!
-            all.goalsFor += myScore; all.goalsAgainst += oppScore
-            if (myScore > oppScore) { s.wins++; all.wins++ }
-            else if (myScore < oppScore) { s.losses++; all.losses++ }
-            else { s.draws++; all.draws++ }
+            const isA = m.team_A_id === teamId
+            const myScore = Number(isA ? m.fs_A : m.fs_B)
+            const oppScore = Number(isA ? m.fs_B : m.fs_A)
+            for (const t of [s, all]) {
+                t.played++
+                t.goalsFor += myScore; t.goalsAgainst += oppScore
+                if (outcome === 'V') t.wins++
+                else if (outcome === 'H') t.losses++
+                else t.draws++
+            }
         })
         for (const s of map.values()) {
             if (s.played > 0) {
@@ -272,7 +275,7 @@ export function useTeamData(teamId: string | undefined) {
 
     const displayStats = useMemo(() => {
         const matchesForStats = filteredMatches.filter(m => {
-            if (m.status !== MATCH_STATUS.PLAYED || !m.date) return false
+            if (!isResult(m) || !m.date) return false
             if (selectedYear !== 'all' && !m.date.startsWith(selectedYear)) return false
             if (selectedYear !== 'all' && selectedHalf !== 'all' && halfOf(m.date) !== selectedHalf) return false
             return true
@@ -280,15 +283,14 @@ export function useTeamData(teamId: string | undefined) {
 
         const s: YearStats = { played: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, diffStr: '0', ppg: 0, goalsScoredPerMatch: 0, goalsConcededPerMatch: 0 }
         matchesForStats.forEach(m => {
+            const outcome = teamId ? outcomeFor(m, teamId) : null
+            if (!outcome) return
             s.played++
             const isA = m.team_A_id === teamId
-            const myScore = parseInt(isA ? m.fs_A || '0' : m.fs_B || '0', 10)
-            const oppScore = parseInt(isA ? m.fs_B || '0' : m.fs_A || '0', 10)
-            if (isNaN(myScore) || isNaN(oppScore)) return
-            s.goalsFor += myScore
-            s.goalsAgainst += oppScore
-            if (myScore > oppScore) s.wins++
-            else if (myScore < oppScore) s.losses++
+            s.goalsFor += Number(isA ? m.fs_A : m.fs_B)
+            s.goalsAgainst += Number(isA ? m.fs_B : m.fs_A)
+            if (outcome === 'V') s.wins++
+            else if (outcome === 'H') s.losses++
             else s.draws++
         })
         if (s.played > 0) {
@@ -301,30 +303,6 @@ export function useTeamData(teamId: string | undefined) {
         return s
     }, [filteredMatches, selectedYear, selectedHalf, teamId])
 
-    const performanceComparison = useMemo((): PerformanceComparison | null => {
-        const currentYear = years[0] || APP_CONFIG.CURRENT_YEAR
-        const targetYear = selectedYear === 'all' ? currentYear : selectedYear
-        const prevYear = String(parseInt(targetYear) - 1)
-        const currentStats = statsByYear.get(targetYear)
-        const prevStats = statsByYear.get(prevYear)
-        if (!currentStats || currentStats.played === 0) return null
-        const currentPPG = currentStats.ppg
-        const prevPPG = prevStats && prevStats.played > 0 ? prevStats.ppg : null
-        let trend: 'better' | 'worse' | 'neutral' = 'neutral'
-        let ppgDiffStr = ''
-        if (prevPPG !== null) {
-            const diff = currentPPG - prevPPG
-            trend = diff > 0.15 ? 'better' : diff < -0.15 ? 'worse' : 'neutral'
-            ppgDiffStr = diff > 0 ? `+${diff.toFixed(2)}` : diff.toFixed(2)
-        }
-        return {
-            targetYear, prevYear, currentPPG, prevPPG, trend, ppgDiff: prevPPG !== null ? currentPPG - prevPPG : null, ppgDiffStr,
-            currentGoalsScored: currentStats.goalsScoredPerMatch,
-            prevGoalsScored: prevStats && prevStats.played > 0 ? prevStats.goalsScoredPerMatch : null,
-            currentGoalsConceded: currentStats.goalsConcededPerMatch,
-            prevGoalsConceded: prevStats && prevStats.played > 0 ? prevStats.goalsConcededPerMatch : null,
-        }
-    }, [statsByYear, selectedYear, years])
 
     const playerTransitions = useMemo((): PlayerTransitions => {
         const currentYear = years[0] || APP_CONFIG.CURRENT_YEAR
@@ -364,46 +342,41 @@ export function useTeamData(teamId: string | undefined) {
         return map
     }, [team])
 
-    const pastMatches = useMemo(() => {
-        let filtered = filteredMatches.filter(m => m.status === MATCH_STATUS.PLAYED)
-        if (selectedYear !== 'all') filtered = filtered.filter(m => m.date && m.date.startsWith(selectedYear))
-        if (selectedYear !== 'all' && selectedHalf !== 'all') filtered = filtered.filter(m => halfOf(m.date) === selectedHalf)
-        return filtered.sort((a, b) => (b.date || '').localeCompare(a.date || ''))
-    }, [filteredMatches, selectedYear, selectedHalf])
+    // Live + upcoming are "now": never hidden by the season chips. Stale old fixtures never show.
+    const split = useMemo(() => splitMatches(matches), [matches])
+    const onNow = split.onNow
+    const upcoming = useMemo(() => split.upcoming.slice(0, 10), [split])
 
-    const upcoming = useMemo(() => {
-        let filtered = filteredMatches.filter(m => m.status === MATCH_STATUS.FIXTURE)
+    const pastMatches = useMemo(() => {
+        let filtered = split.results.filter(m => m.date && allowedYears.includes(m.date.slice(0, 4)))
         if (selectedYear !== 'all') filtered = filtered.filter(m => m.date && m.date.startsWith(selectedYear))
         if (selectedYear !== 'all' && selectedHalf !== 'all') filtered = filtered.filter(m => halfOf(m.date) === selectedHalf)
-        return filtered.sort((a, b) => (a.date || '').localeCompare(b.date || '')).slice(0, 10)
-    }, [filteredMatches, selectedYear, selectedHalf])
+        return filtered
+    }, [split, allowedYears, selectedYear, selectedHalf])
 
     const homeAwayStats = useMemo(() => {
         const home = { played: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0 }
         const away = { played: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0 }
         filteredMatches.forEach(m => {
-            if (m.status !== MATCH_STATUS.PLAYED || !m.date) return
+            const outcome = teamId ? outcomeFor(m, teamId) : null
+            if (!outcome || !m.date) return
             const isA = m.team_A_id === teamId
-            const myScore = parseInt(isA ? m.fs_A || '0' : m.fs_B || '0', 10)
-            const oppScore = parseInt(isA ? m.fs_B || '0' : m.fs_A || '0', 10)
-            if (isNaN(myScore) || isNaN(oppScore)) return
             const s = isA ? home : away
-            s.played++; s.goalsFor += myScore; s.goalsAgainst += oppScore
-            if (myScore > oppScore) s.wins++
-            else if (myScore < oppScore) s.losses++
+            s.played++; s.goalsFor += Number(isA ? m.fs_A : m.fs_B); s.goalsAgainst += Number(isA ? m.fs_B : m.fs_A)
+            if (outcome === 'V') s.wins++
+            else if (outcome === 'H') s.losses++
             else s.draws++
         })
         const ppg = (s: typeof home) => s.played > 0 ? ((s.wins * 3 + s.draws) / s.played).toFixed(2) : '-'
         return { home, away, homePPG: ppg(home), awayPPG: ppg(away) }
     }, [filteredMatches, teamId])
 
-    const last5Form = useMemo(() => pastMatches.slice(0, 5).map(m => {
-        const isA = m.team_A_id === teamId
-        const myScore = parseInt(isA ? m.fs_A || '0' : m.fs_B || '0', 10)
-        const oppScore = parseInt(isA ? m.fs_B || '0' : m.fs_A || '0', 10)
-        if (isNaN(myScore) || isNaN(oppScore)) return null
-        return myScore > oppScore ? 'V' as const : myScore < oppScore ? 'H' as const : 'T' as const
-    }).filter((r): r is 'V' | 'H' | 'T' => r !== null), [pastMatches, teamId])
+    // KUNTO = latest five results whatever the season chip says, oldest → newest.
+    const last5Form = useMemo(() => split.results
+        .map(m => (teamId ? outcomeFor(m, teamId) : null))
+        .filter((r): r is 'V' | 'H' | 'T' => r !== null)
+        .slice(0, 5)
+        .reverse(), [split, teamId])
 
     const currentScorers = useMemo(() => {
         const yr = selectedYear === 'all' ? (years[0] || APP_CONFIG.CURRENT_YEAR) : selectedYear
@@ -425,8 +398,8 @@ export function useTeamData(teamId: string | undefined) {
     return {
         team, matches, loading, error, tab, setTab, selectedYear, setSelectedYear,
         selectedHalf, setSelectedHalf,
-        players, allowedYears, years, statsByYear, displayStats, performanceComparison,
-        playerTransitions, categoriesByYear, pastMatches, upcoming, homeAwayStats, last5Form,
+        players, allowedYears, years, statsByYear, displayStats,
+        playerTransitions, categoriesByYear, pastMatches, upcoming, onNow, homeAwayStats, last5Form, reload,
         currentScorers, rosterPlayers, rosterYear, loadingPlayers, historyError,
         historicalPlayersByYear, historicalPlayersByHalf, teamTopScorers, teamTopScorersByHalf, fav, isFavorite, toggle,
         filteredMatches, relevantGroups,

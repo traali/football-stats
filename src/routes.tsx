@@ -12,6 +12,9 @@ import { CategoryPage } from './pages/CategoryPage'
 import { FavoritesPage } from './pages/FavoritesPage'
 import { TurnauksetPage } from './pages/TurnauksetPage'
 import { BottomNav } from './components/BottomNav'
+import { HakuPage } from './pages/HakuPage'
+import { ClubPage } from './pages/ClubPage'
+import { WebMcpTools } from './webmcp/WebMcpTools'
 
 function Layout() {
     const isEmbed =
@@ -40,7 +43,7 @@ function Layout() {
             {!isEmbed && (
                 <footer className="mt-8 mb-4 px-4 text-center">
                     <div className="inline-flex items-center gap-2 text-[11px] text-zinc-500">
-                        <span className="font-bold text-zinc-400">Football Stats</span>
+                        <span className="font-bold text-zinc-400">Jalkapallo · tiedot: Palloliiton tulospalvelu</span>
                         <span>•</span>
                         <span
                             data-testid="app-version-badge"
@@ -52,6 +55,7 @@ function Layout() {
                 </footer>
             )}
             {!isEmbed && <BottomNav />}
+            <WebMcpTools />
         </div>
     )
 }
@@ -68,10 +72,10 @@ export const router = createHashRouter([
             { path: '/competition/:compId/category/:catId', element: <CategoryPage /> },
             { path: '/group/:compId/:catId/:groupId', element: <GroupPage /> },
             { path: '/team/:teamId', element: <TeamPage /> },
-            { path: '/turnaukset/:turnaus/:sarja/*', element: <TurnauksetPage /> },
             { path: '/turnaukset/:turnaus/:sarja/:teamId', element: <TurnauksetPage /> },
             { path: '/turnaukset/:turnaus/:sarja', element: <TurnauksetPage /> },
-            { path: '/turnaukset/:turnaus/*', element: <TurnauksetPage /> },
+            { path: '/haku', element: <HakuPage /> },
+            { path: '/club/:clubId', element: <ClubPage /> },
             { path: '/player/:playerId', element: <PlayerPage /> },
             { path: '/favorites', element: <FavoritesPage /> },
             { path: '*', element: <NotFound /> },

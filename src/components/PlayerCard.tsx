@@ -2,23 +2,12 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, type Variants } from 'framer-motion'
 import { PlayerStats } from '../types'
-import { User, Shield, AlertTriangle, Target, Activity } from 'lucide-react'
+import { User, Shield, AlertTriangle, Target } from 'lucide-react'
 import { StatBadge } from './StatBadge'
-import type { PlayerEligibilityResult } from '../domain/eligibility'
 
 const cardVariants: Variants = {
     hidden: { opacity: 0, y: 16 },
     visible: { opacity: 1, y: 0 },
-}
-
-const LEVEL_FI: Record<string, string> = {
-    liiga: 'Liiga',
-    ykkonen: 'Ykkönen',
-    kakkonen: 'Kakkonen',
-    kolmonen: 'Kolmonen',
-    nelonen: 'Nelonen',
-    vitonen: 'Vitonen',
-    harraste: 'Harraste',
 }
 
 function GameBoxes({
@@ -58,11 +47,10 @@ function gdLabel(gf?: number, ga?: number): string {
     return `${gf}–${ga} (${sign}${d})`
 }
 
-export function PlayerCard({ stats, eligibility }: { stats: PlayerStats; eligibility?: PlayerEligibilityResult }) {
+export function PlayerCard({ stats }: { stats: PlayerStats }) {
     const [imgError, setImgError] = useState(false)
     const series = stats.seriesThisYear || []
-    const showTotals = stats.gamesPlayedThisYear > 0 || stats.goalsThisYear > 0 || stats.warningsThisYear > 0 || (stats.goalsInMatch || 0) > 0 || (stats.gamesLast14Days || 0) > 0
-    const lastHigher = eligibility?.lastOfficialHigher
+    const showTotals = stats.gamesPlayedThisYear > 0 || stats.goalsThisYear > 0 || stats.warningsThisYear > 0
 
     const inner = (
         <motion.div variants={cardVariants} className="bg-surface-1 border border-border-hairline rounded-xl p-5 space-y-4 hover:border-accent/30">
@@ -90,25 +78,14 @@ export function PlayerCard({ stats, eligibility }: { stats: PlayerStats; eligibi
                         </p>
                     )}
                     <p className="text-text-secondary text-sm">{[stats.birthYear, stats.position_fi || 'Pelaaja'].filter(Boolean).join(' · ')}</p>
-                    {lastHigher && (
-                        <p className="text-[11px] text-semantic-amber font-semibold mt-1.5">
-                            Edellinen peli ylempänä: {LEVEL_FI[lastHigher.level] || lastHigher.level} {lastHigher.date}
-                        </p>
-                    )}
                 </div>
             </div>
 
             {showTotals && (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                     <StatBadge label="Ottelut" value={stats.gamesPlayedThisYear} icon={<Shield />} />
                     <StatBadge label="Maalit" value={stats.goalsThisYear} icon={<Target />} variant="success" />
                     <StatBadge label="Varoitukset" value={stats.warningsThisYear} icon={<AlertTriangle />} variant={stats.warningsThisYear > 0 ? 'warning' : 'default'} />
-                    <StatBadge
-                        label="14 vrk"
-                        value={stats.gamesLast14Days ?? 0}
-                        icon={<Activity />}
-                        variant={(stats.gamesLast14Days ?? 0) >= 3 ? 'warning' : (stats.gamesLast14Days ?? 0) > 0 ? 'info' : 'default'}
-                    />
                 </div>
             )}
 

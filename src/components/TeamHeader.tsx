@@ -2,6 +2,7 @@ import { Shield, Heart, CalendarDays } from 'lucide-react'
 import { cn } from '../utils/cn'
 import type { TeamResponse } from '../types'
 import { APP_CONFIG } from '../config'
+import { FormLegend } from './FormLegend'
 interface CategoryLike {
     category_name?: string | { fi?: string }
     category_name_translations?: { fi?: string }
@@ -81,11 +82,15 @@ export function TeamHeader({ team, teamId, last5Form, fav, onToggleFav }: {
                                 {team?.club_name && <span className="text-text-muted font-medium">{team.club_name}</span>}
                             </div>
                             {last5Form.length > 0 && (
-                                <div className="flex items-center gap-1.5 mt-1.5">
-                                    <span className="text-[10px] text-text-muted uppercase tracking-wider font-bold">Kunto:</span>
-                                    {last5Form.map((r, i) => (
-                                        <span key={`form-${team?.team_id || 'team'}-${i}`} className={cn('w-2.5 h-2.5 rounded-full', r === 'V' ? 'bg-semantic-green' : r === 'H' ? 'bg-semantic-red' : 'bg-accent')} />
-                                    ))}
+                                <div className="mt-1.5 space-y-1">
+                                    <div className="flex items-center gap-1.5" aria-label={`Viimeiset ${last5Form.length} tulosta: ${last5Form.join(' ')}`}>
+                                        <span className="text-[10px] text-text-muted uppercase tracking-wider font-bold">Kunto:</span>
+                                        {last5Form.map((r, i) => (
+                                            <span key={`form-${team?.team_id || 'team'}-${i}`} title={r === 'V' ? 'Voitto' : r === 'H' ? 'Häviö' : 'Tasapeli'} className={cn('w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center text-text-inverse', r === 'V' ? 'bg-semantic-green' : r === 'H' ? 'bg-semantic-red' : 'bg-accent')}>{r}</span>
+                                        ))}
+                                        <span className="text-[10px] text-text-muted">→ uusin</span>
+                                    </div>
+                                    <FormLegend />
                                 </div>
                             )}
                         </div>

@@ -1,12 +1,8 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { registerSW } from 'virtual:pwa-register'
-import { registerFootballWebMCP } from './mcp-app'
 import App from './App'
 import './index.css'
-
-// Register WebMCP browser tools for Chrome / ChatGPT Desktop
-void registerFootballWebMCP()
 
 registerSW({
     immediate: true,

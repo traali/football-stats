@@ -8,7 +8,7 @@ describe('dates utils', () => {
         })
 
         it('should format date with short format', () => {
-            expect(formatDate('2026-06-14', 'short')).toBe('06.14')
+            expect(formatDate('2026-06-14', 'short')).toBe('14.6.')
         })
 
         it('should format date with day-month format', () => {

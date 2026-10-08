@@ -3,6 +3,8 @@ import type { PlayerLineupInfo } from './players'
 export const MATCH_STATUS = {
     PLAYED: 'Played',
     FIXTURE: 'Fixture',
+    FORFEITED: 'Forfeited',
+    PLANNED: 'Planned',
 } as const;
 
 export type MatchStatus = typeof MATCH_STATUS[keyof typeof MATCH_STATUS];
@@ -49,6 +51,7 @@ export interface MatchDetails {
     time?: string
     category_name: string
     competition_name: string
+    group_name?: string
     referee_1_name?: string
     referee_1_id?: string
     referee_1_player_id?: string
@@ -61,7 +64,37 @@ export interface MatchDetails {
     bookings?: MatchBooking[]
     venue_name?: string
     weather?: string
+    temperature?: string
     attendance?: string
+    venue_lat?: string
+    venue_lon?: string
+    time_end?: string
+    playing_time_min?: string
+    live_A?: string
+    live_B?: string
+    live_time?: string
+    live_time_mmss?: string
+    live_period?: string
+    live_timer_on?: string | number
+    periods_played?: string | number
+    walkover?: string | number
+    forfeit_A?: string
+    forfeit_B?: string
+    winner_id?: string
+    team_A_description?: string
+    team_B_description?: string
+    events?: MatchEvent[]
+}
+
+export interface MatchEvent {
+    event_id?: string
+    code?: string
+    code_fi?: string
+    team_id?: string
+    player_id?: string
+    player_name?: string
+    time_min?: string
+    description?: string
 }
 
 export interface MatchSummary {
@@ -77,6 +110,17 @@ export interface MatchSummary {
     winner_id?: string | null
     status: string
     referee_1_id?: string
+    time_end?: string
+    playing_time_min?: string
+    live_A?: string
+    live_B?: string
+    live_time?: string
+    walkover?: string | number
+    forfeit_A?: string
+    forfeit_B?: string
+    team_A_description?: string
+    team_B_description?: string
+    venue_name?: string
 }
 
 export interface DiscoveryMatch {

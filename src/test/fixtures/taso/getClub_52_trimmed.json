@@ -1,0 +1,70 @@
+{
+ "call": {
+  "parameters": {},
+  "logged_in": false,
+  "method": "getClub",
+  "status": "ok",
+  "result_time": 0.69,
+  "apilevel": "1",
+  "time_stamp": 1791431650
+ },
+ "club": {
+  "club_id": "52",
+  "name": "Pallo-Pojat Juniorit",
+  "city_name": "Helsinki",
+  "crest": "https://cdn.torneopal.net/logo/palloliitto/52x.png",
+  "contact_email": "MASKED-contact_email",
+  "contact_phone": "MASKED-contact_phone",
+  "contact_name": "MASKED-contact_name",
+  "officials": [
+   {
+    "name": "(trimmed)",
+    "role": "(trimmed)",
+    "email": "x@example.invalid",
+    "phone": "000"
+   }
+  ],
+  "teams": [
+   {
+    "team_id": "35230232",
+    "team_name": "PPJ/Laru Sininen",
+    "status": "active",
+    "sport_id": "futsal",
+    "primary_category": {
+     "category_name": "P14 Futsal-Kolmonen",
+     "competition_season": "2026-27"
+    }
+   },
+   {
+    "team_id": "184923",
+    "team_name": "PPJ/Laru val",
+    "status": "active",
+    "sport_id": "football",
+    "primary_category": {
+     "category_name": "P14 Nelonen",
+     "competition_season": "2026"
+    }
+   },
+   {
+    "team_id": "185085",
+    "team_name": "PPJ/Laru sin",
+    "status": "active",
+    "sport_id": "football",
+    "primary_category": {
+     "category_name": "P13 Kolmonen",
+     "competition_season": "2026"
+    }
+   },
+   {
+    "team_id": "183454",
+    "team_name": "PPJ",
+    "status": "archived",
+    "sport_id": "football",
+    "primary_category": {
+     "category_name": "P16 Liiga Etelä",
+     "competition_season": "2025"
+    }
+   }
+  ]
+ }
+}

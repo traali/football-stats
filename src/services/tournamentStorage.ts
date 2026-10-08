@@ -1,81 +1,72 @@
-import { parseTournamentUrl } from '../utils/tournamentUrl'
 import { todayISO } from '../utils/dates'
+import type { ParsedTournamentUrl } from '../utils/tournamentUrl'
 
 export interface SavedTournament {
     id: string
     title: string
     teamName: string
     category: string
-    url: string
     turnaus: string
     sarja: string
     teamId: string
-    host: string
     dateAdded: string
 }
 
 const STORAGE_KEY = 'football_stats_saved_tournaments'
 
-export const DEFAULT_TOURNAMENTS: SavedTournament[] = [
-    {
-        id: 'vierumaki-2026',
-        title: 'Vierumäki-turnaus 5.–6.9.2026',
-        teamName: 'PPJ/Laru Sininen',
-        category: 'P13 Haaste (2013)',
-        url: 'https://vierumaki-turnaus5-2026.torneopal.fi/taso/joukkue.php?joukkue=201313&turnaus=lime_0016&sarja=P13H',
-        turnaus: 'lime_0016',
-        sarja: 'P13H',
-        teamId: '201313',
-        host: 'vierumaki-turnaus5-2026.torneopal.fi',
-        dateAdded: '2026-08-30',
-    },
-]
-
+/** Nothing is pre-filled: only tournaments the user saved themselves. Old widget-only entries are dropped. */
 export function getSavedTournaments(): SavedTournament[] {
     try {
-        const raw = localStorage.getItem(STORAGE_KEY)
-        if (!raw) return DEFAULT_TOURNAMENTS
-        const parsed = JSON.parse(raw)
-        if (Array.isArray(parsed) && parsed.length > 0) {
-            const hasVierumaki = parsed.some(t => t.turnaus === 'lime_0016' || t.id === 'vierumaki-2026')
-            if (!hasVierumaki) {
-                return [...DEFAULT_TOURNAMENTS, ...parsed]
-            }
-            return parsed
-        }
-        return DEFAULT_TOURNAMENTS
+        const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
+        if (!Array.isArray(parsed)) return []
+        return parsed
+            .filter(t => t && typeof t === 'object' && t.turnaus && t.sarja && t.id !== 'vierumaki-2026')
+            .map(t => ({
+                id: String(t.id || `${t.turnaus}-${t.sarja}-${t.teamId || ''}`),
+                title: String(t.title || t.turnaus),
+                teamName: String(t.teamName || ''),
+                category: String(t.category || t.sarja),
+                turnaus: String(t.turnaus),
+                sarja: String(t.sarja),
+                teamId: /^\d+$/.test(String(t.teamId || '')) ? String(t.teamId) : '',
+                dateAdded: String(t.dateAdded || ''),
+            }))
     } catch {
-        return DEFAULT_TOURNAMENTS
+        return []
     }
 }
 
-export function saveTournamentFromUrl(inputUrl: string, customTitle?: string): SavedTournament | null {
-    const parsed = parseTournamentUrl(inputUrl)
-    if (!parsed) return null
+function write(list: SavedTournament[]) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)) } catch { /* storage full / private */ }
+}
 
-    const existing = getSavedTournaments()
-    const id = `${parsed.host}-${parsed.turnaus}-${parsed.sarja}-${parsed.teamId}`
-    const already = existing.find(t => t.id === id || (t.turnaus === parsed.turnaus && t.teamId === parsed.teamId))
-    if (already) return already
+export function tournamentPath(t: Pick<SavedTournament, 'turnaus' | 'sarja' | 'teamId'>): string {
+    return `/turnaukset/${encodeURIComponent(t.turnaus)}/${encodeURIComponent(t.sarja)}${t.teamId ? `/${t.teamId}` : ''}`
+}
 
-    const newTournament: SavedTournament = {
+export function saveTournament(p: Pick<ParsedTournamentUrl, 'turnaus' | 'sarja' | 'teamId'>, info?: { title?: string; teamName?: string; category?: string }): SavedTournament {
+    const list = getSavedTournaments()
+    const id = `${p.turnaus}-${p.sarja}-${p.teamId || ''}`
+    const existing = list.find(t => t.id === id)
+    const entry: SavedTournament = {
         id,
-        title: customTitle || `${parsed.turnaus.toUpperCase()} Turnaus`,
-        teamName: parsed.teamId ? `Joukkue #${parsed.teamId}` : 'Joukkue',
-        category: parsed.sarja || 'Sarja',
-        url: parsed.rawUrl,
-        turnaus: parsed.turnaus,
-        sarja: parsed.sarja,
-        teamId: parsed.teamId,
-        host: parsed.host,
-        dateAdded: todayISO(),
+        title: info?.title || existing?.title || p.turnaus,
+        teamName: info?.teamName || existing?.teamName || '',
+        category: info?.category || existing?.category || p.sarja,
+        turnaus: p.turnaus,
+        sarja: p.sarja,
+        teamId: p.teamId || '',
+        dateAdded: existing?.dateAdded || todayISO(),
     }
+    write([entry, ...list.filter(t => t.id !== id)])
+    return entry
+}
 
-    const updated = [newTournament, ...existing]
-    try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
-    } catch {
-        // storage error ignore
-    }
-    return newTournament
+export function isTournamentSaved(p: Pick<SavedTournament, 'turnaus' | 'sarja' | 'teamId'>): boolean {
+    const id = `${p.turnaus}-${p.sarja}-${p.teamId || ''}`
+    return getSavedTournaments().some(t => t.id === id)
+}
+
+export function removeTournament(id: string): void {
+    write(getSavedTournaments().filter(t => t.id !== id))
 }

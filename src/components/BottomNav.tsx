@@ -1,12 +1,13 @@
 import { NavLink } from 'react-router-dom'
 import { Home, Search, LayoutGrid, Heart } from 'lucide-react'
 import { cn } from '../utils/cn'
+import { FEATURED } from '../config'
 
 const navItems = [
-    { to: '/', label: 'Etusivu', icon: Home },
-    { to: '/competition/etejp26', label: 'Selaa', icon: LayoutGrid },
-    { to: '/match', label: 'Ottelu', icon: Search },
-    { to: '/favorites', label: 'Suosikit', icon: Heart },
+    { to: '/', label: 'Etusivu', icon: Home, end: true },
+    { to: '/haku', label: 'Haku', icon: Search, end: false },
+    { to: `/competition/${FEATURED.competitionId}`, label: 'Selaa', icon: LayoutGrid, end: false },
+    { to: '/favorites', label: 'Suosikit', icon: Heart, end: false },
 ]
 
 export function BottomNav() {
@@ -24,6 +25,7 @@ export function BottomNav() {
                 <NavLink
                     key={item.label}
                     to={item.to}
+                    end={item.end}
                     className={({ isActive }) =>
                         cn(
                             'flex flex-col items-center justify-center gap-0.5 py-2 px-4 min-w-[64px] min-h-[48px] transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50',

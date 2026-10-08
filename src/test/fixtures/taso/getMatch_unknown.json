@@ -1,0 +1,15 @@
+{
+ "call": {
+  "parameters": {},
+  "logged_in": false,
+  "method": "getMatch",
+  "status": "error",
+  "access": [],
+  "timestamp": "2026-10-08T06:56:24",
+  "withapp": 0,
+  "error_message": "Match not found or published 3",
+  "result_time": 0.141,
+  "apilevel": "1",
+  "time_stamp": 1791431784
+ }
+}

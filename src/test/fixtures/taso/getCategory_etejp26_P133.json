@@ -1,0 +1,437 @@
+{
+ "call": {
+  "method": "getCategory",
+  "status": "ok",
+  "parameters": {
+   "competition_id": "etejp26",
+   "category_id": "P133"
+  },
+  "teams_count": 61,
+  "groups_count": 4,
+  "player_statistics_count": 1365,
+  "official_statistics_count": 8,
+  "result_time": 1.553,
+  "apilevel": "1",
+  "time_stamp": 1791432479
+ },
+ "category": {
+  "competition_id": "etejp26",
+  "competition_name": "Etelä Jalkapallo 2026",
+  "category_id": "P133",
+  "category_name": "P13 Kolmonen",
+  "groups": [
+   {
+    "group_id": "4",
+    "group_name": "Syksy 1",
+    "group_type": "group_stage",
+    "current": "1",
+    "group_notice": "Pelit sovittavissa joukkueiden kesken aikaikkunaan 20.7. - 15.11.",
+    "teams": [
+     {
+      "team_id": "183526",
+      "team_name": "HJK/Töölö sin"
+     },
+     {
+      "team_id": "35115990",
+      "team_name": "KäPa/City 2 Black"
+     },
+     {
+      "team_id": "35139221",
+      "team_name": "LePa/keltainen"
+     },
+     {
+      "team_id": "185252",
+      "team_name": "EBK/Vihreä"
+     },
+     {
+      "team_id": "174351",
+      "team_name": "FC POHU"
+     },
+     {
+      "team_id": "35138736",
+      "team_name": "Kasiysi/PEP YJ2"
+     },
+     {
+      "team_id": "175943",
+      "team_name": "PPV/PiTa YJ"
+     },
+     {
+      "team_id": "35196671",
+      "team_name": "ATW United/Valkoinen"
+     },
+     {
+      "team_id": "35185621",
+      "team_name": "VJS/punainen 2"
+     },
+     {
+      "team_id": "35140258",
+      "team_name": "LePa/sininen"
+     },
+     {
+      "team_id": "183527",
+      "team_name": "HJK/Töölö sinival"
+     },
+     {
+      "team_id": "185831",
+      "team_name": "HJK/Arabia val"
+     },
+     {
+      "team_id": "185251",
+      "team_name": "EBK/Valkoinen"
+     },
+     {
+      "team_id": "173325",
+      "team_name": "KaPy"
+     },
+     {
+      "team_id": "185085",
+      "team_name": "PPJ/Laru sin"
+     },
+     {
+      "team_id": "35185769",
+      "team_name": "PPJ/Väiski sininen"
+     },
+     {
+      "team_id": "35155838",
+      "team_name": "EPS/Punainen"
+     },
+     {
+      "team_id": "35213520",
+      "team_name": "HJK/Kantsu sinival"
+     },
+     {
+      "team_id": "35138422",
+      "team_name": "EsPa/Keltainen 3"
+     },
+     {
+      "team_id": "186033",
+      "team_name": "Tikka"
+     },
+     {
+      "team_id": "35118691",
+      "team_name": "GrIFK/Green"
+     },
+     {
+      "team_id": "35139358",
+      "team_name": "EPS/Valkoinen"
+     },
+     {
+      "team_id": "184933",
+      "team_name": "PPJ/Jätkäsaari oran"
+     },
+     {
+      "team_id": "35137179",
+      "team_name": "GrIFK/2"
+     }
+    ]
+   },
+   {
+    "group_id": "5",
+    "group_name": "Syksy 2",
+    "group_type": "group_stage",
+    "current": "1",
+    "group_notice": "Pelit sovittavissa joukkueiden kesken aikaikkunaan 20.7. - 15.11.",
+    "teams": [
+     {
+      "team_id": "184979",
+      "team_name": "PK-35/musta"
+     },
+     {
+      "team_id": "35157121",
+      "team_name": "I-HK"
+     },
+     {
+      "team_id": "35209782",
+      "team_name": "JäPS/Sininen"
+     },
+     {
+      "team_id": "35184418",
+      "team_name": "KP-75/TuPS YJ"
+     },
+     {
+      "team_id": "35210916",
+      "team_name": "IF Gnistan/4"
+     },
+     {
+      "team_id": "35160326",
+      "team_name": "AskU"
+     },
+     {
+      "team_id": "35183985",
+      "team_name": "KelA"
+     },
+     {
+      "team_id": "35140898",
+      "team_name": "FCFJ/3"
+     },
+     {
+      "team_id": "35184280",
+      "team_name": "FC Lahti/Musta"
+     },
+     {
+      "team_id": "35141199",
+      "team_name": "KJP/Musta"
+     },
+     {
+      "team_id": "35138985",
+      "team_name": "RaKe/Musta"
+     },
+     {
+      "team_id": "35139723",
+      "team_name": "FC Loviisa"
+     },
+     {
+      "team_id": "35183933",
+      "team_name": "PKKU/3"
+     },
+     {
+      "team_id": "35213344",
+      "team_name": "FC Lahti/5"
+     },
+     {
+      "team_id": "35140893",
+      "team_name": "IPS"
+     },
+     {
+      "team_id": "35162773",
+      "team_name": "KoiPS/Sininen"
+     },
+     {
+      "team_id": "176363",
+      "team_name": "PuiU/Sininen"
+     },
+     {
+      "team_id": "185150",
+      "team_name": "Valtti/Keltainen"
+     },
+     {
+      "team_id": "35185426",
+      "team_name": "FC Viikingit/Pun"
+     },
+     {
+      "team_id": "174335",
+      "team_name": "TiPS/Vihreä"
+     },
+     {
+      "team_id": "35121240",
+      "team_name": "PPS/2"
+     },
+     {
+      "team_id": "35121657",
+      "team_name": "FC KTP Juniorit/val2"
+     },
+     {
+      "team_id": "35147009",
+      "team_name": "FC KTP Juniorit/val3"
+     },
+     {
+      "team_id": "185142",
+      "team_name": "Nopsa"
+     }
+    ]
+   },
+   {
+    "group_id": "1",
+    "group_name": "Kevät 1",
+    "group_type": "group_stage",
+    "current": "0",
+    "group_notice": "",
+    "teams": [
+     {
+      "team_id": "35139220",
+      "team_name": "LePa/vihreä"
+     },
+     {
+      "team_id": "174355",
+      "team_name": "Ponnistus"
+     },
+     {
+      "team_id": "185696",
+      "team_name": "HPS/vihreä"
+     },
+     {
+      "team_id": "185227",
+      "team_name": "NuPS/musta"
+     },
+     {
+      "team_id": "185252",
+      "team_name": "EBK/Vihreä"
+     },
+     {
+      "team_id": "186033",
+      "team_name": "Tikka"
+     },
+     {
+      "team_id": "183527",
+      "team_name": "HJK/Töölö sinival"
+     },
+     {
+      "team_id": "35138736",
+      "team_name": "Kasiysi/PEP YJ2"
+     },
+     {
+      "team_id": "35185769",
+      "team_name": "PPJ/Väiski sininen"
+     },
+     {
+      "team_id": "185251",
+      "team_name": "EBK/Valkoinen"
+     },
+     {
+      "team_id": "35185621",
+      "team_name": "VJS/punainen 2"
+     },
+     {
+      "team_id": "35140258",
+      "team_name": "LePa/sininen"
+     },
+     {
+      "team_id": "174351",
+      "team_name": "FC POHU"
+     },
+     {
+      "team_id": "175943",
+      "team_name": "PPV/PiTa YJ"
+     },
+     {
+      "team_id": "185831",
+      "team_name": "HJK/Arabia val"
+     },
+     {
+      "team_id": "35155838",
+      "team_name": "EPS/Punainen"
+     },
+     {
+      "team_id": "35138422",
+      "team_name": "EsPa/Keltainen 3"
+     },
+     {
+      "team_id": "35118691",
+      "team_name": "GrIFK/Green"
+     },
+     {
+      "team_id": "35210916",
+      "team_name": "IF Gnistan/4"
+     },
+     {
+      "team_id": "35137179",
+      "team_name": "GrIFK/2"
+     },
+     {
+      "team_id": "35213520",
+      "team_name": "HJK/Kantsu sinival"
+     },
+     {
+      "team_id": "35159218",
+      "team_name": "HJK/Munkka sinval"
+     }
+    ]
+   },
+   {
+    "group_id": "2",
+    "group_name": "Kevät 2",
+    "group_type": "group_stage",
+    "current": "0",
+    "group_notice": "",
+    "teams": [
+     {
+      "team_id": "175413",
+      "team_name": "PEPO/Violetti"
+     },
+     {
+      "team_id": "174334",
+      "team_name": "TiPS/2"
+     },
+     {
+      "team_id": "35159953",
+      "team_name": "HyPS/Voima"
+     },
+     {
+      "team_id": "35139149",
+      "team_name": "KOPSE"
+     },
+     {
+      "team_id": "35184418",
+      "team_name": "KP-75/TuPS YJ"
+     },
+     {
+      "team_id": "35209782",
+      "team_name": "JäPS/Sininen"
+     },
+     {
+      "team_id": "35183985",
+      "team_name": "KelA"
+     },
+     {
+      "team_id": "35213344",
+      "team_name": "FC Lahti/5"
+     },
+     {
+      "team_id": "184979",
+      "team_name": "PK-35/musta"
+     },
+     {
+      "team_id": "35183933",
+      "team_name": "PKKU/3"
+     },
+     {
+      "team_id": "35184280",
+      "team_name": "FC Lahti/Musta"
+     },
+     {
+      "team_id": "35139723",
+      "team_name": "FC Loviisa"
+     },
+     {
+      "team_id": "35140898",
+      "team_name": "FCFJ/3"
+     },
+     {
+      "team_id": "35121240",
+      "team_name": "PPS/2"
+     },
+     {
+      "team_id": "35121657",
+      "team_name": "FC KTP Juniorit/val2"
+     },
+     {
+      "team_id": "35157121",
+      "team_name": "I-HK"
+     },
+     {
+      "team_id": "176363",
+      "team_name": "PuiU/Sininen"
+     },
+     {
+      "team_id": "185150",
+      "team_name": "Valtti/Keltainen"
+     },
+     {
+      "team_id": "35141199",
+      "team_name": "KJP/Musta"
+     },
+     {
+      "team_id": "35147009",
+      "team_name": "FC KTP Juniorit/val3"
+     },
+     {
+      "team_id": "35121680",
+      "team_name": "LPS/musta"
+     },
+     {
+      "team_id": "35140331",
+      "team_name": "RiPS/Valkoinen"
+     },
+     {
+      "team_id": "35137508",
+      "team_name": "FC KTP Juniorit/sin"
+     },
+     {
+      "team_id": "178496",
+      "team_name": "MU/vihreät"
+     }
+    ]
+   }
+  ]
+ }
+}

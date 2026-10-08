@@ -5,7 +5,7 @@ export function formatDate(dateStr: string | undefined, format: 'short' | 'day-m
     const month = parseInt(dateStr.slice(5, 7), 10)
     const year = dateStr.slice(0, 4)
     if (format === 'short') {
-        return `${String(month).padStart(2, '0')}.${String(day).padStart(2, '0')}`
+        return `${day}.${month}.`
     }
     if (format === 'with-year') {
         return `${day}.${month}.${year}`

@@ -1,0 +1,176 @@
+{
+ "call": {
+  "parameters": {},
+  "logged_in": false,
+  "method": "search",
+  "status": "ok",
+  "text": "PPJ",
+  "result_count": 287,
+  "debug_count": 6758,
+  "result_time": 0.165,
+  "apilevel": "1",
+  "time_stamp": 1791431789
+ },
+ "results": [
+  {
+   "type": "club",
+   "id": "52",
+   "text": "Pallo-Pojat Juniorit",
+   "data": {
+    "city_id": "91",
+    "city_name": "Helsinki",
+    "club_abbrevation": "PPJ"
+   }
+  },
+  {
+   "type": "club",
+   "id": "5556",
+   "text": "Priima Palloilijat JK",
+   "data": {
+    "city_id": "92",
+    "city_name": "Vantaa",
+    "club_abbrevation": "PPJK"
+   }
+  },
+  {
+   "type": "team",
+   "id": "194324",
+   "text": "PPJ",
+   "data": {
+    "club_id": "52",
+    "yob": "",
+    "gender": "F",
+    "primary_competition_id": "splfs2627",
+    "primary_category_id": "FN1",
+    "primary_category_name": "Naisten Futsal-Ykkönen",
+    "competition_names": "Naisten Futsal-Ykkönen, SPL Futsal 2026-27"
+   }
+  },
+  {
+   "type": "team",
+   "id": "35230232",
+   "text": "PPJ/Laru Sininen",
+   "data": {
+    "club_id": "52",
+    "yob": "2013",
+    "gender": "M",
+    "primary_competition_id": "etefs2627",
+    "primary_category_id": "FP143",
+    "primary_category_name": "P14 Futsal-Kolmonen",
+    "competition_names": "P14 Futsal-Kolmonen, Etelä Futsal 2026-2027"
+   }
+  },
+  {
+   "type": "team",
+   "id": "35230228",
+   "text": "PPJ",
+   "data": {
+    "club_id": "52",
+    "yob": "2014",
+    "gender": "M",
+    "primary_competition_id": "etefs2627",
+    "primary_category_id": "FP131",
+    "primary_category_name": "P13 Futsal-Ykkönen",
+    "competition_names": "P13 Futsal-Ykkönen, Etelä Futsal 2026-2027"
+   }
+  },
+  {
+   "type": "team",
+   "id": "35175080",
+   "text": "PPJ/Laru Valkoiset ",
+   "data": {
+    "club_id": "52",
+    "yob": "2014",
+    "gender": "M",
+    "primary_competition_id": "etefs2627",
+    "primary_category_id": "FP133",
+    "primary_category_name": "P13 Futsal-Kolmonen",
+    "competition_names": "P13 Futsal-Kolmonen, Etelä Futsal 2026-2027"
+   }
+  },
+  {
+   "type": "team",
+   "id": "35230229",
+   "text": "PPJ/Laru musta",
+   "data": {
+    "club_id": "52",
+    "yob": "2014",
+    "gender": "M",
+    "primary_competition_id": "etefs2627",
+    "primary_category_id": "FP134",
+    "primary_category_name": "P13 Futsal-Nelonen",
+    "competition_names": "P13 Futsal-Nelonen, Etelä Futsal 2026-2027"
+   }
+  },
+  {
+   "type": "team",
+   "id": "35201910",
+   "text": "PPJ/15",
+   "data": {
+    "club_id": "52",
+    "yob": "2015",
+    "gender": "F",
+    "primary_competition_id": "etefs2627",
+    "primary_category_id": "FT132",
+    "primary_category_name": "T13 Futsal-Kakkonen",
+    "competition_names": "T13 Futsal-Kakkonen, Etelä Futsal 2026-2027"
+   }
+  },
+  {
+   "type": "team",
+   "id": "35175205",
+   "text": "PPJ/Sininen",
+   "data": {
+    "club_id": "52",
+    "yob": "2015",
+    "gender": "M",
+    "primary_competition_id": "etefs2627",
+    "primary_category_id": "FP122",
+    "primary_category_name": "P12 Futsal-Kakkonen",
+    "competition_names": "P12 Futsal-Kakkonen, Etelä Futsal 2026-2027"
+   }
+  },
+  {
+   "type": "team",
+   "id": "35230234",
+   "text": "PPJ/Laru oranssi",
+   "data": {
+    "club_id": "52",
+    "yob": "2015",
+    "gender": "M",
+    "primary_competition_id": "etefs2627",
+    "primary_category_id": "FP124",
+    "primary_category_name": "P12 Futsal-Nelonen",
+    "competition_names": "P12 Futsal-Nelonen, Etelä Futsal 2026-2027"
+   }
+  },
+  {
+   "type": "team",
+   "id": "35201911",
+   "text": "PPJ/Valkoinen",
+   "data": {
+    "club_id": "52",
+    "yob": "2015",
+    "gender": "F",
+    "primary_competition_id": "etefs2627",
+    "primary_category_id": "FT122",
+    "primary_category_name": "T12 Futsal-Kakkonen",
+    "competition_names": "T12 Futsal-Kakkonen, Etelä Futsal 2026-2027"
+   }
+  },
+  {
+   "type": "team",
+   "id": "35230231",
+   "text": "PPJ/Oranssi",
+   "data": {
+    "club_id": "52",
+    "yob": "2015",
+    "gender": "F",
+    "primary_competition_id": "etefs2627",
+    "primary_category_id": "FT123",
+    "primary_category_name": "T12 Futsal-Kolmonen",
+    "competition_names": "T12 Futsal-Kolmonen, Etelä Futsal 2026-2027"
+   }
+  }
+ ]
+}

@@ -16,9 +16,9 @@ Every component file: [UI_COMPONENTS.md](./UI_COMPONENTS.md).
 - There is no `/search` and no `/browse`. Bottom nav **Selaa** goes to `/competition/etejp26` (Etelä, from `FEATURED` in `src/config.ts`). **Ottelu** goes to `/match` so you can type an id.
 - Home title is `Pelaajatilastot`. The subtitle `PPJ/Laru sin · P13 Kolmonen · Etelä` is a fixed identity line, not a live filter.
 - The featured team card is `FEATURED`: team `185085`, PPJ/Laru sin, competition `etejp26`, category `P133`, group `4`.
-- `FEATURED.calendarNote` is still `Vierumäki 4.–6.9.2026`. That date is **stale** as of 2026-09-26. Do not treat it as a live tournament clock. Updating the note is allowed. Inventing a new featured team is not.
+- `FEATURED` is the family's team (PPJ/Laru sin, 185085). There is no calendar note and no pre-filled tournament; saved tournaments are only the ones the user saved.
 - Favorites are `localStorage` keys `favoriteTeams` and the player list beside them. Not Cloudflare.
-- WebMCP tools register from `src/mcp-app.ts` onto `document.modelContext`. There is **no** header badge. Do not add one just to match basketball unless you also show native vs polyfill honestly.
+- WebMCP tools register from `src/webmcp/WebMcpTools.tsx` (Google `use-webmcp-tool`, feature-detected `document.modelContext.registerTool`). No polyfill, no message bridge, no header badge. Tool logic lives in `src/webmcp/tools.ts` and follows the same truth rules as the UI.
 - `?embed=true` hides the bottom nav and the version footer.
 
 **Not signed:** that every tournament import host still resolves, and the inner layout of match weather / lineups beyond the blocks named here.
@@ -88,8 +88,8 @@ Phone: tabs **Ottelut** and **Pelaajat**. Desktop: roster, scorers, and transiti
 
 - Header (teams, score, status)
 - Lineups
-- Pre-match comparison when the match is not played (`DualStatBar` for dressed players, season goals, cards)
-- Weather card when the venue is outdoor and coordinates exist
+- Common opponents when the match is not played
+- Taso's own temperature, weather and attendance, only when filled in. No forecast
 - Standings snippet for the two teams' group
 
 Do not invent lineups.

@@ -3,11 +3,15 @@ import { useParams } from 'react-router-dom'
 import { Users, Calendar, TrendingUp } from 'lucide-react'
 import { cn } from '../utils/cn'
 import { useTeamData } from '../hooks/useTeamData'
-import { usePlayerCardStats } from '../hooks/usePlayerCardStats'
+import type { DiscoveryMatch } from '../types'
+import { formatPpm } from '../utils/standings'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { ErrorState } from '../components/ErrorState'
+import { TasoLink } from '../components/TasoLink'
 import { getTeamCategory } from '../utils/dataProcessors'
 import { formatSeasonLabel } from '../utils/dates'
 import { APP_CONFIG } from '../config'
-import { StatBadge, BackButton, PageLayout, Card, PlayerAvatar, TeamHeader, TeamMatchList } from '../components'
+import { StatBadge, BackButton, PageLayout, Card, PlayerAvatar, TeamHeader, TeamMatchList, MatchRow } from '../components'
 import { TeamRoster } from '../components/TeamRoster'
 import { useNavigate } from 'react-router-dom'
 import { setLastSelectedTeamId } from '../services/teamSelection'
@@ -16,6 +20,7 @@ export function TeamPage() {
     const { teamId = '' } = useParams()
     const navigate = useNavigate()
     const data = useTeamData(teamId)
+    useDocumentTitle(data.team?.team_name || 'Joukkue')
 
     useEffect(() => {
         setLastSelectedTeamId(teamId)
@@ -31,18 +36,16 @@ export function TeamPage() {
     )
 
     if (data.error || !teamId) return (
-        <div className="min-h-screen px-4 py-8 text-center text-semantic-red">
-            {data.error || 'Joukkuetta ei löytynyt'}
-        </div>
+        <ErrorState message={data.error || 'Joukkuetta ei löytynyt.'} onRetry={teamId ? data.reload : undefined} />
     )
 
     const {
         team, tab, setTab, selectedYear, setSelectedYear,
         selectedHalf, setSelectedHalf,
-        displayStats, performanceComparison, statsByYear, years,
+        displayStats, statsByYear, years,
         playerTransitions, categoriesByYear, rosterPlayers,
         rosterYear, loadingPlayers, historyError, historicalPlayersByYear,
-        currentScorers, pastMatches, upcoming, last5Form,
+        currentScorers, pastMatches, upcoming, onNow, last5Form,
         fav, toggle,
     } = data
 
@@ -58,7 +61,6 @@ export function TeamPage() {
             selectedHalf={selectedHalf}
             setSelectedHalf={setSelectedHalf}
             displayStats={displayStats}
-            performanceComparison={performanceComparison}
             statsByYear={statsByYear}
             years={years}
             playerTransitions={playerTransitions}
@@ -71,6 +73,7 @@ export function TeamPage() {
             currentScorers={currentScorers}
             pastMatches={pastMatches}
             upcoming={upcoming}
+            onNow={onNow}
             last5Form={last5Form}
             fav={fav}
             toggle={toggle}
@@ -86,13 +89,12 @@ function TeamPageReady(props: any) {
 function TeamPageBody({
     teamId, navigate, team, tab, setTab, selectedYear, setSelectedYear,
     selectedHalf, setSelectedHalf,
-    displayStats, performanceComparison, statsByYear, years,
+    displayStats, statsByYear, years,
     playerTransitions, categoriesByYear, rosterPlayers, rosterYear,
     loadingPlayers, historyError, historicalPlayersByYear,
-    currentScorers, pastMatches, upcoming, last5Form, fav, toggle,
+    currentScorers, pastMatches, upcoming, onNow, last5Form, fav, toggle,
 }: any) {
 /* eslint-enable @typescript-eslint/no-explicit-any */
-    const cardStats = usePlayerCardStats(rosterPlayers.map((p: { player_id: string }) => p.player_id), rosterYear, selectedHalf)
     const prevYear = String(parseInt(rosterYear, 10) - 1)
     const lastSeasonById = Object.fromEntries(
         (historicalPlayersByYear[prevYear] || []).map((p: { player_id: string; matches?: number; goals?: number }) => [p.player_id, { matches: p.matches, goals: p.goals }]),
@@ -108,7 +110,6 @@ function TeamPageBody({
             loading={loadingPlayers}
             error={historyError}
             lastSeasonById={lastSeasonById}
-            cardStats={cardStats}
         />
     )
 
@@ -245,6 +246,13 @@ function TeamPageBody({
                 fav={fav}
                 onToggleFav={() => toggle(teamId, team?.team_name, team ? getTeamCategory(team, APP_CONFIG.CURRENT_YEAR) : undefined)}
             />
+            <TasoLink kind="team" id={teamId} />
+            {onNow.length > 0 && (
+                <section className="bg-surface-1 border border-semantic-red/30 rounded-xl p-3 space-y-1" data-testid="team-on-now">
+                    <h2 className="text-sm font-bold text-text-primary uppercase tracking-wider px-1">Nyt käynnissä</h2>
+                    {(onNow as DiscoveryMatch[]).map(m => <MatchRow key={m.match_id} match={m} teamId={teamId} subtitle={[m.category_name, m.venue_name].filter(Boolean).map(String).join(' · ')} />)}
+                </section>
+            )}
 
             <div className="space-y-4 pt-4 border-t border-border-hairline">
                 <div className="flex flex-wrap items-center justify-between gap-3">
@@ -286,6 +294,7 @@ function TeamPageBody({
                             <div className="flex items-center gap-1 bg-surface-2 p-1 rounded-lg border border-border-hairline">
                                 <button
                                     onClick={() => setSelectedHalf('syksy')}
+                                    aria-pressed={selectedHalf === 'syksy'}
                                     className={cn(
                                         "text-xs px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer active:scale-95",
                                         selectedHalf === 'syksy'
@@ -293,10 +302,11 @@ function TeamPageBody({
                                             : "text-text-muted hover:text-text-primary"
                                     )}
                                 >
-                                    Syksy
+                                    Syksy {selectedYear}
                                 </button>
                                 <button
                                     onClick={() => setSelectedHalf('kevät')}
+                                    aria-pressed={selectedHalf === 'kevät'}
                                     className={cn(
                                         "text-xs px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer active:scale-95",
                                         selectedHalf === 'kevät'
@@ -304,7 +314,7 @@ function TeamPageBody({
                                             : "text-text-muted hover:text-text-primary"
                                     )}
                                 >
-                                    Kevät
+                                    Kevät {selectedYear}
                                 </button>
                                 <button
                                     onClick={() => setSelectedHalf('all')}
@@ -315,7 +325,7 @@ function TeamPageBody({
                                             : "text-text-muted hover:text-text-primary"
                                     )}
                                 >
-                                    Koko kausi
+                                    Koko {selectedYear}
                                 </button>
                             </div>
                         )}
@@ -330,8 +340,8 @@ function TeamPageBody({
                     <StatBadge label="Maaliero" value={displayStats.diffStr} variant={parseInt(displayStats.diffStr) > 0 ? 'success' : parseInt(displayStats.diffStr) < 0 ? 'danger' : 'default'} />
                     {displayStats.played > 0 && (
                         <>
-                            <StatBadge label="Maalit/ottelu" value={Number(displayStats.goalsScoredPerMatch).toFixed(2)} variant="success" />
-                            <StatBadge label="Päästetyt/ottelu" value={Number(displayStats.goalsConcededPerMatch).toFixed(2)} variant="danger" />
+                            <StatBadge label="Maalit/ottelu" value={formatPpm(displayStats.goalsScoredPerMatch)} variant="success" />
+                            <StatBadge label="Päästetyt/ottelu" value={formatPpm(displayStats.goalsConcededPerMatch)} variant="danger" />
                         </>
                     )}
                 </div>
@@ -339,20 +349,7 @@ function TeamPageBody({
                 {years.length > 1 && (
                     <div className="mt-4 pt-4 border-t border-border-hairline space-y-3">
                         <div className="flex flex-wrap items-center justify-between gap-2 text-[10px] font-bold uppercase tracking-[0.08em] text-text-muted">
-                            <span>Kausivertailu (Pisteet per ottelu & maaliero)</span>
-                            {performanceComparison && performanceComparison.ppgDiff !== null && (
-                                <span className={cn(
-                                    "font-bold uppercase tracking-[0.06em] px-1.5 py-0.5 rounded flex items-center gap-1 leading-none shrink-0",
-                                    performanceComparison.trend === 'better' ? "bg-semantic-green/10 text-semantic-green border border-semantic-green/20" :
-                                    performanceComparison.trend === 'worse' ? "bg-semantic-red/10 text-semantic-red border border-semantic-red/20" :
-                                    "bg-accent/10 text-accent border border-accent/20"
-                                )}>
-                                    {performanceComparison.trend === 'better' && "▲ Kunto nouseva"}
-                                    {performanceComparison.trend === 'worse' && "▼ Kunto laskeva"}
-                                    {performanceComparison.trend === 'neutral' && "► Tasainen kunto"}
-                                    <span className="font-mono text-[10px]">({performanceComparison.ppgDiffStr} PPG vs {performanceComparison.prevYear})</span>
-                                </span>
-                            )}
+                            <span>Kaudet (pisteet per ottelu ja maaliero, kaikki sarjat)</span>
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                             {years.map((yr: string) => {
@@ -387,7 +384,7 @@ function TeamPageBody({
                                             </div>
                                         )}
                                         <div className="mt-1.5 flex items-baseline justify-between">
-                                            <span className="text-sm font-mono tracking-tight">{yrStats.ppg.toFixed(2)} PPG</span>
+                                            <span className="text-sm font-mono tracking-tight">{formatPpm(yrStats.ppg)} p/ott.</span>
                                             <span className="text-[10px] text-text-muted">{yrStats.played} ottelua</span>
                                         </div>
                                     </div>
@@ -421,7 +418,7 @@ function TeamPageBody({
                 </div>
                 <div>
                     {tab === 'matches' ? (
-                        <TeamMatchList upcoming={upcoming} pastMatches={pastMatches} teamId={teamId} />
+                        <TeamMatchList onNow={[]} upcoming={upcoming} pastMatches={pastMatches} teamId={teamId} team={team} pastLabel={formatSeasonLabel(selectedYear, selectedHalf)} />
                     ) : (
                         <div className="space-y-6">
                             {rosterContent}
@@ -439,7 +436,7 @@ function TeamPageBody({
                     {transitionsContent}
                 </div>
                 <div className="col-span-2 space-y-6">
-                    <TeamMatchList upcoming={upcoming} pastMatches={pastMatches} teamId={teamId} />
+                    <TeamMatchList onNow={[]} upcoming={upcoming} pastMatches={pastMatches} teamId={teamId} team={team} pastLabel={formatSeasonLabel(selectedYear, selectedHalf)} />
                 </div>
             </div>
         </PageLayout>
