@@ -46,7 +46,7 @@ export function TeamPage() {
         playerTransitions, categoriesByYear, rosterPlayers,
         rosterYear, loadingPlayers, historyError, historicalPlayersByYear,
         currentScorers, pastMatches, upcoming, onNow, last5Form,
-        fav, toggle,
+        fav, toggle, matchesFetchedAt, now,
     } = data
 
     return (
@@ -77,6 +77,8 @@ export function TeamPage() {
             last5Form={last5Form}
             fav={fav}
             toggle={toggle}
+            matchesFetchedAt={matchesFetchedAt}
+            now={now}
         />
     )
 }
@@ -92,7 +94,7 @@ function TeamPageBody({
     displayStats, statsByYear, years,
     playerTransitions, categoriesByYear, rosterPlayers, rosterYear,
     loadingPlayers, historyError, historicalPlayersByYear,
-    currentScorers, pastMatches, upcoming, onNow, last5Form, fav, toggle,
+    currentScorers, pastMatches, upcoming, onNow, last5Form, fav, toggle, matchesFetchedAt, now,
 }: any) {
 /* eslint-enable @typescript-eslint/no-explicit-any */
     const prevYear = String(parseInt(rosterYear, 10) - 1)
@@ -250,7 +252,7 @@ function TeamPageBody({
             {onNow.length > 0 && (
                 <section className="bg-surface-1 border border-semantic-red/30 rounded-xl p-3 space-y-1" data-testid="team-on-now">
                     <h2 className="text-sm font-bold text-text-primary uppercase tracking-wider px-1">Nyt käynnissä</h2>
-                    {(onNow as DiscoveryMatch[]).map(m => <MatchRow key={m.match_id} match={m} teamId={teamId} subtitle={[m.category_name, m.venue_name].filter(Boolean).map(String).join(' · ')} />)}
+                    {(onNow as DiscoveryMatch[]).map(m => <MatchRow key={m.match_id} match={m} teamId={teamId} now={now} fetchedAt={matchesFetchedAt} subtitle={[m.category_name, m.venue_name].filter(Boolean).map(String).join(' · ')} />)}
                 </section>
             )}
 

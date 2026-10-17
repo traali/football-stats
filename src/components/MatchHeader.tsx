@@ -9,6 +9,7 @@ import { formatDate, formatTime } from '../utils/dates'
 import { displayScore, hasClockTime, isForfeit, matchPhase } from '../domain/matchState'
 import { isPlaceholderTeam, teamLabel } from '../utils/teamLabel'
 import { LiveBadge } from './LiveBadge'
+import { LiveFreshness } from './LiveFreshness'
 import { TasoLink } from './TasoLink'
 
 const filled = (v: unknown): string => (v === null || v === undefined ? '' : String(v).trim())
@@ -26,7 +27,7 @@ function TeamSide({ id, name, desc, crest, align }: { id: string; name: string; 
     return <Link to={`/team/${id}`} className={cn(cls, 'hover:opacity-80 transition-opacity')}>{inner}</Link>
 }
 
-export function MatchHeader({ match, group, teamA, teamB, now }: { match: MatchDetails; group: GroupDetails | null; teamA?: TeamResponse | null; teamB?: TeamResponse | null; now?: Date }) {
+export function MatchHeader({ match, group, teamA, teamB, now, fetchedAt }: { match: MatchDetails; group: GroupDetails | null; teamA?: TeamResponse | null; teamB?: TeamResponse | null; now?: Date; fetchedAt?: number }) {
     const phase = matchPhase(match, now)
     const score = displayScore(match, now)
     const forfeit = phase === 'result' && isForfeit(match)
@@ -72,6 +73,7 @@ export function MatchHeader({ match, group, teamA, teamB, now }: { match: MatchD
                             )}
                         </div>
                         {phase === 'live' && clock && <div className="text-xs font-mono text-semantic-red mt-1">{clock}</div>}
+                        {phase === 'live' && fetchedAt && <LiveFreshness fetchedAt={fetchedAt} now={now} className="mt-1 text-xs" />}
                         {htReal && (
                             <div className="flex items-center gap-1.5 text-xs text-text-muted font-mono mt-1">
                                 <Timer className="w-3 h-3" />
