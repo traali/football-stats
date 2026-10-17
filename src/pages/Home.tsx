@@ -31,7 +31,7 @@ function HeroCard({ match, teamName }: { match: DiscoveryMatch; teamName: string
     const venue = String(match.venue_name || match.venue || match.venue_city_name || '')
     return (
         <button type="button" onClick={() => navigate(`/match/${match.match_id}`)} data-testid="hero-match"
-            className="w-full h-full text-left bg-surface-1 border border-border-hairline rounded-2xl p-4 hover:bg-surface-2 transition-colors">
+            className="w-full text-left bg-surface-1 border border-border-hairline rounded-2xl p-4 hover:bg-surface-2 transition-colors">
             <p className="text-[10px] font-bold uppercase tracking-widest mb-2 text-accent flex items-center gap-2">
                 {teamName}
                 {phase === 'live' && <LiveBadge />}
