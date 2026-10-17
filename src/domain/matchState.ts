@@ -159,6 +159,13 @@ export function matchPhase(m: MatchLike, now: Date = new Date()): MatchPhase {
         // Card opened early (status 'Live', 0–0, clock never started): still upcoming until kickoff.
         const kick = hasClockTime(m.time) ? helsinkiToMs(m.date, m.time) : null
         if (kick !== null && now.getTime() < kick && !hasStarted(m)) return 'upcoming'
+        // Taso leaves some old games on status 'Live' for good (e.g. 3891605, 2025-09-03).
+        // A game from an earlier day whose slot is over is not on now.
+        const d = str(m.date)
+        if (d && d < helsinkiToday(now)) {
+            const win = liveWindow(m)
+            if (win && now.getTime() > win.end) return 'stale'
+        }
         return 'live'
     }
     const today = helsinkiToday(now)
