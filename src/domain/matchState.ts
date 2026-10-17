@@ -38,6 +38,7 @@ export interface MatchLike {
     live_time_mmss?: string | null
     live_period?: string | number | null
     live_timer_on?: string | number | null
+    live_timer_start?: string | null
     periods_played?: string | number | null
     walkover?: string | number | null
     forfeit_A?: string | null
@@ -132,9 +133,32 @@ export function liveWindow(m: MatchLike): { start: number; end: number } | null 
     return { start, end: end + AFTER_WHISTLE_GRACE_MIN * 60_000 }
 }
 
+/**
+ * Taso proof that the whistle has blown: a started match clock, a running minute,
+ * a goal on the board or a finished period. live_period='1' alone is NOT proof:
+ * Taso sets it (and status 'Live') when the match card is opened before kickoff.
+ */
+function hasStarted(m: MatchLike): boolean {
+    if (str(m.time).includes("'")) return true
+    const start = str(m.live_timer_start)
+    if (Number(m.live_timer_on) === 1 && /^\d{4}-\d{2}-\d{2}/.test(start) && !start.startsWith('0000')) return true
+    const mmss = str(m.live_time_mmss)
+    if (mmss && mmss !== '00:00') return true
+    const lt = str(m.live_time)
+    if (lt && !/^0{1,2}(:00){0,2}$/.test(lt)) return true
+    if (Number(m.periods_played) > 0) return true
+    if (numeric(m.live_A) && numeric(m.live_B) && Number(m.live_A) + Number(m.live_B) > 0) return true
+    return false
+}
+
 export function matchPhase(m: MatchLike, now: Date = new Date()): MatchPhase {
     if (isResult(m)) return 'result'
-    if (explicitLive(m)) return 'live'
+    if (explicitLive(m)) {
+        // Card opened early (status 'Live', 0–0, clock never started): still upcoming until kickoff.
+        const kick = hasClockTime(m.time) ? helsinkiToMs(m.date, m.time) : null
+        if (kick !== null && now.getTime() < kick && !hasStarted(m)) return 'upcoming'
+        return 'live'
+    }
     const today = helsinkiToday(now)
     const date = str(m.date)
     const win = liveWindow(m)
@@ -185,10 +209,19 @@ export interface Score { a: number; b: number }
 export function displayScore(m: MatchLike, now: Date = new Date()): Score | null {
     if (isResult(m)) return hasFinalScore(m) ? { a: Number(m.fs_A), b: Number(m.fs_B) } : null
     if (matchPhase(m, now) !== 'live') return null
-    if (!numeric(m.live_A) || !numeric(m.live_B)) return null
-    const a = Number(m.live_A)
-    const b = Number(m.live_B)
-    if (explicitLive(m) || hasLiveEvidence(m) || a + b > 0) return { a, b }
+    if (numeric(m.live_A) && numeric(m.live_B)) {
+        const a = Number(m.live_A)
+        const b = Number(m.live_B)
+        if (explicitLive(m) || hasLiveEvidence(m) || a + b > 0) return { a, b }
+        return null
+    }
+    // getMatches rows leave live_A/live_B empty and carry the running score in fs_A/fs_B.
+    // Trust it only while Taso itself says the game is on (status Live, clock started or a goal).
+    if (explicitLive(m) && numeric(m.fs_A) && numeric(m.fs_B) && str(m.live_A) === '' && str(m.live_B) === '') {
+        const a = Number(m.fs_A)
+        const b = Number(m.fs_B)
+        if (hasStarted(m) || a + b > 0) return { a, b }
+    }
     return null
 }
 
