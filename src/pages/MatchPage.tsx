@@ -110,7 +110,7 @@ export function MatchPage() {
 
                 {data && (
                     <div className="space-y-8">
-                        <MatchHeader match={data.match} group={data.group} teamA={data.teamA} teamB={data.teamB} />
+                        <MatchHeader match={data.match} group={data.group} teamA={data.teamA} teamB={data.teamB} now={now} fetchedAt={data.fetchedAt} />
 
                         <div className="flex flex-wrap gap-2">
                             <button

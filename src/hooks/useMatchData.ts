@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { getMatchDetails, getGroupDetails, getTeamProfile } from '../services/api';
+import { getMatchDetails, getGroupDetails, getTeamProfile, matchFetchedAt } from '../services/api';
 import type { MatchDetails, GroupDetails, TeamResponse } from '../types';
 import { friendlyError } from '../utils/friendlyError';
 
@@ -22,6 +22,8 @@ export function useMatchData() {
         group: GroupDetails | null;
         teamA?: TeamResponse | null;
         teamB?: TeamResponse | null;
+        /** When Taso last answered OK for this match (epoch ms). */
+        fetchedAt?: number;
     } | null>(null);
     const abortRef = useRef<AbortController | null>(null);
     const mountedRef = useRef(true);
@@ -57,7 +59,7 @@ export function useMatchData() {
                 match.team_B_id ? getTeamProfile(match.team_B_id, controller.signal).catch(() => null) : Promise.resolve(null),
             ]);
             if (controller.signal.aborted || !mountedRef.current) return;
-            setData({ match, group, teamA, teamB });
+            setData({ match, group, teamA, teamB, fetchedAt: matchFetchedAt(id) });
         } catch (err: unknown) {
             if (controller.signal.aborted || !mountedRef.current) return;
             if (opts?.silent) return; // keep showing the last good data during live refresh

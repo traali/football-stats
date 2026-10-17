@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Trophy, Heart, Shield, ChevronRight, Calendar, MapPin, User, Trash2 } from 'lucide-react'
 import { Button, LiveBadge, MatchRow, PageLayout, SearchBox } from '../components'
-import { getTeamMatches, getTeamProfile } from '../services/api'
+import { getTeamMatches, getTeamProfile, teamMatchesFetchedAt } from '../services/api'
 import { listViewedMatches, type ViewedMatch } from '../services/viewedCache'
 import { useFavorites } from '../hooks/useFavorites'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
@@ -61,7 +61,7 @@ export function Home() {
     const [savedTournaments, setSavedTournaments] = useState<SavedTournament[]>(() => getSavedTournaments())
     const [hero, setHero] = useState<DiscoveryMatch | null>(null)
     const [heroFailed, setHeroFailed] = useState(false)
-    const [todayMatches, setTodayMatches] = useState<{ teamId: string; teamName: string; match: DiscoveryMatch }[]>([])
+    const [todayMatches, setTodayMatches] = useState<{ teamId: string; teamName: string; match: DiscoveryMatch; fetchedAt?: number }[]>([])
     const [viewed] = useState<ViewedMatch[]>(() => listViewedMatches().slice(0, 8))
     const [loadingHero, setLoadingHero] = useState(true)
     const navigate = useNavigate()
@@ -95,14 +95,14 @@ export function Home() {
                 if (!silent) setHeroFailed(!featured?.ok)
                 setLoadingHero(false)
                 const seen = new Set<string>()
-                const out: { teamId: string; teamName: string; match: DiscoveryMatch }[] = []
+                const out: { teamId: string; teamName: string; match: DiscoveryMatch; fetchedAt?: number }[] = []
                 for (const { id, ms } of rows) {
                     for (const m of ms) {
                         if (m.date !== today || seen.has(m.match_id)) continue
                         if (matchPhase(m) === 'stale') continue
                         seen.add(m.match_id)
                         const name = String(m.team_A_id) === id ? m.team_A_name : m.team_B_name
-                        out.push({ teamId: id, teamName: name, match: m })
+                        out.push({ teamId: id, teamName: name, match: m, fetchedAt: teamMatchesFetchedAt(id) })
                     }
                 }
                 out.sort((a, b) => byKickoffAsc(a.match, b.match))
@@ -205,8 +205,8 @@ export function Home() {
             {todayMatches.length > 0 && (
                 <section className="bg-surface-1 border border-border-hairline rounded-xl p-3 space-y-1" data-testid="today-section">
                     <h2 className="text-sm font-bold text-text-primary uppercase tracking-wider px-1">Tänään</h2>
-                    {todayMatches.map(({ teamId, match }) => (
-                        <MatchRow key={match.match_id} match={match} teamId={teamId} subtitle={String(match.category_name || '')} />
+                    {todayMatches.map(({ teamId, match, fetchedAt }) => (
+                        <MatchRow key={match.match_id} match={match} teamId={teamId} subtitle={String(match.category_name || '')} now={now} fetchedAt={fetchedAt} />
                     ))}
                 </section>
             )}

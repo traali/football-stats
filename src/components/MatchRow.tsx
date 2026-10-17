@@ -5,6 +5,7 @@ import { WLD_CONFIG } from '../utils/wld'
 import { displayScore, isForfeit, matchPhase, outcomeFor, penaltyScore, type MatchLike } from '../domain/matchState'
 import { teamLabel, isPlaceholderTeam } from '../utils/teamLabel'
 import { LiveBadge } from './LiveBadge'
+import { LiveFreshness } from './LiveFreshness'
 
 export interface RowMatch extends MatchLike {
     match_id: string
@@ -36,8 +37,10 @@ function TeamName({ id, name, desc, mine }: { id?: string; name?: string; desc?:
  * One row for any match list. Taps through to /match/:id.
  * Score only for results or a running game; otherwise "vs".
  */
-export function MatchRow({ match: m, teamId, standings, subtitle, now, className }: {
+export function MatchRow({ match: m, teamId, standings, subtitle, now, className, fetchedAt }: {
     match: RowMatch
+    /** When Taso last answered OK for this list (epoch ms). Shown only on live rows. */
+    fetchedAt?: number
     /** Perspective team: shows V/T/H and highlights the team. */
     teamId?: string
     standings?: Record<string, string | number>
@@ -84,6 +87,7 @@ export function MatchRow({ match: m, teamId, standings, subtitle, now, className
                         {subtitle && <span className="truncate">{subtitle}</span>}
                     </span>
                 )}
+                {phase === 'live' && fetchedAt && <span className="block text-center mt-0.5"><LiveFreshness fetchedAt={fetchedAt} now={now} /></span>}
             </span>
             <span className="w-6 shrink-0 text-right">
                 {wld && (

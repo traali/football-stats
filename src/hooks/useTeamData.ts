@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, useMemo, useRef } from 'react'
-import { getTeamProfile, getTeamMatches, getGroupFull, batchFetch } from '../services/api'
+import { getTeamProfile, getTeamMatches, getGroupFull, batchFetch, teamMatchesFetchedAt } from '../services/api'
 import { useFavorites } from './useFavorites'
 import { needsQuietRefresh, useMinuteClock, useQuietRefresh } from './useQuietRefresh'
 import { isResult, outcomeFor, splitMatches } from '../domain/matchState'
@@ -35,6 +35,7 @@ export function useTeamData(teamId: string | undefined) {
     const currentSeason = useMemo(() => getCurrentSeason(), [])
     const [team, setTeam] = useState<TeamResponse | null>(null)
     const [matches, setMatches] = useState<DiscoveryMatch[]>([])
+    const [matchesFetchedAt, setMatchesFetchedAt] = useState<number | undefined>(undefined)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [reloadTick, setReloadTick] = useState(0)
@@ -68,7 +69,7 @@ export function useTeamData(teamId: string | undefined) {
         ])
             .then(([t, m]) => {
                 if (controller.signal.aborted) return
-                setTeam(t); setMatches(m); setLoading(false)
+                setTeam(t); setMatches(m); setMatchesFetchedAt(teamMatchesFetchedAt(teamId)); setLoading(false)
             })
             .catch(e => {
                 if (controller.signal.aborted) return
@@ -89,7 +90,7 @@ export function useTeamData(teamId: string | undefined) {
         const ctrl = new AbortController()
         refreshCtrl.current = ctrl
         getTeamMatches(teamId, ctrl.signal)
-            .then(m => { if (!ctrl.signal.aborted && m.length) setMatches(m) })
+            .then(m => { if (!ctrl.signal.aborted && m.length) { setMatches(m); setMatchesFetchedAt(teamMatchesFetchedAt(teamId)) } })
             .catch(() => { /* keep the last good list */ })
     }, [teamId])
     useQuietRefresh(refreshActive, quietRefresh)
@@ -420,7 +421,7 @@ export function useTeamData(teamId: string | undefined) {
     const rosterPlayers = mergeRoster(rosterBase, players, scorersForRoster)
 
     return {
-        team, matches, loading, error, tab, setTab, selectedYear, setSelectedYear,
+        team, matches, matchesFetchedAt, now, loading, error, tab, setTab, selectedYear, setSelectedYear,
         selectedHalf, setSelectedHalf,
         players, allowedYears, years, statsByYear, displayStats,
         playerTransitions, categoriesByYear, pastMatches, upcoming, onNow, homeAwayStats, last5Form, reload,

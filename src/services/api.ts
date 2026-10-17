@@ -206,12 +206,22 @@ export async function batchFetch<T>(
     return results
 }
 
+/**
+ * When Taso last answered OK for a match / a team's match list (epoch ms).
+ * Set only inside a successful network call, so a cache hit or a failed refresh
+ * keeps the time of the data actually on screen.
+ */
+const fetchedAtMs = new Map<string, number>()
+export function matchFetchedAt(matchId: string): number | undefined { return fetchedAtMs.get(`m:${matchId}`) }
+export function teamMatchesFetchedAt(teamId: string): number | undefined { return fetchedAtMs.get(`t:${teamId}`) }
+
 export async function getMatchDetails(matchId: string, signal?: AbortSignal): Promise<MatchDetails> {
     const params = { match_id: matchId }
     try {
         const match = await withCache('getMatch', params, async () => {
             const data = await fetchAPIData<{ match: MatchDetails }>('getMatch', params, signal)
             if (!data.match) throw new APINotFoundError(`Ottelua ei löydy (ID: ${matchId})`)
+            fetchedAtMs.set(`m:${matchId}`, Date.now())
             setCached('getMatch', params, data.match, data.match.status)
             return data.match
         })
@@ -300,6 +310,7 @@ export async function getTeamMatches(teamId: string, signal?: AbortSignal): Prom
     const params = { team_id: teamId }
     return withCache('getMatches', params, async () => {
         const data = await fetchAPIData<{ matches?: DiscoveryMatch[] }>('getMatches', params, signal)
+        fetchedAtMs.set(`t:${teamId}`, Date.now())
         return data.matches || []
     })
 }
