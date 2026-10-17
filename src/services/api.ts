@@ -67,11 +67,30 @@ async function waitForRateLimit(endpoint?: string, signal?: AbortSignal): Promis
 const FETCH_TIMEOUT_MS = 10000
 const RETRY_DELAYS_MS = [500, 1000, 2000]
 
-function requestUrl(endpoint: string, cleanParams: Record<string, string>): string {
-    const qs = new URLSearchParams(cleanParams)
-    const proxy = String(import.meta.env.VITE_TASO_PROXY || '').replace(/\/$/, '')
-    if (proxy) return `${proxy}/${endpoint}?${qs}`
+/**
+ * Taso (spl.torneopal.net) refuses a call without a `hash` query param since mid-October 2026
+ * (empty HTTP 403). tulospalvelu.palloliitto.fi signs every call the same way:
+ * sha256 hex of `<endpoint>?<salt>&k1=v1&k2=v2…` with raw (unencoded) values, in query order,
+ * then sends the params followed by `hash`.
+ */
+export async function tasoHash(endpoint: string, params: Record<string, string>): Promise<string> {
+    let input = `${endpoint}?${APP_CONFIG.API_HASH_SALT}`
+    for (const [k, v] of Object.entries(params)) input += `&${k}=${v}`
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(input))
+    return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
+/** Direct Taso URL with the signed `hash` param last, as tulospalvelu sends it. */
+export async function tasoUrl(endpoint: string, params: Record<string, string>): Promise<string> {
+    const hash = await tasoHash(endpoint, params)
+    const qs = new URLSearchParams({ ...params, hash })
     return `${APP_CONFIG.API_BASE_URL}${endpoint}?${qs}`
+}
+
+async function requestUrl(endpoint: string, cleanParams: Record<string, string>): Promise<string> {
+    const proxy = String(import.meta.env.VITE_TASO_PROXY || '').replace(/\/$/, '')
+    if (proxy) return `${proxy}/${endpoint}?${new URLSearchParams(cleanParams)}`
+    return tasoUrl(endpoint, cleanParams)
 }
 
 function requestHeaders(): Record<string, string> {
@@ -107,7 +126,7 @@ export async function fetchAPIData<T>(
     for (const [k, v] of Object.entries(params)) {
         if (v !== undefined && v !== '') cleanParams[k] = String(v)
     }
-    const url = requestUrl(endpoint, cleanParams)
+    const url = await requestUrl(endpoint, cleanParams)
     const headers = requestHeaders()
     let lastError: Error = new APIHttpError('Tuntematon virhe')
     for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
@@ -130,7 +149,7 @@ export async function fetchAPIData<T>(
             if (!response.ok || response.status === 403) {
                 // Torneopal origin CF cache sometimes stores empty 403s. Bust once, then origin.
                 if (response.status === 403 || response.status === 429) {
-                    const origin = `${APP_CONFIG.API_BASE_URL}${endpoint}?${new URLSearchParams({ ...cleanParams, _cb: String(Date.now()) })}`
+                    const origin = await tasoUrl(endpoint, { ...cleanParams, _cb: String(Date.now()) })
                     const bust = await fetch(origin, { headers: APP_CONFIG.API_HEADERS, signal: controller.signal })
                     if (bust.ok) {
                         const raw = await bust.text()

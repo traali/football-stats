@@ -6,6 +6,8 @@ export const APP_CONFIG: APIConfig = {
         Accept: "json/4h7dznqdxwtp3hsfdyf5r793uahfxy7x",
         Referer: "https://tulospalvelu.palloliitto.fi/",
     },
+    // Same salt tulospalvelu.palloliitto.fi uses to sign Taso calls (see tasoHash in services/api.ts).
+    API_HASH_SALT: "ysnyp4h6e9egetkc3s3v",
 
     CURRENT_YEAR: "2026",
     PREVIOUS_YEAR: "2025",

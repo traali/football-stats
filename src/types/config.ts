@@ -8,6 +8,7 @@ export interface APIConfig {
     CURRENT_YEAR: string;
     PREVIOUS_YEAR: string;
     API_HEADERS: Record<string, string>;
+    API_HASH_SALT: string;
     RATE_LIMIT: {
         MAX_CALLS_PER_MINUTE: number;
         MAX_CALLS_PER_ENDPOINT: Record<string, number>;
