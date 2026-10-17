@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Search, Share2 } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useMatchData } from '../hooks/useMatchData'
+import { needsQuietRefresh, useMinuteClock, useQuietRefresh } from '../hooks/useQuietRefresh'
 import { MatchHeader } from '../components/MatchHeader'
 import { MatchLineups } from '../components/MatchLineups'
 import { StandingsTable } from '../components/StandingsTable'
@@ -41,13 +42,13 @@ export function MatchPage() {
         }
     }, [matchId, fetchData])
 
-    // Live game: refresh every 60 s while the page is open.
-    const phase = data ? matchPhase(data.match) : null
-    useEffect(() => {
-        if (!matchId || (phase !== 'live' && phase !== 'awaiting')) return
-        const t = setInterval(() => fetchData(matchId, { silent: true }), 60_000)
-        return () => clearInterval(t)
-    }, [matchId, phase, fetchData])
+    // Live game (or kickoff within 15 min, or result still awaited): quiet refresh every 60 s
+    // while the tab is visible. Stops by itself once Taso has the result (phase 'result').
+    const now = useMinuteClock()
+    const phase = data ? matchPhase(data.match, now) : null
+    const refreshActive = !!matchId && !!data && (phase === 'awaiting' || needsQuietRefresh([data.match], now))
+    const quietRefresh = useCallback(() => { if (matchId) fetchData(matchId, { silent: true }) }, [matchId, fetchData])
+    useQuietRefresh(refreshActive, quietRefresh)
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault()

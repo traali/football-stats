@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Trophy, Heart, Shield, ChevronRight, Calendar, MapPin, User, Trash2 } from 'lucide-react'
 import { Button, LiveBadge, MatchRow, PageLayout, SearchBox } from '../components'
@@ -6,6 +6,7 @@ import { getTeamMatches, getTeamProfile } from '../services/api'
 import { listViewedMatches, type ViewedMatch } from '../services/viewedCache'
 import { useFavorites } from '../hooks/useFavorites'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { needsQuietRefresh, useMinuteClock, useQuietRefresh } from '../hooks/useQuietRefresh'
 import { getTeamCategory } from '../utils/dataProcessors'
 import { APP_CONFIG, APP_NAME, FEATURED } from '../config'
 import type { DiscoveryMatch } from '../types'
@@ -77,16 +78,21 @@ export function Home() {
         const ids = [FEATURED.teamId, ...orderedFavorites.map(f => f.id)]
         return [...new Set(ids)].slice(0, MAX_TODAY_TEAMS).join(',')
     }, [orderedFavorites])
-    useEffect(() => {
-        const ctrl = new AbortController()
+    // Last good getMatches per team: a failed quiet refresh never empties the list.
+    const lastGood = useRef(new Map<string, DiscoveryMatch[]>())
+    const loadToday = useCallback((signal: AbortSignal, silent: boolean) => {
         const ids = todayTeamKey.split(',').filter(Boolean)
         const today = helsinkiToday()
-        Promise.all(ids.map(id => getTeamMatches(id, ctrl.signal).then(ms => ({ id, ms, ok: true })).catch(() => ({ id, ms: [] as DiscoveryMatch[], ok: false }))))
+        return Promise.all(ids.map(id => getTeamMatches(id, signal)
+            .then(ms => { lastGood.current.set(id, ms); return { id, ms, ok: true } })
+            .catch(() => ({ id, ms: lastGood.current.get(id) || [] as DiscoveryMatch[], ok: lastGood.current.has(id) }))))
             .then(rows => {
-                if (ctrl.signal.aborted) return
+                if (signal.aborted) return
+                if (silent && rows.every(r => !r.ok)) return
                 const featured = rows.find(r => r.id === FEATURED.teamId)
-                setHero(featured?.ok ? pickHeroMatch(featured.ms) : null)
-                setHeroFailed(!featured?.ok)
+                if (featured?.ok) setHero(pickHeroMatch(featured.ms))
+                else if (!silent) setHero(null)
+                if (!silent) setHeroFailed(!featured?.ok)
                 setLoadingHero(false)
                 const seen = new Set<string>()
                 const out: { teamId: string; teamName: string; match: DiscoveryMatch }[] = []
@@ -102,8 +108,28 @@ export function Home() {
                 out.sort((a, b) => byKickoffAsc(a.match, b.match))
                 setTodayMatches(out)
             })
-        return () => ctrl.abort()
     }, [todayTeamKey])
+    useEffect(() => {
+        const ctrl = new AbortController()
+        loadToday(ctrl.signal, false)
+        return () => ctrl.abort()
+    }, [loadToday])
+
+    // Quiet refresh while a listed game is on or kicks off within 15 min (no spinner, keeps last good data).
+    const now = useMinuteClock()
+    const refreshActive = useMemo(
+        () => needsQuietRefresh([...todayMatches.map(t => t.match), ...(hero ? [hero] : [])], now),
+        [todayMatches, hero, now],
+    )
+    const refreshCtrl = useRef<AbortController | null>(null)
+    useEffect(() => () => refreshCtrl.current?.abort(), [])
+    const quietRefresh = useCallback(() => {
+        refreshCtrl.current?.abort()
+        const ctrl = new AbortController()
+        refreshCtrl.current = ctrl
+        loadToday(ctrl.signal, true).catch(() => { /* keep what is shown */ })
+    }, [loadToday])
+    useQuietRefresh(refreshActive, quietRefresh)
 
     useEffect(() => {
         const teamFromUrl = normalizeTeamId(searchParams.get('team'))
