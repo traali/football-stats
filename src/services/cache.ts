@@ -34,7 +34,7 @@ const MAX_MEMORY = 500
 const MAX_PERSIST = 80
 const PERSIST_KEY = 'fs.apiPersist.v1'
 
-const LIVE_STATUSES = new Set(['live', 'started', 'playing', 'inplay', 'in_play', 'ongoing', '2', 'interrupted'])
+const LIVE_STATUSES = new Set(['live', 'break', 'started', 'playing', 'inplay', 'in_play', 'ongoing', '2', 'interrupted'])
 
 export type MatchPhase = 'live' | 'upcoming' | 'played'
 

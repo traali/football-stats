@@ -46,7 +46,8 @@ export interface MatchLike {
     winner_id?: string | null
 }
 
-const LIVE_STATUSES = new Set(['live', 'playing', 'inplay', 'in_play', 'ongoing', 'käynnissä', 'kesken'])
+/** Taso 'Break' = half-time: the game is on, the clock is stopped. */
+const LIVE_STATUSES = new Set(['live', 'break', 'playing', 'inplay', 'in_play', 'ongoing', 'käynnissä', 'kesken'])
 const DEFAULT_PLAYING_MIN = 90
 /** Results are typed in after the whistle; keep the game visible as live a bit longer. */
 const AFTER_WHISTLE_GRACE_MIN = 20
@@ -140,6 +141,7 @@ export function liveWindow(m: MatchLike): { start: number; end: number } | null 
  */
 function hasStarted(m: MatchLike): boolean {
     if (str(m.time).includes("'")) return true
+    if (str(m.status).toLowerCase() === 'break') return true
     const start = str(m.live_timer_start)
     if (Number(m.live_timer_on) === 1 && /^\d{4}-\d{2}-\d{2}/.test(start) && !start.startsWith('0000')) return true
     const mmss = str(m.live_time_mmss)

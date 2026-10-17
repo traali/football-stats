@@ -48,3 +48,15 @@ describe('getMatches rows during live games (live_A empty, score in fs_A)', () =
         expect(splitMatches([row('4313216')], at('13:51')).onNow).toHaveLength(1)
     })
 })
+
+import breakRows from '../test/fixtures/taso/getMatches_break_rows_2026-10-17.json'
+const brk = (id: string) => breakRows.matches.find(m => m.match_id === id) as MatchLike
+
+describe('Taso status Break (half-time)', () => {
+    it('is live and lists show the half-time score', () => {
+        expect(matchPhase(brk('4336888'), at('13:53'))).toBe('live')
+        expect(phaseLabel(brk('4336888'), at('13:53'))).toBe('Käynnissä')
+        expect(displayScore(brk('4336888'), at('13:53'))).toEqual({ a: 0, b: 1 })
+        expect(displayScore(brk('4291676'), at('13:53'))).toEqual({ a: 0, b: 1 })
+    })
+})
