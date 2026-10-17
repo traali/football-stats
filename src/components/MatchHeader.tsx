@@ -73,7 +73,6 @@ export function MatchHeader({ match, group, teamA, teamB, now, fetchedAt }: { ma
                             )}
                         </div>
                         {phase === 'live' && clock && <div className="text-xs font-mono text-semantic-red mt-1">{clock}</div>}
-                        {phase === 'live' && fetchedAt && <LiveFreshness fetchedAt={fetchedAt} now={now} className="mt-1 text-xs" />}
                         {htReal && (
                             <div className="flex items-center gap-1.5 text-xs text-text-muted font-mono mt-1">
                                 <Timer className="w-3 h-3" />
@@ -83,6 +82,8 @@ export function MatchHeader({ match, group, teamA, teamB, now, fetchedAt }: { ma
                     </div>
                     <TeamSide id={match.team_B_id} name={match.team_B_name} desc={match.team_B_description} crest={crestB} align="left" />
                 </div>
+                {/* Full width under the score row, so the note never squeezes the team names. */}
+                {phase === 'live' && fetchedAt && <LiveFreshness fetchedAt={fetchedAt} now={now} className="-mt-3 text-xs text-center" />}
 
                 {match.goals && match.goals.length > 0 && (
                     <div className="w-full max-w-md space-y-2">
