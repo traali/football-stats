@@ -1,0 +1,49 @@
+{
+ "_source": "Taso getMatches?date=2026-10-17 rows fetched 13:53 Europe/Helsinki (time_stamp 1792234394), half-time, trimmed",
+ "matches": [
+  {
+   "match_id": "4336888",
+   "date": "2026-10-17",
+   "time": "13:00:00",
+   "time_end": "15:00:00",
+   "status": "Break",
+   "team_A_id": "60627",
+   "team_A_name": "TPS",
+   "team_B_id": "156365",
+   "team_B_name": "FC KTP",
+   "fs_A": "0",
+   "fs_B": "1",
+   "live_A": "",
+   "live_B": "",
+   "live_time": "00:00",
+   "live_time_mmss": "",
+   "live_timer_on": "0",
+   "live_timer_start": "2026-10-17 13:47:23",
+   "live_period": "2",
+   "periods_played": 0,
+   "playing_time_min": "120"
+  },
+  {
+   "match_id": "4291676",
+   "date": "2026-10-17",
+   "time": "13:00:00",
+   "time_end": "15:00:00",
+   "status": "Break",
+   "team_A_id": "107249",
+   "team_A_name": "GrIFK",
+   "team_B_id": "35180779",
+   "team_B_name": "FC Lahti",
+   "fs_A": "0",
+   "fs_B": "1",
+   "live_A": "",
+   "live_B": "",
+   "live_time": "00:00",
+   "live_time_mmss": "",
+   "live_timer_on": "0",
+   "live_timer_start": "2026-10-17 13:48:27",
+   "live_period": "2",
+   "periods_played": 0,
+   "playing_time_min": "120"
+  }
+ ]
+}
