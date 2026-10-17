@@ -1,6 +1,7 @@
-import { useEffect, useState, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useState, useMemo, useRef } from 'react'
 import { getTeamProfile, getTeamMatches, getGroupFull, batchFetch } from '../services/api'
 import { useFavorites } from './useFavorites'
+import { needsQuietRefresh, useMinuteClock, useQuietRefresh } from './useQuietRefresh'
 import { isResult, outcomeFor, splitMatches } from '../domain/matchState'
 import type { TeamResponse, DiscoveryMatch } from '../types'
 import { APP_CONFIG } from '../config'
@@ -76,6 +77,23 @@ export function useTeamData(teamId: string | undefined) {
         return () => { controller.abort() }
     }, [teamId, reloadTick])
 
+    // Quiet refresh of the match list while a game is on or kicks off within 15 min.
+    // No spinner; a failed call keeps the last good list.
+    const now = useMinuteClock()
+    const refreshActive = useMemo(() => !loading && needsQuietRefresh(matches, now), [loading, matches, now])
+    const refreshCtrl = useRef<AbortController | null>(null)
+    useEffect(() => () => refreshCtrl.current?.abort(), [teamId])
+    const quietRefresh = useCallback(() => {
+        if (!teamId) return
+        refreshCtrl.current?.abort()
+        const ctrl = new AbortController()
+        refreshCtrl.current = ctrl
+        getTeamMatches(teamId, ctrl.signal)
+            .then(m => { if (!ctrl.signal.aborted && m.length) setMatches(m) })
+            .catch(() => { /* keep the last good list */ })
+    }, [teamId])
+    useQuietRefresh(refreshActive, quietRefresh)
+
     useEffect(() => {
         if (seasonTouched.current || !matches.length) return
         const s = resolveActiveSeason(matches)
@@ -100,16 +118,22 @@ export function useTeamData(teamId: string | undefined) {
         return [...yearsSet].sort((a, b) => b.localeCompare(a))
     }, [filteredMatches])
 
-    const relevantGroups = useMemo(() => {
-        if (!team?.groups) return []
+    // Keyed by content: a quiet match-list refresh must not refetch the player history.
+    const relevantGroupsKey = useMemo(() => {
+        if (!team?.groups) return '[]'
         const yearOfComp = new Map<string, string>()
         for (const m of matches) {
             if (m.competition_id && m.date && !yearOfComp.has(String(m.competition_id))) yearOfComp.set(String(m.competition_id), m.date.slice(0, 4))
         }
-        return (team.groups as Array<{ competition_season?: string | number; competition_id?: string; category_id?: string; group_id?: string }>)
+        const groups = (team.groups as Array<{ competition_season?: string | number; competition_id?: string; category_id?: string; group_id?: string }>)
             .map(g => ({ ...g, competition_season: g.competition_season ? String(g.competition_season) : (yearOfComp.get(String(g.competition_id || '')) || '') }))
             .filter(g => !!g.competition_season && allowedYears.includes(String(g.competition_season)))
+        return JSON.stringify(groups)
     }, [team, allowedYears, matches])
+    const relevantGroups = useMemo(
+        () => JSON.parse(relevantGroupsKey) as Array<{ competition_season: string; competition_id?: string; category_id?: string; group_id?: string }>,
+        [relevantGroupsKey],
+    )
 
     useEffect(() => {
         if (!teamId || relevantGroups.length === 0) return
@@ -343,7 +367,7 @@ export function useTeamData(teamId: string | undefined) {
     }, [team])
 
     // Live + upcoming are "now": never hidden by the season chips. Stale old fixtures never show.
-    const split = useMemo(() => splitMatches(matches), [matches])
+    const split = useMemo(() => splitMatches(matches, now), [matches, now])
     const onNow = split.onNow
     const upcoming = useMemo(() => split.upcoming.slice(0, 10), [split])
 
