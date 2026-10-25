@@ -87,14 +87,12 @@ export async function tasoUrl(endpoint: string, params: Record<string, string>):
     return `${APP_CONFIG.API_BASE_URL}${endpoint}?${qs}`
 }
 
+/** Always the signed direct Torneopal URL. taso-proxy was retired 2026-10-25 (upstream blocks Cloudflare egress). */
 async function requestUrl(endpoint: string, cleanParams: Record<string, string>): Promise<string> {
-    const proxy = String(import.meta.env.VITE_TASO_PROXY || '').replace(/\/$/, '')
-    if (proxy) return `${proxy}/${endpoint}?${new URLSearchParams(cleanParams)}`
     return tasoUrl(endpoint, cleanParams)
 }
 
 function requestHeaders(): Record<string, string> {
-    if (import.meta.env.VITE_TASO_PROXY) return { Accept: 'application/json' }
     return APP_CONFIG.API_HEADERS
 }
 
