@@ -6,9 +6,13 @@ export interface SavedTournament {
     title: string
     teamName: string
     category: string
+    /** 'fudis' for fudisturnaus.com; otherwise a Taso competition id */
     turnaus: string
+    /** fudisturnaus slug when turnaus==='fudis'; else Taso category id */
     sarja: string
     teamId: string
+    /** fudisturnaus clubId filter (optional) */
+    clubId?: string
     dateAdded: string
 }
 
@@ -29,6 +33,7 @@ export function getSavedTournaments(): SavedTournament[] {
                 turnaus: String(t.turnaus),
                 sarja: String(t.sarja),
                 teamId: /^\d+$/.test(String(t.teamId || '')) ? String(t.teamId) : '',
+                clubId: /^\d+$/.test(String(t.clubId || '')) ? String(t.clubId) : '',
                 dateAdded: String(t.dateAdded || ''),
             }))
     } catch {
@@ -40,22 +45,52 @@ function write(list: SavedTournament[]) {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)) } catch { /* storage full / private */ }
 }
 
-export function tournamentPath(t: Pick<SavedTournament, 'turnaus' | 'sarja' | 'teamId'>): string {
+export function tournamentPath(t: Pick<SavedTournament, 'turnaus' | 'sarja' | 'teamId' | 'clubId'>): string {
+    if (t.turnaus === 'fudis') {
+        const base = `/fudis/${encodeURIComponent(t.sarja)}${t.teamId ? `/${t.teamId}` : ''}`
+        return t.clubId ? `${base}?clubId=${encodeURIComponent(t.clubId)}` : base
+    }
     return `/turnaukset/${encodeURIComponent(t.turnaus)}/${encodeURIComponent(t.sarja)}${t.teamId ? `/${t.teamId}` : ''}`
 }
 
-export function saveTournament(p: Pick<ParsedTournamentUrl, 'turnaus' | 'sarja' | 'teamId'>, info?: { title?: string; teamName?: string; category?: string }): SavedTournament {
+export function saveTournament(
+    p: ParsedTournamentUrl | Pick<SavedTournament, 'turnaus' | 'sarja' | 'teamId' | 'clubId'>,
+    info?: { title?: string; teamName?: string; category?: string },
+): SavedTournament {
     const list = getSavedTournaments()
-    const id = `${p.turnaus}-${p.sarja}-${p.teamId || ''}`
+    let turnaus: string
+    let sarja: string
+    let teamId: string
+    let clubId: string
+    if ('kind' in p) {
+        if (p.kind === 'fudis') {
+            turnaus = 'fudis'
+            sarja = p.slug
+            teamId = p.teamId || ''
+            clubId = p.clubId || ''
+        } else {
+            turnaus = p.turnaus
+            sarja = p.sarja
+            teamId = p.teamId || ''
+            clubId = ''
+        }
+    } else {
+        turnaus = p.turnaus
+        sarja = p.sarja
+        teamId = p.teamId || ''
+        clubId = p.clubId || ''
+    }
+    const id = `${turnaus}-${sarja}-${teamId || ''}`
     const existing = list.find(t => t.id === id)
     const entry: SavedTournament = {
         id,
-        title: info?.title || existing?.title || p.turnaus,
+        title: info?.title || existing?.title || (turnaus === 'fudis' ? sarja : turnaus),
         teamName: info?.teamName || existing?.teamName || '',
-        category: info?.category || existing?.category || p.sarja,
-        turnaus: p.turnaus,
-        sarja: p.sarja,
-        teamId: p.teamId || '',
+        category: info?.category || existing?.category || (turnaus === 'fudis' ? 'fudisturnaus' : sarja),
+        turnaus,
+        sarja,
+        teamId,
+        clubId,
         dateAdded: existing?.dateAdded || todayISO(),
     }
     write([entry, ...list.filter(t => t.id !== id)])
