@@ -104,8 +104,11 @@ export function FudisTurnausPage() {
     const quiet = useMemo(() => (view ? needsQuietRefresh(view.all) : false), [view])
     useQuietRefresh(quiet && !loading && !error, quietReload)
 
-    const teams = data?.teams || []
-    const clubTeams = clubId ? teams.filter(t => String(t.clubId) === clubId) : teams
+    const teams = useMemo(() => data?.teams || [], [data])
+    const clubTeams = useMemo(
+        () => (clubId ? teams.filter(t => String(t.clubId) === clubId) : teams),
+        [clubId, teams],
+    )
     const selectedTeamId = teamId || ''
     const myIds = useMemo(() => {
         if (selectedTeamId) return [selectedTeamId]
@@ -137,9 +140,12 @@ export function FudisTurnausPage() {
     const selectedGroup = data?.groups.find(g => String(g.id) === selectedGroupId) || null
     const showTables = !!data?.calculateGroupTables && !(data.ageGroups || []).some(a => a.hideGroupTables)
 
-    const savedKey = { turnaus: 'fudis' as const, sarja: slug, teamId: selectedTeamId, clubId }
+    const savedKey = useMemo(
+        () => ({ turnaus: 'fudis' as const, sarja: slug, teamId: selectedTeamId, clubId }),
+        [slug, selectedTeamId, clubId],
+    )
     const [saved, setSaved] = useState(() => isTournamentSaved(savedKey))
-    useEffect(() => { setSaved(isTournamentSaved(savedKey)) }, [slug, selectedTeamId, clubId])
+    useEffect(() => { setSaved(isTournamentSaved(savedKey)) }, [savedKey])
 
     const teamName = selectedTeamId
         ? (teams.find(t => String(t.id) === selectedTeamId)?.name || '')

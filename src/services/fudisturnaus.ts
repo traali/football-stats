@@ -155,7 +155,10 @@ export async function fetchFudisTournament(slug: string, signal?: AbortSignal): 
     } catch (err) {
         if (signal?.aborted) throw err
         // Browser CORS / network failures surface as TypeError — never invent a stale copy.
-        throw new Error('Turnauksen live-tietoja ei saatu ladattua tältä sivustolta juuri nyt. Kokeile hetken päästä uudelleen.')
+        throw new Error(
+            'Turnauksen live-tietoja ei saatu ladattua tältä sivustolta juuri nyt. Kokeile hetken päästä uudelleen.',
+            { cause: err },
+        )
     }
     if (!res.ok) throw new Error(`Turnauksen lataus epäonnistui (${res.status}).`)
     const data = (await res.json()) as FudisTournament
