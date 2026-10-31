@@ -145,11 +145,18 @@ export function playingMinutesFromInfo(info?: string | null): number {
 
 export async function fetchFudisTournament(slug: string, signal?: AbortSignal): Promise<FudisTournament> {
     if (!isFudisSlug(slug)) throw new Error('Turnauksen tunniste ei kelpaa.')
-    const res = await fetch(`${FUDIS_EDGE}${encodeURIComponent(slug)}`, {
-        signal,
-        cache: 'no-store',
-        headers: { Accept: 'application/json' },
-    })
+    let res: Response
+    try {
+        res = await fetch(`${FUDIS_EDGE}${encodeURIComponent(slug)}`, {
+            signal,
+            cache: 'no-store',
+            headers: { Accept: 'application/json' },
+        })
+    } catch (err) {
+        if (signal?.aborted) throw err
+        // Browser CORS / network failures surface as TypeError — never invent a stale copy.
+        throw new Error('Turnauksen live-tietoja ei saatu ladattua tältä sivustolta juuri nyt. Kokeile hetken päästä uudelleen.')
+    }
     if (!res.ok) throw new Error(`Turnauksen lataus epäonnistui (${res.status}).`)
     const data = (await res.json()) as FudisTournament
     if (!data || typeof data !== 'object' || !data.slug) throw new Error('Turnausvastausta ei voitu lukea.')

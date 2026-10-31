@@ -92,7 +92,9 @@ export function FudisTurnausPage() {
                 setFetchedAt(Date.now())
             })
             .catch(err => {
-                if (!ctrl.signal.aborted) setError(friendlyError(err, 'Turnausta'))
+                if (ctrl.signal.aborted) return
+                const msg = err instanceof Error ? err.message : ''
+                setError(msg.includes('Turnaus') || msg.includes('live-tietoja') ? msg : friendlyError(err, 'Turnausta'))
             })
             .finally(() => { if (!ctrl.signal.aborted) setLoading(false) })
         return () => ctrl.abort()
