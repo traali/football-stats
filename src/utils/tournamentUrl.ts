@@ -1,4 +1,5 @@
-export interface ParsedTournamentUrl {
+export interface ParsedTasoTournamentUrl {
+    kind: 'taso'
     /** Taso competition id, e.g. hc2026 */
     turnaus: string
     /** Taso category id, e.g. B13-8 */
@@ -11,11 +12,27 @@ export interface ParsedTournamentUrl {
     rawUrl: string
 }
 
+export interface ParsedFudisTournamentUrl {
+    kind: 'fudis'
+    /** fudisturnaus.com slug */
+    slug: string
+    /** Optional club filter (fudisturnaus clubId) */
+    clubId: string
+    /** Optional team filter (fudisturnaus team id) */
+    teamId: string
+    host: string
+    rawUrl: string
+}
+
+export type ParsedTournamentUrl = ParsedTasoTournamentUrl | ParsedFudisTournamentUrl
+
 /**
- * Understands links that point at Taso data:
+ * Understands links that point at Taso data or fudisturnaus.com:
  *  - tulospalvelu.palloliitto.fi/category/B13-8!hc2026[/group/13][/...]
  *  - *.torneopal.fi/...?turnaus=hc2026&sarja=B13-8&joukkue=185085 (or competition/class/teamid)
  *  - this app's own #/turnaukset/hc2026/B13-8/185085 links
+ *  - this app's own #/fudis/<slug>[/teamId] links
+ *  - www.fudisturnaus.com/t/<slug>?clubId=&teamId=
  */
 export function parseTournamentUrl(input: string): ParsedTournamentUrl | null {
     if (!input || typeof input !== 'string') return null
@@ -31,15 +48,55 @@ export function parseTournamentUrl(input: string): ParsedTournamentUrl | null {
     }
     const host = url.hostname.toLowerCase()
 
-    const own = /#\/turnaukset\/([^/?#]+)\/([^/?#]+)(?:\/(\d+))?/.exec(url.hash ? url.hash : '')
+    // Hash-router query lives inside the fragment: #/fudis/slug?clubId=20
+    const hash = url.hash || ''
+    const hashPath = hash.split('?')[0]
+    const hashQuery = new URLSearchParams(hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '')
+
+    const ownFudis = /#\/fudis\/([^/?#]+)(?:\/(\d+))?/.exec(hashPath)
+    if (ownFudis) {
+        return {
+            kind: 'fudis',
+            slug: decodeURIComponent(ownFudis[1]),
+            clubId: hashQuery.get('clubId') || url.searchParams.get('clubId') || '',
+            teamId: ownFudis[2] || hashQuery.get('teamId') || url.searchParams.get('teamId') || '',
+            host,
+            rawUrl: raw,
+        }
+    }
+
+    const own = /#\/turnaukset\/([^/?#]+)\/([^/?#]+)(?:\/(\d+))?/.exec(hashPath)
     if (own) {
-        return { turnaus: decodeURIComponent(own[1]), sarja: decodeURIComponent(own[2]), teamId: own[3] || '', groupId: '', host, rawUrl: raw }
+        return {
+            kind: 'taso',
+            turnaus: decodeURIComponent(own[1]),
+            sarja: decodeURIComponent(own[2]),
+            teamId: own[3] || hashQuery.get('team') || '',
+            groupId: hashQuery.get('lohko') || '',
+            host,
+            rawUrl: raw,
+        }
+    }
+
+    if (host === 'www.fudisturnaus.com' || host === 'fudisturnaus.com') {
+        const m = /\/t\/([^/]+)/.exec(url.pathname)
+        if (!m) return null
+        const slug = decodeURIComponent(m[1])
+        if (!/^[A-Za-z0-9-]{8,200}$/.test(slug)) return null
+        return {
+            kind: 'fudis',
+            slug,
+            clubId: url.searchParams.get('clubId') || '',
+            teamId: url.searchParams.get('teamId') || '',
+            host,
+            rawUrl: raw,
+        }
     }
 
     if (host === 'tulospalvelu.palloliitto.fi') {
         const m = /\/category\/([^/!]+)!([^/]+)(?:\/group\/(\d+))?/.exec(decodeURIComponent(url.pathname))
         if (!m) return null
-        return { turnaus: m[2], sarja: m[1], teamId: url.searchParams.get('team') || '', groupId: m[3] || '', host, rawUrl: raw }
+        return { kind: 'taso', turnaus: m[2], sarja: m[1], teamId: url.searchParams.get('team') || '', groupId: m[3] || '', host, rawUrl: raw }
     }
 
     if (!host.endsWith('torneopal.fi') && !host.endsWith('torneopal.net')) return null
@@ -48,5 +105,5 @@ export function parseTournamentUrl(input: string): ParsedTournamentUrl | null {
     const teamId = url.searchParams.get('joukkue') || url.searchParams.get('teamid') || url.searchParams.get('team') || ''
     const groupId = url.searchParams.get('lohko') || url.searchParams.get('group') || ''
     if (!turnaus || !sarja) return null
-    return { turnaus, sarja, teamId: /^\d+$/.test(teamId) ? teamId : '', groupId: /^\d+$/.test(groupId) ? groupId : '', host, rawUrl: raw }
+    return { kind: 'taso', turnaus, sarja, teamId: /^\d+$/.test(teamId) ? teamId : '', groupId: /^\d+$/.test(groupId) ? groupId : '', host, rawUrl: raw }
 }

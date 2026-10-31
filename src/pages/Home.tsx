@@ -165,13 +165,17 @@ export function Home() {
         setTournamentError(null)
         const parsed = parseTournamentUrl(tournamentUrlInput.trim())
         if (!parsed) {
-            setTournamentError('Linkki ei kelpaa. Liitä tulospalvelu.palloliitto.fi-sarjan linkki tai Torneopal-linkki, jossa on turnaus ja sarja.')
+            setTournamentError('Linkki ei kelpaa. Liitä Palloliiton tulospalvelun, Torneopalin tai fudisturnaus.com-turnauksen linkki.')
             return
         }
-        saveTournament(parsed)
+        const saved = saveTournament(parsed)
         setSavedTournaments(getSavedTournaments())
         setTournamentUrlInput('')
-        navigate(`${tournamentPath(parsed)}${parsed.groupId ? `?lohko=${parsed.groupId}` : ''}`)
+        if (parsed.kind === 'fudis') {
+            navigate(tournamentPath(saved))
+        } else {
+            navigate(`${tournamentPath(saved)}${parsed.groupId ? `?lohko=${parsed.groupId}` : ''}`)
+        }
     }
 
     return (
@@ -280,13 +284,13 @@ export function Home() {
                 </summary>
                 <form onSubmit={handleImportTournament} className="mt-3 space-y-2">
                     <p className="text-xs text-text-secondary">
-                        Liitä turnauksen sarjan linkki Palloliiton tulospalvelusta, esim. tulospalvelu.palloliitto.fi/category/B13-8!hc2026.
+                        Liitä Palloliiton tulospalvelun, Torneopalin tai fudisturnaus.com-turnauksen linkki.
                     </p>
                     <div className="flex gap-2">
                         <input type="url" inputMode="url" value={tournamentUrlInput}
                             onChange={e => { setTournamentUrlInput(e.target.value); setTournamentError(null) }}
                             aria-label="Turnauksen linkki"
-                            placeholder="https://tulospalvelu.palloliitto.fi/category/…"
+                            placeholder="https://www.fudisturnaus.com/t/… tai tulospalvelu…"
                             className="flex-1 min-w-0 bg-surface-2 border border-border-hairline rounded-lg px-3 py-2 text-text-primary text-sm" />
                         <Button type="submit">Lisää</Button>
                     </div>

@@ -11,6 +11,7 @@ import { CompetitionPage } from './pages/CompetitionPage'
 import { CategoryPage } from './pages/CategoryPage'
 import { FavoritesPage } from './pages/FavoritesPage'
 import { TurnauksetPage } from './pages/TurnauksetPage'
+import { FudisTurnausPage } from './pages/FudisTurnausPage'
 import { BottomNav } from './components/BottomNav'
 import { HakuPage } from './pages/HakuPage'
 import { ClubPage } from './pages/ClubPage'
@@ -74,6 +75,8 @@ export const router = createHashRouter([
             { path: '/team/:teamId', element: <TeamPage /> },
             { path: '/turnaukset/:turnaus/:sarja/:teamId', element: <TurnauksetPage /> },
             { path: '/turnaukset/:turnaus/:sarja', element: <TurnauksetPage /> },
+            { path: '/fudis/:slug/:teamId', element: <FudisTurnausPage /> },
+            { path: '/fudis/:slug', element: <FudisTurnausPage /> },
             { path: '/haku', element: <HakuPage /> },
             { path: '/club/:clubId', element: <ClubPage /> },
             { path: '/player/:playerId', element: <PlayerPage /> },
