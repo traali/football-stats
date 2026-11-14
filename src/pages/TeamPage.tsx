@@ -13,6 +13,8 @@ import { APP_CONFIG } from '../config'
 import { StatBadge, BackButton, PageLayout, Card, PlayerAvatar, TeamHeader, TeamMatchList } from '../components'
 import { TeamRoster } from '../components/TeamRoster'
 import { TeamTodayBlock } from '../components/TeamTodayBlock'
+import { TwinRoster } from '../components/TwinRoster'
+import { useRosterTwin } from '../hooks/useRosterTwin'
 import { useNavigate } from 'react-router-dom'
 import { setLastSelectedTeamId } from '../services/teamSelection'
 
@@ -103,6 +105,8 @@ function TeamPageBody({
         (historicalPlayersByYear[prevYear] || []).map((p: { player_id: string; matches?: number; goals?: number }) => [p.player_id, { matches: p.matches, goals: p.goals }]),
     )
 
+    const ownRosterEmpty = !loadingPlayers && rosterPlayers.length === 0 && !(team?.players || []).length
+    const twin = useRosterTwin(team, teamId, ownRosterEmpty)
     const rosterContent = (
         <TeamRoster
             players={rosterPlayers}
@@ -113,6 +117,7 @@ function TeamPageBody({
             loading={loadingPlayers}
             error={historyError}
             lastSeasonById={lastSeasonById}
+            emptyFallback={twin.twin ? <TwinRoster twin={twin.twin} /> : twin.loading ? <div className="h-24 rounded-lg bg-surface-2 animate-pulse" /> : undefined}
         />
     )
 
