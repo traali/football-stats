@@ -3,7 +3,6 @@ import { useParams } from 'react-router-dom'
 import { Users, Calendar, TrendingUp } from 'lucide-react'
 import { cn } from '../utils/cn'
 import { useTeamData } from '../hooks/useTeamData'
-import type { DiscoveryMatch } from '../types'
 import { formatPpm } from '../utils/standings'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { ErrorState } from '../components/ErrorState'
@@ -11,8 +10,9 @@ import { TasoLink } from '../components/TasoLink'
 import { getTeamCategory } from '../utils/dataProcessors'
 import { formatSeasonLabel } from '../utils/dates'
 import { APP_CONFIG } from '../config'
-import { StatBadge, BackButton, PageLayout, Card, PlayerAvatar, TeamHeader, TeamMatchList, MatchRow } from '../components'
+import { StatBadge, BackButton, PageLayout, Card, PlayerAvatar, TeamHeader, TeamMatchList } from '../components'
 import { TeamRoster } from '../components/TeamRoster'
+import { TeamTodayBlock } from '../components/TeamTodayBlock'
 import { useNavigate } from 'react-router-dom'
 import { setLastSelectedTeamId } from '../services/teamSelection'
 
@@ -46,7 +46,7 @@ export function TeamPage() {
         playerTransitions, categoriesByYear, rosterPlayers,
         rosterYear, loadingPlayers, historyError, historicalPlayersByYear,
         currentScorers, pastMatches, upcoming, onNow, last5Form,
-        fav, toggle, matchesFetchedAt, now,
+        fav, toggle, matchesFetchedAt, now, matches,
     } = data
 
     return (
@@ -79,6 +79,7 @@ export function TeamPage() {
             toggle={toggle}
             matchesFetchedAt={matchesFetchedAt}
             now={now}
+            matches={matches}
         />
     )
 }
@@ -94,7 +95,7 @@ function TeamPageBody({
     displayStats, statsByYear, years,
     playerTransitions, categoriesByYear, rosterPlayers, rosterYear,
     loadingPlayers, historyError, historicalPlayersByYear,
-    currentScorers, pastMatches, upcoming, onNow, last5Form, fav, toggle, matchesFetchedAt, now,
+    currentScorers, pastMatches, upcoming, last5Form, fav, toggle, matchesFetchedAt, now, matches,
 }: any) {
 /* eslint-enable @typescript-eslint/no-explicit-any */
     const prevYear = String(parseInt(rosterYear, 10) - 1)
@@ -249,12 +250,7 @@ function TeamPageBody({
                 onToggleFav={() => toggle(teamId, team?.team_name, team ? getTeamCategory(team, APP_CONFIG.CURRENT_YEAR) : undefined)}
             />
             <TasoLink kind="team" id={teamId} />
-            {onNow.length > 0 && (
-                <section className="bg-surface-1 border border-semantic-red/30 rounded-xl p-3 space-y-1" data-testid="team-on-now">
-                    <h2 className="text-sm font-bold text-text-primary uppercase tracking-wider px-1">Nyt käynnissä</h2>
-                    {(onNow as DiscoveryMatch[]).map(m => <MatchRow key={m.match_id} match={m} teamId={teamId} now={now} fetchedAt={matchesFetchedAt} subtitle={[m.category_name, m.venue_name].filter(Boolean).map(String).join(' · ')} />)}
-                </section>
-            )}
+            <TeamTodayBlock teamId={teamId} team={team} matches={matches} now={now} fetchedAt={matchesFetchedAt} />
 
             <div className="space-y-4 pt-4 border-t border-border-hairline">
                 <div className="flex flex-wrap items-center justify-between gap-3">
@@ -267,7 +263,7 @@ function TeamPageBody({
                                 <button
                                     onClick={() => setSelectedYear('all')}
                                     className={cn(
-                                        "text-xs px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer active:scale-95",
+                                        "text-xs px-3 min-h-[44px] rounded-md font-semibold transition-all cursor-pointer active:scale-95",
                                         selectedYear === 'all'
                                             ? "bg-accent text-text-inverse shadow-sm"
                                             : "text-text-muted hover:text-text-primary"
@@ -280,7 +276,7 @@ function TeamPageBody({
                                         key={y}
                                         onClick={() => setSelectedYear(y)}
                                         className={cn(
-                                            "text-xs px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer active:scale-95",
+                                            "text-xs px-3 min-h-[44px] rounded-md font-semibold transition-all cursor-pointer active:scale-95",
                                             selectedYear === y
                                                 ? "bg-accent text-text-inverse shadow-sm"
                                                 : "text-text-muted hover:text-text-primary"
@@ -298,7 +294,7 @@ function TeamPageBody({
                                     onClick={() => setSelectedHalf('syksy')}
                                     aria-pressed={selectedHalf === 'syksy'}
                                     className={cn(
-                                        "text-xs px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer active:scale-95",
+                                        "text-xs px-3 min-h-[44px] rounded-md font-semibold transition-all cursor-pointer active:scale-95",
                                         selectedHalf === 'syksy'
                                             ? "bg-accent text-text-inverse shadow-sm"
                                             : "text-text-muted hover:text-text-primary"
@@ -310,7 +306,7 @@ function TeamPageBody({
                                     onClick={() => setSelectedHalf('kevät')}
                                     aria-pressed={selectedHalf === 'kevät'}
                                     className={cn(
-                                        "text-xs px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer active:scale-95",
+                                        "text-xs px-3 min-h-[44px] rounded-md font-semibold transition-all cursor-pointer active:scale-95",
                                         selectedHalf === 'kevät'
                                             ? "bg-accent text-text-inverse shadow-sm"
                                             : "text-text-muted hover:text-text-primary"
@@ -321,7 +317,7 @@ function TeamPageBody({
                                 <button
                                     onClick={() => setSelectedHalf('all')}
                                     className={cn(
-                                        "text-xs px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer active:scale-95",
+                                        "text-xs px-3 min-h-[44px] rounded-md font-semibold transition-all cursor-pointer active:scale-95",
                                         selectedHalf === 'all'
                                             ? "bg-accent text-text-inverse shadow-sm"
                                             : "text-text-muted hover:text-text-primary"
@@ -334,6 +330,9 @@ function TeamPageBody({
                     </div>
                 </div>
 
+                {displayStats.played === 0 ? (
+                    <p className="text-sm text-text-muted bg-surface-1 border border-border-hairline rounded-xl p-4">Ei pelattuja otteluita tällä rajauksella.</p>
+                ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
                     <StatBadge label="Ottelut" value={displayStats.played} />
                     <StatBadge label="Voitot" value={displayStats.wins} variant="success" />
@@ -347,6 +346,7 @@ function TeamPageBody({
                         </>
                     )}
                 </div>
+                )}
 
                 {years.length > 1 && (
                     <div className="mt-4 pt-4 border-t border-border-hairline space-y-3">
@@ -363,7 +363,7 @@ function TeamPageBody({
                                         key={yr}
                                         onClick={() => setSelectedYear(yr)}
                                         className={cn(
-                                            "p-3 rounded-xl border transition-all cursor-pointer select-none",
+                                            "p-3 rounded-xl border transition-all cursor-pointer select-none min-h-[44px]",
                                             isActive
                                                 ? "bg-accent/10 border-accent/40 text-accent font-bold"
                                                 : "bg-surface-2 border-border-hairline hover:border-accent/20 text-text-secondary hover:text-text-primary"

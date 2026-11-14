@@ -132,7 +132,7 @@ export function PlayerPage() {
 
     return (
         <PageLayout>
-            <BackButton className="mb-2" />
+            <BackButton className="mb-2" fallbackTo={teams[0]?.teamId ? `/team/${teams[0].teamId}` : '/'} />
             <div className="bg-surface-1 border border-border-hairline rounded-2xl p-6 relative overflow-hidden">
                 <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-bmw-cyan via-bmw-magenta to-bmw-amber" />
                 <div className="flex items-start justify-between gap-4">
@@ -202,7 +202,7 @@ export function PlayerPage() {
                                 <button
                                     onClick={() => { seasonTouched.current = true; setSelectedYear('all') }}
                                     className={cn(
-                                        "text-xs px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer active:scale-95",
+                                        "text-xs px-3 min-h-[44px] rounded-md font-semibold transition-all cursor-pointer active:scale-95",
                                         selectedYear === 'all'
                                             ? "bg-accent text-text-inverse shadow-sm"
                                             : "text-text-muted hover:text-text-primary"
@@ -215,7 +215,7 @@ export function PlayerPage() {
                                         key={y}
                                         onClick={() => { seasonTouched.current = true; setSelectedYear(y) }}
                                         className={cn(
-                                            "text-xs px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer active:scale-95",
+                                            "text-xs px-3 min-h-[44px] rounded-md font-semibold transition-all cursor-pointer active:scale-95",
                                             selectedYear === y
                                                 ? "bg-accent text-text-inverse shadow-sm"
                                                 : "text-text-muted hover:text-text-primary"
@@ -232,7 +232,7 @@ export function PlayerPage() {
                                 <button
                                     onClick={() => { seasonTouched.current = true; setSelectedHalf('syksy') }}
                                     className={cn(
-                                        "text-xs px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer active:scale-95",
+                                        "text-xs px-3 min-h-[44px] rounded-md font-semibold transition-all cursor-pointer active:scale-95",
                                         selectedHalf === 'syksy'
                                             ? "bg-accent text-text-inverse shadow-sm"
                                             : "text-text-muted hover:text-text-primary"
@@ -243,7 +243,7 @@ export function PlayerPage() {
                                 <button
                                     onClick={() => { seasonTouched.current = true; setSelectedHalf('kevät') }}
                                     className={cn(
-                                        "text-xs px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer active:scale-95",
+                                        "text-xs px-3 min-h-[44px] rounded-md font-semibold transition-all cursor-pointer active:scale-95",
                                         selectedHalf === 'kevät'
                                             ? "bg-accent text-text-inverse shadow-sm"
                                             : "text-text-muted hover:text-text-primary"
@@ -254,7 +254,7 @@ export function PlayerPage() {
                                 <button
                                     onClick={() => { seasonTouched.current = true; setSelectedHalf('all') }}
                                     className={cn(
-                                        "text-xs px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer active:scale-95",
+                                        "text-xs px-3 min-h-[44px] rounded-md font-semibold transition-all cursor-pointer active:scale-95",
                                         selectedHalf === 'all'
                                             ? "bg-accent text-text-inverse shadow-sm"
                                             : "text-text-muted hover:text-text-primary"
@@ -273,7 +273,7 @@ export function PlayerPage() {
                         <div className="bg-surface-1 border border-border-hairline rounded-xl p-5 space-y-3">
                             <div className="flex items-center justify-between">
                                 <h2 className="text-sm font-bold text-text-primary uppercase tracking-wider">Joukkueet</h2>
-                                {selectedTeamId && <button onClick={() => setSelectedTeamId(null)} className="text-xs text-text-muted">Tyhjennä</button>}
+                                {selectedTeamId && <button type="button" onClick={() => setSelectedTeamId(null)} className="text-xs text-text-muted min-h-[44px] px-2">Tyhjennä</button>}
                             </div>
                             {teams.map(t => (
                                 <div key={t.teamId} onClick={() => setSelectedTeamId(selectedTeamId === t.teamId ? null : t.teamId)}
@@ -282,7 +282,7 @@ export function PlayerPage() {
                                         <p className="text-text-primary font-bold text-sm truncate">{t.teamName}</p>
                                         <p className="text-text-muted text-xs mt-0.5 truncate">{t.level}</p>
                                     </div>
-                                    <button type="button" onClick={(e) => { e.stopPropagation(); navigate(`/team/${t.teamId}`) }} className="p-2 text-text-muted hover:text-accent">
+                                    <button type="button" aria-label={`Avaa joukkueen ${t.teamName} sivu`} onClick={(e) => { e.stopPropagation(); navigate(`/team/${t.teamId}`) }} className="min-w-[44px] min-h-[44px] flex items-center justify-center text-text-muted hover:text-accent shrink-0">
                                         <ExternalLink className="w-4 h-4" />
                                     </button>
                                 </div>

@@ -18,6 +18,8 @@ import { getLastSelectedTeamId } from '../services/teamSelection'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import type { MatchDetails } from '../types'
 import { tasoUrl } from '../utils/tasoLinks'
+import { VenueBlock } from '../components/VenueBlock'
+import { venueOf } from '../utils/venue'
 
 function shareText(m: MatchDetails): string {
     const score = displayScore(m)
@@ -121,6 +123,13 @@ export function MatchPage() {
                                 <Share2 className="w-4 h-4" /> Jaa ottelu
                             </button>
                         </div>
+
+                        {!isForfeit(data.match) && venueOf(data.match) && (
+                            <section className="bg-surface-1 border border-border-hairline rounded-xl p-4 space-y-2" data-testid="match-venue">
+                                <h2 className="text-xs font-bold text-text-muted uppercase tracking-widest">Pelipaikka</h2>
+                                <VenueBlock venue={venueOf(data.match)} />
+                            </section>
+                        )}
 
                         {!isResult(data.match) && data.group && (
                             <CommonOpponents

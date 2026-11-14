@@ -106,8 +106,8 @@ export function StandingsTable({ teams, matches = [], teamAId, teamBId, selected
                 <table className="w-full text-sm text-left">
                     <thead className="text-[10px] font-bold uppercase tracking-[0.08em] text-text-muted bg-surface-3">
                         <tr>
-                            <th className="w-10 px-3 py-3 font-bold">#</th>
-                            <th className="px-3 py-3 font-bold">Joukkue</th>
+                            <th className="w-8 px-2 py-3 font-bold">#</th>
+                            <th className="px-2 py-3 font-bold">Joukkue</th>
                             <th className="w-10 px-2 py-3 font-bold text-center">O</th>
                             <th className="w-10 px-2 py-3 font-bold text-center">V</th>
                             <th className="w-10 px-2 py-3 font-bold text-center">T</th>
@@ -116,7 +116,7 @@ export function StandingsTable({ teams, matches = [], teamAId, teamBId, selected
                             {showPointsPerMatch && <th className="w-14 px-2 py-3 font-bold text-center text-text-primary" title="Pisteitä per ottelu">P/O</th>}
                             {!compact && <th className="w-12 px-2 py-3 font-bold text-right">TM</th>}
                             {!compact && <th className="w-12 px-2 py-3 font-bold text-right">PM</th>}
-                            <th className="w-28 px-3 py-3 font-bold text-center text-xs">Kunto</th>
+                            <th className="hidden sm:table-cell w-28 px-3 py-3 font-bold text-center text-xs">Kunto</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-border-hairline">
@@ -142,8 +142,8 @@ export function StandingsTable({ teams, matches = [], teamAId, teamBId, selected
                                         !isSelected && !isHovered && !primaryResult && !isMatchTeam && 'hover:bg-surface-2',
                                     )}
                                 >
-                                    <td className="w-10 px-3 py-3 font-bold text-text-muted font-mono text-sm">{team.current_standing}</td>
-                                    <td className={cn('max-w-0 w-full px-3 py-3 font-medium text-sm', isMatchTeam && !isSelected ? 'text-accent' : 'text-text-secondary')}>
+                                    <td className="w-8 px-2 py-3 font-bold text-text-muted font-mono text-sm">{team.current_standing}</td>
+                                    <td className={cn('max-w-0 w-full px-2 py-3 font-medium text-sm', isMatchTeam && !isSelected ? 'text-accent' : 'text-text-secondary')}>
                                         <div className="flex items-center gap-2">
                                             {isMatchTeam && !isSelected && <span className="w-0.5 h-4 rounded-full bg-gradient-to-b from-bmw-cyan via-bmw-magenta to-bmw-amber shrink-0" />}
                                             <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
@@ -179,7 +179,7 @@ export function StandingsTable({ teams, matches = [], teamAId, teamBId, selected
                                     {showPointsPerMatch && <td className="w-14 px-2 py-3 text-center font-bold text-text-primary font-mono text-sm">{ppm(team.points_per_match)}</td>}
                                     {!compact && <td className="w-12 px-2 py-3 text-right text-text-secondary font-mono text-sm">{team.goals_for}</td>}
                                     {!compact && <td className="w-12 px-2 py-3 text-right text-text-secondary font-mono text-sm">{team.goals_against}</td>}
-                                    <td className="w-28 px-3 py-3 text-center">
+                                    <td className="hidden sm:table-cell w-28 px-3 py-3 text-center">
                                         <div className="flex items-center justify-center gap-0.5">
                                             {(teamForm.get(team.team_id) || []).map((r, i) => (
                                                 <span key={`${team.team_id}-form-${i}`} title={r === 'V' ? 'Voitto' : r === 'H' ? 'Häviö' : 'Tasapeli'} className={cn('w-2 h-2 rounded-full', r === 'V' ? 'bg-semantic-green' : r === 'H' ? 'bg-semantic-red' : 'bg-accent')} />
@@ -193,7 +193,7 @@ export function StandingsTable({ teams, matches = [], teamAId, teamBId, selected
                 </table>
             </div>
             <div className="px-4 py-2.5 border-t border-border-hairline space-y-1 text-[11px] text-text-muted">
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <div className="hidden sm:flex flex-wrap items-center gap-x-3 gap-y-1">
                     <span className="font-semibold">Kunto (5 viimeisintä, uusin oikealla):</span>
                     <FormLegend />
                 </div>

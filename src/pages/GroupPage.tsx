@@ -46,7 +46,7 @@ export function GroupPage() {
 
     return (
         <PageLayout>
-            <BackButton className="mb-2" />
+            <BackButton className="mb-2" fallbackTo={compId && catId ? `/competition/${compId}/category/${catId}` : '/'} />
 
             <div>
                 <h1 className="text-2xl font-bold text-text-primary">{group.group_name || 'Lohko'}</h1>

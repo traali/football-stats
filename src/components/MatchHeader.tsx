@@ -19,10 +19,10 @@ function TeamSide({ id, name, desc, crest, align }: { id: string; name: string; 
     const inner = (
         <>
             {crest && <img src={crest} alt="" className="w-8 h-8 object-contain mb-1" />}
-            <h3 className={cn('text-xl md:text-3xl font-bold leading-tight', align === 'right' ? 'text-right' : 'text-left', isPlaceholderTeam(id) ? 'italic text-text-muted' : 'text-text-primary')}>{label}</h3>
+            <h3 className={cn('text-lg md:text-3xl font-bold leading-tight break-words [overflow-wrap:anywhere] max-w-full', align === 'right' ? 'text-right' : 'text-left', isPlaceholderTeam(id) ? 'italic text-text-muted' : 'text-text-primary')}>{label}</h3>
         </>
     )
-    const cls = cn('flex-1 flex flex-col space-y-2 rounded-xl p-1', align === 'right' ? 'items-end' : 'items-start')
+    const cls = cn('flex-1 basis-0 min-w-0 flex flex-col space-y-2 rounded-xl p-1', align === 'right' ? 'items-end' : 'items-start')
     if (isPlaceholderTeam(id)) return <div className={cls}>{inner}</div>
     return <Link to={`/team/${id}`} className={cn(cls, 'hover:opacity-80 transition-opacity')}>{inner}</Link>
 }
@@ -49,7 +49,7 @@ export function MatchHeader({ match, group, teamA, teamB, now, fetchedAt }: { ma
             animate={{ opacity: 1, scale: 1 }}
             className="bg-surface-1 rounded-xl overflow-hidden border border-border-hairline"
         >
-            <div className="p-6 md:p-8 flex flex-col items-center text-center space-y-6">
+            <div className="p-4 md:p-8 flex flex-col items-center text-center space-y-6">
                 <div className="flex flex-col items-center space-y-2">
                     <div className="flex items-center gap-2 flex-wrap justify-center">
                         <div className="px-3 py-1 bg-accent/10 border border-accent/20 rounded-md text-accent text-xs font-bold uppercase tracking-widest">
@@ -62,7 +62,7 @@ export function MatchHeader({ match, group, teamA, teamB, now, fetchedAt }: { ma
                     <h2 className="text-text-muted text-sm font-medium">{match.category_name} {group?.group_name && `• ${group.group_name}`}</h2>
                 </div>
 
-                <div className="flex items-center justify-center space-x-4 md:space-x-8 w-full">
+                <div className="flex items-center justify-center gap-3 md:gap-8 w-full">
                     <TeamSide id={match.team_A_id} name={match.team_A_name} desc={match.team_A_description} crest={crestA} align="right" />
                     <div className="flex flex-col items-center shrink-0">
                         <div className="text-4xl md:text-6xl font-bold tabular-nums tracking-tighter text-text-primary font-mono leading-none" data-testid="match-score">

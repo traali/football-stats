@@ -44,12 +44,12 @@ export function TeamHeader({ team, teamId, last5Form, fav, onToggleFav }: {
     const primaryCatNames = Array.from(categoryNames).slice(0, 3)
 
     return (
-        <div className="bg-surface-1 border border-border-hairline rounded-2xl p-6 relative overflow-hidden space-y-6">
+        <div className="bg-surface-1 border border-border-hairline rounded-2xl p-4 sm:p-6 relative overflow-hidden space-y-6">
             <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-bmw-cyan via-bmw-magenta to-bmw-amber" />
 
             <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
-                    <div className="flex items-center gap-3.5">
+                    <div className="flex items-center gap-3.5 min-w-0">
                         {team?.crest ? (
                             <div className="w-14 h-14 rounded-full bg-surface-2 border border-border-hairline p-1 flex items-center justify-center shrink-0">
                                 <img src={team.crest} alt="" className="w-full h-full rounded-full object-contain" />
@@ -60,13 +60,13 @@ export function TeamHeader({ team, teamId, last5Form, fav, onToggleFav }: {
                             </div>
                         )}
                         {team?.kit_1_front && (
-                            <div className="w-14 h-14 rounded-xl bg-surface-2 border border-border-hairline p-1 flex items-center justify-center shrink-0">
+                            <div className="w-14 h-14 rounded-xl bg-surface-2 border border-border-hairline p-1 hidden sm:flex items-center justify-center shrink-0">
                                 <img src={team.kit_1_front} alt="Paita" className="w-full h-full object-contain rounded" />
                             </div>
                         )}
-                        <div>
+                        <div className="min-w-0">
                             <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-accent">Joukkueprofiili</span>
-                            <h1 className="text-2xl font-bold text-text-primary truncate mt-0.5">{team?.team_name || teamId}</h1>
+                            <h1 className="text-2xl font-bold text-text-primary break-words [overflow-wrap:anywhere] mt-0.5">{team?.team_name || teamId}</h1>
                             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-text-secondary mt-1.5">
                                 {team?.birthyear && (
                                     <span className="flex items-center gap-1 font-medium bg-surface-2 px-2 py-0.5 rounded-md">
@@ -98,7 +98,7 @@ export function TeamHeader({ team, teamId, last5Form, fav, onToggleFav }: {
                 </div>
                 <button
                     onClick={onToggleFav}
-                    className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl bg-surface-2 border border-border-hairline hover:border-accent/30 hover:bg-surface-3 transition-all cursor-pointer active:scale-95"
+                    className="p-2 min-w-[44px] min-h-[44px] shrink-0 flex items-center justify-center rounded-xl bg-surface-2 border border-border-hairline hover:border-accent/30 hover:bg-surface-3 transition-all cursor-pointer active:scale-95"
                     aria-label={fav ? 'Poista suosikeista' : 'Lisää suosikkeihin'}
                 >
                     <Heart className={cn('w-5 h-5 transition-colors', fav ? 'fill-semantic-red text-semantic-red' : 'text-text-muted')} />
