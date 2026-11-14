@@ -1,69 +1,34 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { Trophy, Heart, Shield, ChevronRight, Calendar, MapPin, User, Trash2 } from 'lucide-react'
-import { Button, LiveBadge, MatchRow, PageLayout, SearchBox } from '../components'
+import { Trophy, Heart, Shield, ChevronRight, Search, User, Trash2, Hash } from 'lucide-react'
+import { Button, MatchRow, PageLayout, SearchBox } from '../components'
+import { GameHero } from '../components/GameHero'
 import { getTeamMatches, getTeamProfile, teamMatchesFetchedAt } from '../services/api'
 import { listViewedMatches, type ViewedMatch } from '../services/viewedCache'
 import { useFavorites } from '../hooks/useFavorites'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { needsQuietRefresh, useMinuteClock, useQuietRefresh } from '../hooks/useQuietRefresh'
 import { getTeamCategory } from '../utils/dataProcessors'
-import { APP_CONFIG, APP_NAME, FEATURED } from '../config'
+import { APP_CONFIG, APP_NAME } from '../config'
 import type { DiscoveryMatch } from '../types'
-import { formatDate, formatTime } from '../utils/dates'
-import { pickHeroMatch } from '../utils/matchLive'
-import { displayScore, helsinkiToday, isForfeit, matchPhase, byKickoffAsc } from '../domain/matchState'
-import { teamLabel } from '../utils/teamLabel'
+import { teamToday } from '../utils/favoriteHero'
+import { helsinkiToday, matchPhase, byKickoffAsc } from '../domain/matchState'
 import { getSavedTournaments, removeTournament, saveTournament, tournamentPath, type SavedTournament } from '../services/tournamentStorage'
 import { getLastSelectedTeamId, normalizeTeamId, setLastSelectedTeamId, sortFavoritesByLastSelected } from '../services/teamSelection'
 import { parseTournamentUrl } from '../utils/tournamentUrl'
 
 const MAX_TODAY_TEAMS = 6
 
-function HeroCard({ match, teamName }: { match: DiscoveryMatch; teamName: string }) {
-    const navigate = useNavigate()
-    const phase = matchPhase(match)
-    const score = displayScore(match)
-    const forfeit = phase === 'result' && isForfeit(match)
-    const label = phase === 'live' ? null
-        : phase === 'awaiting' ? null
-            : phase === 'result' ? (forfeit ? 'Viimeisin ottelu · Luovutus' : 'Viimeisin ottelu')
-                : 'Seuraava ottelu'
-    const venue = String(match.venue_name || match.venue || match.venue_city_name || '')
-    return (
-        <button type="button" onClick={() => navigate(`/match/${match.match_id}`)} data-testid="hero-match"
-            className="w-full text-left bg-surface-1 border border-border-hairline rounded-2xl p-4 hover:bg-surface-2 transition-colors">
-            <p className="text-[10px] font-bold uppercase tracking-widest mb-2 text-accent flex items-center gap-2">
-                {teamName}
-                {phase === 'live' && <LiveBadge />}
-                {phase === 'awaiting' && <LiveBadge awaiting />}
-                {label && <span className="text-text-muted">· {label}</span>}
-            </p>
-            <p className="text-lg font-bold text-text-primary">
-                {teamLabel(match.team_A_id, match.team_A_name, match.team_A_description as string | undefined)} – {teamLabel(match.team_B_id, match.team_B_name, match.team_B_description as string | undefined)}
-            </p>
-            <p className="font-mono text-2xl font-bold mt-1">{score ? `${score.a}–${score.b}` : 'vs'}</p>
-            <p className="text-sm text-text-secondary mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
-                <span className="flex items-center gap-1">
-                    <Calendar className="w-3.5 h-3.5" />
-                    {formatDate(match.date, 'with-year')} {formatTime(match.time)}
-                </span>
-                {venue && !forfeit && <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{venue}</span>}
-            </p>
-        </button>
-    )
-}
+interface TeamGames { ms: DiscoveryMatch[]; ok: boolean }
 
 export function Home() {
     const [matchId, setMatchId] = useState('')
     const [tournamentUrlInput, setTournamentUrlInput] = useState('')
     const [tournamentError, setTournamentError] = useState<string | null>(null)
     const [savedTournaments, setSavedTournaments] = useState<SavedTournament[]>(() => getSavedTournaments())
-    const [hero, setHero] = useState<DiscoveryMatch | null>(null)
-    const [heroFailed, setHeroFailed] = useState(false)
-    const [todayMatches, setTodayMatches] = useState<{ teamId: string; teamName: string; match: DiscoveryMatch; fetchedAt?: number }[]>([])
+    const [games, setGames] = useState<Record<string, TeamGames>>({})
+    const [loaded, setLoaded] = useState(false)
     const [viewed] = useState<ViewedMatch[]>(() => listViewedMatches().slice(0, 8))
-    const [loadingHero, setLoadingHero] = useState(true)
     const navigate = useNavigate()
     const [searchParams] = useSearchParams()
     const { favorites, updateName, favoritePlayers } = useFavorites()
@@ -73,40 +38,26 @@ export function Home() {
         [favorites],
     )
 
-    // Featured team's hero game + today's games (Helsinki date) for the featured and favourite teams.
-    const todayTeamKey = useMemo(() => {
-        const ids = [FEATURED.teamId, ...orderedFavorites.map(f => f.id)]
-        return [...new Set(ids)].slice(0, MAX_TODAY_TEAMS).join(',')
-    }, [orderedFavorites])
+    // Only the family's own saved teams: no sample team on the front page.
+    const todayTeamKey = useMemo(
+        () => [...new Set(orderedFavorites.map(f => f.id))].slice(0, MAX_TODAY_TEAMS).join(','),
+        [orderedFavorites],
+    )
     // Last good getMatches per team: a failed quiet refresh never empties the list.
     const lastGood = useRef(new Map<string, DiscoveryMatch[]>())
     const loadToday = useCallback((signal: AbortSignal, silent: boolean) => {
         const ids = todayTeamKey.split(',').filter(Boolean)
-        const today = helsinkiToday()
+        if (ids.length === 0) { setGames({}); setLoaded(true); return Promise.resolve() }
         return Promise.all(ids.map(id => getTeamMatches(id, signal)
             .then(ms => { lastGood.current.set(id, ms); return { id, ms, ok: true } })
             .catch(() => ({ id, ms: lastGood.current.get(id) || [] as DiscoveryMatch[], ok: lastGood.current.has(id) }))))
             .then(rows => {
                 if (signal.aborted) return
                 if (silent && rows.every(r => !r.ok)) return
-                const featured = rows.find(r => r.id === FEATURED.teamId)
-                if (featured?.ok) setHero(pickHeroMatch(featured.ms))
-                else if (!silent) setHero(null)
-                if (!silent) setHeroFailed(!featured?.ok)
-                setLoadingHero(false)
-                const seen = new Set<string>()
-                const out: { teamId: string; teamName: string; match: DiscoveryMatch; fetchedAt?: number }[] = []
-                for (const { id, ms } of rows) {
-                    for (const m of ms) {
-                        if (m.date !== today || seen.has(m.match_id)) continue
-                        if (matchPhase(m) === 'stale') continue
-                        seen.add(m.match_id)
-                        const name = String(m.team_A_id) === id ? m.team_A_name : m.team_B_name
-                        out.push({ teamId: id, teamName: name, match: m, fetchedAt: teamMatchesFetchedAt(id) })
-                    }
-                }
-                out.sort((a, b) => byKickoffAsc(a.match, b.match))
-                setTodayMatches(out)
+                const next: Record<string, TeamGames> = {}
+                for (const r of rows) next[r.id] = { ms: r.ms, ok: r.ok }
+                setGames(next)
+                setLoaded(true)
             })
     }, [todayTeamKey])
     useEffect(() => {
@@ -115,11 +66,33 @@ export function Home() {
         return () => ctrl.abort()
     }, [loadToday])
 
-    // Quiet refresh while a listed game is on or kicks off within 15 min (no spinner, keeps last good data).
     const now = useMinuteClock()
+    const heroes = useMemo(() => orderedFavorites.slice(0, MAX_TODAY_TEAMS).map(fav => {
+        const g = games[fav.id]
+        return { fav, ok: g?.ok ?? false, known: Boolean(g), today: g ? teamToday(g.ms, now) : null }
+    }), [orderedFavorites, games, now])
+    const heroIds = useMemo(() => new Set(heroes.flatMap(h => h.today?.hero ? [String(h.today.hero.match.match_id)] : [])), [heroes])
+
+    // Today's other games for the saved teams (Helsinki date), not already in a hero card.
+    const todayMatches = useMemo(() => {
+        const today = helsinkiToday(now)
+        const seen = new Set<string>(heroIds)
+        const out: { teamId: string; match: DiscoveryMatch; fetchedAt?: number }[] = []
+        for (const [id, g] of Object.entries(games)) {
+            for (const m of g.ms) {
+                if (m.date !== today || seen.has(String(m.match_id))) continue
+                if (matchPhase(m, now) === 'stale') continue
+                seen.add(String(m.match_id))
+                out.push({ teamId: id, match: m, fetchedAt: teamMatchesFetchedAt(id) })
+            }
+        }
+        return out.sort((a, b) => byKickoffAsc(a.match, b.match))
+    }, [games, heroIds, now])
+
+    // Quiet refresh while a listed game is on or kicks off within 15 min (no spinner, keeps last good data).
     const refreshActive = useMemo(
-        () => needsQuietRefresh([...todayMatches.map(t => t.match), ...(hero ? [hero] : [])], now),
-        [todayMatches, hero, now],
+        () => needsQuietRefresh([...todayMatches.map(t => t.match), ...heroes.flatMap(h => h.today?.hero ? [h.today.hero.match] : [])], now),
+        [todayMatches, heroes, now],
     )
     const refreshCtrl = useRef<AbortController | null>(null)
     useEffect(() => () => refreshCtrl.current?.abort(), [])
@@ -182,33 +155,53 @@ export function Home() {
         <PageLayout>
             <div className="space-y-1">
                 <h1 className="text-3xl font-bold tracking-tight text-text-primary">{APP_NAME}</h1>
-                <p className="text-text-secondary text-sm">Ottelut, tulokset ja sarjataulukot suoraan Palloliiton tulospalvelusta.</p>
+                <p className="text-text-secondary text-sm">Omien joukkueiden pelit, tulokset ja sarjataulukot suoraan Palloliiton tulospalvelusta.</p>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 md:items-start">
-                <section aria-label="Haku">
-                    <SearchBox />
-                </section>
-                <section aria-label="Esittelyjoukkue" className="space-y-2">
-                    {loadingHero && <div className="animate-pulse bg-surface-1 rounded-2xl h-36" />}
-                    {hero && <HeroCard match={hero} teamName={FEATURED.teamName} />}
-                    {!loadingHero && !hero && heroFailed && (
-                        <p className="text-sm text-text-secondary bg-surface-1 border border-border-hairline rounded-2xl p-4">Otteluita ei saatu ladattua juuri nyt.</p>
-                    )}
-                    <Link to={`/team/${FEATURED.teamId}`}
-                        className="w-full bg-surface-1 border border-border-hairline rounded-xl px-4 min-h-[52px] flex items-center justify-between hover:bg-surface-2 transition-colors">
-                        <span className="flex items-center gap-3 min-w-0">
-                            <Shield className="w-5 h-5 text-accent shrink-0" />
-                            <span className="text-text-primary font-semibold truncate">{FEATURED.teamName} · joukkueen sivu</span>
-                        </span>
-                        <ChevronRight className="w-5 h-5 text-text-muted shrink-0" />
-                    </Link>
-                </section>
-            </div>
+            <section aria-label="Omat pelit" className="space-y-3" data-testid="my-games">
+                {orderedFavorites.length === 0 ? (
+                    <div className="bg-surface-1 border border-accent/30 rounded-2xl p-4 space-y-3" data-testid="no-favorites">
+                        <h2 className="text-lg font-bold text-text-primary flex items-center gap-2">
+                            <Heart className="w-5 h-5 text-semantic-red" /> Tallenna oma joukkue
+                        </h2>
+                        <p className="text-sm text-text-secondary">
+                            Hae joukkue alta ja paina sydäntä. Sen jälkeen etusivu näyttää heti oman joukkueen seuraavan pelin tai käynnissä olevan pelin tuloksen, pelipaikan kartan ja pysäköinnin.
+                        </p>
+                        <Link to="/haku" className="inline-flex items-center justify-center gap-2 min-h-[44px] px-4 rounded-lg bg-accent text-text-inverse font-bold text-sm">
+                            <Search className="w-4 h-4" /> Hae joukkue
+                        </Link>
+                    </div>
+                ) : heroes.map(({ fav, ok, known, today }) => {
+                    if (!known && !loaded) return <div key={fav.id} className="animate-pulse bg-surface-1 rounded-2xl h-64" />
+                    if (today?.hero) {
+                        return (
+                            <div key={fav.id} onClickCapture={() => setLastSelectedTeamId(fav.id)}>
+                                <GameHero match={today.hero.match} kind={today.hero.kind} teamId={fav.id} teamName={fav.name} now={now} />
+                            </div>
+                        )
+                    }
+                    return (
+                        <Link key={fav.id} to={`/team/${fav.id}`} onClick={() => setLastSelectedTeamId(fav.id)}
+                            className="bg-surface-1 border border-border-hairline rounded-2xl p-4 min-h-[52px] flex items-center justify-between gap-3 hover:bg-surface-2">
+                            <span className="min-w-0">
+                                <span className="block text-[11px] font-bold uppercase tracking-widest text-accent truncate">{fav.name}</span>
+                                <span className="block text-sm text-text-secondary mt-1">
+                                    {ok ? 'Tulospalvelussa ei ole joukkueelle otteluita.' : 'Otteluita ei saatu ladattua juuri nyt.'}
+                                </span>
+                            </span>
+                            <ChevronRight className="w-5 h-5 text-text-muted shrink-0" />
+                        </Link>
+                    )
+                })}
+            </section>
+
+            <section aria-label="Haku">
+                <SearchBox />
+            </section>
 
             {todayMatches.length > 0 && (
                 <section className="bg-surface-1 border border-border-hairline rounded-xl p-3 space-y-1" data-testid="today-section">
-                    <h2 className="text-sm font-bold text-text-primary uppercase tracking-wider px-1">Tänään</h2>
+                    <h2 className="text-sm font-bold text-text-primary uppercase tracking-wider px-1">Muut pelit tänään</h2>
                     {todayMatches.map(({ teamId, match, fetchedAt }) => (
                         <MatchRow key={match.match_id} match={match} teamId={teamId} subtitle={String(match.category_name || '')} now={now} fetchedAt={fetchedAt} />
                     ))}
@@ -278,11 +271,11 @@ export function Home() {
                 </section>
             )}
 
-            <details className="bg-surface-1 border border-border-hairline rounded-xl p-4">
-                <summary className="cursor-pointer text-sm font-semibold text-text-primary flex items-center gap-2 min-h-[28px]">
+            <details className="bg-surface-1 border border-border-hairline rounded-xl px-4 py-1">
+                <summary className="cursor-pointer text-sm font-semibold text-text-primary flex items-center gap-2 min-h-[44px]">
                     <Trophy className="w-4 h-4 text-accent" /> Lisää turnaus linkillä
                 </summary>
-                <form onSubmit={handleImportTournament} className="mt-3 space-y-2">
+                <form onSubmit={handleImportTournament} className="mt-1 mb-3 space-y-2">
                     <p className="text-xs text-text-secondary">
                         Liitä Palloliiton tulospalvelun, Torneopalin tai fudisturnaus.com-turnauksen linkki.
                     </p>
@@ -298,9 +291,9 @@ export function Home() {
                 </form>
             </details>
 
-            <details className="bg-surface-1 border border-border-hairline rounded-xl p-4">
-                <summary className="cursor-pointer text-sm font-semibold text-text-secondary min-h-[28px]">Avaa ottelu tunnuksella</summary>
-                <form onSubmit={handleSubmit} className="mt-3 flex gap-2">
+            <details className="bg-surface-1 border border-border-hairline rounded-xl px-4 py-1">
+                <summary className="cursor-pointer text-sm font-semibold text-text-secondary flex items-center gap-2 min-h-[44px]"><Hash className="w-4 h-4 text-accent" /> Avaa ottelu tunnuksella</summary>
+                <form onSubmit={handleSubmit} className="mt-1 mb-3 flex gap-2">
                     <input type="text" inputMode="numeric" pattern="[0-9]*" value={matchId} onChange={e => setMatchId(e.target.value)}
                         aria-label="Ottelun tunnus" placeholder="esim. 4208631"
                         className="flex-1 min-w-0 bg-surface-2 border border-border-hairline rounded-lg px-3 py-2 text-text-primary text-sm" />
