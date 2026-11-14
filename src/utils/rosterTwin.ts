@@ -51,8 +51,12 @@ export function teamBirthYear(team: { birthyear?: unknown; primary_category?: un
     return m ? m[1] : null
 }
 
-/** Ranked twins: exact name first, then the newest season. Only same birth year. */
-export function rankTwins(target: { team_id: string; team_name: string; yob: string | null; clubAbbr?: string }, teams: TwinCandidate[]): (TwinCandidate & { match: NameMatch })[] {
+/**
+ * Ranked twins, only same birth year: same sport first (a Winterliiga football team's
+ * twin is the league football team, not a small futsal squad), then exact name,
+ * then the newest season.
+ */
+export function rankTwins(target: { team_id: string; team_name: string; yob: string | null; clubAbbr?: string; sport_id?: string }, teams: TwinCandidate[]): (TwinCandidate & { match: NameMatch })[] {
     if (!target.yob) return []
     const out: (TwinCandidate & { match: NameMatch })[] = []
     for (const t of teams) {
@@ -62,8 +66,11 @@ export function rankTwins(target: { team_id: string; team_name: string; yob: str
         if (m) out.push({ ...t, match: m })
     }
     const seasonKey = (s?: string) => String(s || '').slice(0, 4)
+    const sport = String(target.sport_id || '')
+    const sameSport = (t: TwinCandidate) => (sport && t.sport_id === sport ? 0 : 1)
     return out.sort((a, b) =>
-        (a.match === 'exact' ? 0 : 1) - (b.match === 'exact' ? 0 : 1)
+        sameSport(a) - sameSport(b)
+        || (a.match === 'exact' ? 0 : 1) - (b.match === 'exact' ? 0 : 1)
         || seasonKey(b.season).localeCompare(seasonKey(a.season))
         || String(a.team_id).localeCompare(String(b.team_id)))
 }

@@ -32,6 +32,7 @@ export function useRosterTwin(team: TeamResponse | null | undefined, teamId: str
                 team_name: String(team.team_name),
                 yob,
                 clubAbbr: String((team as { club_abbrevation?: string }).club_abbrevation || ''),
+                sport_id: String((team as { sport_id?: string }).sport_id || ''),
             }, club?.teams || [])
             for (const cand of ranked.slice(0, MAX_TRIES)) {
                 const prof = await getTeamProfile(cand.team_id, ctrl.signal).catch(() => null)

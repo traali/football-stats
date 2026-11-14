@@ -38,6 +38,25 @@ describe('rankTwins', () => {
     it('Winterliiga PPJ/Laru Sininen → futsal Sininen 2013 first, then PPJ/Laru sin 2013', () => {
         expect(rankTwins(winter, club).map(t => [t.team_id, t.match])).toEqual([['35230232', 'exact'], ['185085', 'abbrev']])
     })
+    it('football Winterliiga team: the league football team (PPJ/Laru sin) before the futsal squad', () => {
+        expect(rankTwins({ ...winter, sport_id: 'football' }, club).map(t => t.team_id)).toEqual(['185085', '35230232'])
+    })
+    it('P14R PPJ/Laru Oranssi (football) → PPJ/Laru oran 185086, not futsal oranssi 35230233', () => {
+        const oranClub = [
+            { team_id: '35230233', team_name: 'PPJ/Laru oranssi', yob: '2013', sport_id: 'futsal', season: '2026-27' },
+            { team_id: '185086', team_name: 'PPJ/Laru oran', yob: '2013', sport_id: 'football', season: '2026' },
+            { team_id: '35203799', team_name: 'PPJ/Laru Oranssi', sport_id: 'football' },
+            { team_id: '185085', team_name: 'PPJ/Laru sin', yob: '2013', sport_id: 'football', season: '2026' },
+        ]
+        const ranked = rankTwins({ team_id: '35224455', team_name: 'PPJ/Laru Oranssi', yob: '2013', clubAbbr: 'PPJ', sport_id: 'football' }, oranClub)
+        expect(ranked.map(t => t.team_id)).toEqual(['185086', '35230233'])
+    })
+    it('P14R Oranssi never borrows the P14H Sininen twin; no name match → nothing', () => {
+        const ranked = rankTwins({ team_id: '35224455', team_name: 'PPJ/Laru Oranssi', yob: '2013', clubAbbr: 'PPJ', sport_id: 'football' }, club)
+        expect(ranked.map(t => t.team_id)).toEqual(['185086'])
+        expect(ranked.map(t => t.team_id)).not.toContain('185085')
+        expect(ranked.map(t => t.team_id)).not.toContain('35230232')
+    })
     it('never another birth year or itself', () => {
         const ids = rankTwins(winter, club).map(t => t.team_id)
         expect(ids).not.toContain('35187930')
