@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Bookmark, BookmarkCheck, Trophy } from 'lucide-react'
 import { BackButton, ErrorState, MatchRow, PageLayout, StandingsTable, TasoLink } from '../components'
 import { TournamentScorersList } from '../components/tournament'
@@ -10,7 +10,10 @@ import { isTournamentSaved, removeTournament, saveTournament } from '../services
 import { splitMatches, byKickoffAsc } from '../domain/matchState'
 import { tasoCategoryUrl } from '../utils/tasoLinks'
 import { cn } from '../utils/cn'
-import type { GroupResponse, MatchSummary } from '../types'
+import type { GroupResponse, MatchSummary, TeamResponse } from '../types'
+import { getTeamProfile } from '../services/api'
+import { TwinRoster } from '../components/TwinRoster'
+import { useRosterTwin } from '../hooks/useRosterTwin'
 
 function groupLabel(g: GroupResponse): string {
     const name = String(g.group_name || g.group_id || '')
@@ -46,6 +49,38 @@ function MatchSections({ matches, teamId }: { matches: MatchSummary[]; teamId?: 
                 </Section>
             )}
         </>
+    )
+}
+
+/** The team's Taso players; empty roster → same-name twin team's players, clearly labelled. */
+function TeamPlayersSection({ teamId }: { teamId: string }) {
+    const [team, setTeam] = useState<TeamResponse | null>(null)
+    const [loaded, setLoaded] = useState(false)
+    useEffect(() => {
+        let cancelled = false
+        getTeamProfile(teamId).then(t => { if (!cancelled) { setTeam(t); setLoaded(true) } }).catch(() => { if (!cancelled) setLoaded(true) })
+        return () => { cancelled = true }
+    }, [teamId])
+    const own = (team?.players || []).filter(p => /^\d+$/.test(String(p.player_id || '')))
+    const twin = useRosterTwin(team, teamId, loaded && own.length === 0)
+    if (!loaded) return null
+    return (
+        <Section title={`Pelaajat${own.length ? ` (${own.length})` : ''}`}>
+            {own.length > 0 ? (
+                <ul className="grid grid-cols-1 gap-1">
+                    {own.map(p => (
+                        <li key={p.player_id}>
+                            <Link to={`/player/${p.player_id}`} className="flex items-center gap-3 min-h-[44px] px-3 rounded-lg bg-surface-2 border border-border-hairline hover:bg-surface-3">
+                                {p.shirt_number && <span className="text-xs font-mono font-bold text-accent w-7 shrink-0">#{p.shirt_number}</span>}
+                                <span className="text-sm text-text-primary font-medium truncate">{[p.first_name, p.last_name].filter(Boolean).join(' ')}</span>
+                            </Link>
+                        </li>
+                    ))}
+                </ul>
+            ) : twin.twin ? <TwinRoster twin={twin.twin} />
+                : twin.loading ? <div className="h-24 rounded-lg bg-surface-2 animate-pulse" />
+                    : <p className="text-sm text-text-muted">Ei pelaajatietoja</p>}
+        </Section>
     )
 }
 
@@ -145,7 +180,7 @@ export function TurnauksetPage() {
                         return (
                             <button key={g.group_id} type="button" role="tab" aria-selected={active}
                                 onClick={() => setSearchParams(prev => { const n = new URLSearchParams(prev); n.set('lohko', String(g.group_id)); return n }, { replace: true })}
-                                className={cn('shrink-0 min-h-[40px] px-3 rounded-full border text-xs font-semibold',
+                                className={cn('shrink-0 min-h-[44px] px-3 rounded-full border text-xs font-semibold',
                                     active ? 'bg-accent text-text-inverse border-accent' : 'bg-surface-1 border-border-hairline text-text-secondary hover:text-text-primary')}>
                                 {groupLabel(g)}
                             </button>
@@ -167,6 +202,8 @@ export function TurnauksetPage() {
                     ) : null}
                 </>
             ))}
+
+            {teamId && <TeamPlayersSection teamId={teamId} />}
 
             <TournamentScorersList
                 title={teamId ? 'Joukkueen maalintekijät turnauksessa' : 'Maalintekijät'}

@@ -16,10 +16,14 @@ const filled = (v: unknown): string => (v === null || v === undefined ? '' : Str
 
 function TeamSide({ id, name, desc, crest, align }: { id: string; name: string; desc?: string; crest?: string | null; align: 'left' | 'right' }) {
     const label = teamLabel(id, name, desc)
+    // Break long club/team names after "/" rather than mid-word on a phone.
+    const parts = label.split('/')
     const inner = (
         <>
             {crest && <img src={crest} alt="" className="w-8 h-8 object-contain mb-1" />}
-            <h3 className={cn('text-lg md:text-3xl font-bold leading-tight break-words [overflow-wrap:anywhere] max-w-full', align === 'right' ? 'text-right' : 'text-left', isPlaceholderTeam(id) ? 'italic text-text-muted' : 'text-text-primary')}>{label}</h3>
+            <h3 className={cn('text-lg md:text-3xl font-bold leading-tight break-words max-w-full', align === 'right' ? 'text-right' : 'text-left', isPlaceholderTeam(id) ? 'italic text-text-muted' : 'text-text-primary')}>
+                {parts.map((p, i) => <span key={i}>{p}{i < parts.length - 1 && <>/<wbr /></>}</span>)}
+            </h3>
         </>
     )
     const cls = cn('flex-1 basis-0 min-w-0 flex flex-col space-y-2 rounded-xl p-1', align === 'right' ? 'items-end' : 'items-start')

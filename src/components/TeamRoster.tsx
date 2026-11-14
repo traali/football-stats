@@ -17,7 +17,7 @@ interface P {
 }
 
 export function TeamRoster({
-    players, teamName, level, rosterYear, rosterHalf, loading, error, lastSeasonById,
+    players, teamName, level, rosterYear, rosterHalf, loading, error, lastSeasonById, emptyFallback,
 }: {
     players: P[]
     teamName?: string
@@ -27,6 +27,8 @@ export function TeamRoster({
     loading?: boolean
     error?: string | null
     lastSeasonById?: Record<string, { matches?: number; goals?: number }>
+    /** Shown instead of "Ei pelaajatietoja" when the roster is empty (e.g. a same-name twin team). */
+    emptyFallback?: React.ReactNode
 }) {
     const halfLabel = rosterHalf && rosterHalf !== 'all'
         ? (rosterHalf === 'kevät' ? 'Kevät ' : 'Syksy ')
@@ -44,7 +46,7 @@ export function TeamRoster({
             </h3>
             {error && <p className="text-xs text-semantic-red">Pelaajatilastoja ei saatu ladattua. Päivitä sivu hetken päästä.</p>}
             {players.length === 0 ? (
-                <p className="text-text-muted text-sm text-center py-8">Ei pelaajatietoja</p>
+                emptyFallback || <p className="text-text-muted text-sm text-center py-8">Ei pelaajatietoja</p>
             ) : (
                 <div className="grid grid-cols-1 gap-3">
                     {players.map(p => {

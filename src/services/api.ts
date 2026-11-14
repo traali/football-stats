@@ -345,6 +345,8 @@ export interface ClubTeam {
     sport_id?: string
     category_name?: string
     season?: string
+    /** Taso team birth year (yob), when the club has set one. */
+    yob?: string
 }
 
 export interface ClubInfo {
@@ -359,7 +361,7 @@ export interface ClubInfo {
 export async function getClubInfo(clubId: string, signal?: AbortSignal): Promise<ClubInfo | null> {
     const params = { club_id: clubId }
     return withCache('getClub', params, async () => {
-        type RawTeam = { team_id?: string; team_name?: string; status?: string; sport_id?: string; primary_category?: { category_name?: string; competition_season?: string } | null }
+        type RawTeam = { team_id?: string; team_name?: string; status?: string; sport_id?: string; yob?: string; primary_category?: { category_name?: string; competition_season?: string } | null }
         const data = await fetchAPIData<{ club?: { club_id?: string; name?: string; city_name?: string; crest?: string; teams?: RawTeam[] } }>('getClub', params, signal)
         const c = data.club
         if (!c?.club_id) return null
@@ -376,6 +378,7 @@ export async function getClubInfo(clubId: string, signal?: AbortSignal): Promise
                     sport_id: t.sport_id || undefined,
                     category_name: t.primary_category?.category_name || undefined,
                     season: t.primary_category?.competition_season || undefined,
+                    yob: /^\d{4}$/.test(String(t.yob || '')) ? String(t.yob) : undefined,
                 })),
         }
     })
