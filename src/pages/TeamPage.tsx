@@ -117,7 +117,7 @@ function TeamPageBody({
             loading={loadingPlayers}
             error={historyError}
             lastSeasonById={lastSeasonById}
-            emptyFallback={twin.twin ? <TwinRoster twin={twin.twin} /> : twin.loading ? <div className="h-24 rounded-lg bg-surface-2 animate-pulse" /> : undefined}
+            emptyFallback={twin.twin ? <TwinRoster twin={twin.twin} seasonYear={rosterYear} /> : twin.loading ? <div className="h-24 rounded-lg bg-surface-2 animate-pulse" /> : undefined}
         />
     )
 

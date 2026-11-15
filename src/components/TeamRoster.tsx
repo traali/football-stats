@@ -1,6 +1,6 @@
 import { Users } from 'lucide-react'
-import { PlayerCard } from './PlayerCard'
-import { rosterToStats } from '../utils/rosterToStats'
+import { RosterCard } from './RosterCard'
+import { usePlayerSplits } from '../hooks/usePlayerSplits'
 
 interface P {
     player_id: string
@@ -16,8 +16,17 @@ interface P {
     warnings?: number
 }
 
+/** "P13 Kolmonen: 10 ott · 1 m · 0 var" from this team's own group statistics; empty when none. */
+export function teamLineFor(p: Pick<P, 'matches' | 'goals' | 'warnings'>, level?: string): string {
+    if (!p.matches) return ''
+    const parts = [`${p.matches} ott`]
+    if (p.goals !== undefined) parts.push(`${p.goals} m`)
+    if (p.warnings !== undefined) parts.push(`${p.warnings} var`)
+    return `Tässä joukkueessa${level ? ` (${level})` : ''}: ${parts.join(' · ')}`
+}
+
 export function TeamRoster({
-    players, teamName, level, rosterYear, rosterHalf, loading, error, lastSeasonById, emptyFallback,
+    players, level, rosterYear, rosterHalf, loading, error, emptyFallback,
 }: {
     players: P[]
     teamName?: string
@@ -33,9 +42,10 @@ export function TeamRoster({
     const halfLabel = rosterHalf && rosterHalf !== 'all'
         ? (rosterHalf === 'kevät' ? 'Kevät ' : 'Syksy ')
         : ''
+    const splits = usePlayerSplits(players.map(p => p.player_id), rosterYear)
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-3">
             <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center justify-between gap-2">
                 <span className="flex items-center gap-2">
                     <Users className="w-4 h-4 text-accent" />
@@ -48,17 +58,14 @@ export function TeamRoster({
             {players.length === 0 ? (
                 emptyFallback || <p className="text-text-muted text-sm text-center py-8">Ei pelaajatietoja</p>
             ) : (
-                <div className="grid grid-cols-1 gap-3">
-                    {players.map(p => {
-                        const base = rosterToStats(p, {
-                            teamName,
-                            level,
-                            lastSeasonGames: lastSeasonById?.[p.player_id]?.matches,
-                            lastSeasonGoals: lastSeasonById?.[p.player_id]?.goals,
-                        })
-                        return <PlayerCard key={p.player_id} stats={base} />
-                    })}
-                </div>
+                <>
+                    <p className="text-[11px] text-text-muted">Pelaajan kaikki Palloliiton ottelut kaudella, kaikki joukkueet. Ott = ottelut, M = maalit, Var = varoitukset.</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2">
+                        {players.map(p => (
+                            <RosterCard key={p.player_id} player={p} split={splits[p.player_id]} teamLine={teamLineFor(p, level)} />
+                        ))}
+                    </div>
+                </>
             )}
         </div>
     )

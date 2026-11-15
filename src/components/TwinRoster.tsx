@@ -1,17 +1,22 @@
 import { Link } from 'react-router-dom'
-import { Info, ChevronRight } from 'lucide-react'
+import { Info } from 'lucide-react'
+import { RosterCard } from './RosterCard'
+import { usePlayerSplits } from '../hooks/usePlayerSplits'
+import { APP_CONFIG } from '../config'
 import type { RosterTwin } from '../hooks/useRosterTwin'
 import { sportLabel } from '../utils/rosterTwin'
 
 /**
  * Players of the same-name, same-birth-year team, clearly labelled as borrowed:
- * no games, goals or minutes are shown or counted for this team.
+ * no games, goals or minutes are shown or counted for this team. Each card shows the
+ * player's own Taso stats (all their registrations), never this team's results.
  */
-export function TwinRoster({ twin }: { twin: RosterTwin }) {
+export function TwinRoster({ twin, seasonYear = APP_CONFIG.CURRENT_YEAR }: { twin: RosterTwin; seasonYear?: string }) {
     const label = sportLabel(twin.team.sport_id)
     const players = [...twin.players].sort((a, b) =>
         String(a.last_name || '').localeCompare(String(b.last_name || ''), 'fi')
         || String(a.first_name || '').localeCompare(String(b.first_name || ''), 'fi'))
+    const splits = usePlayerSplits(players.map(p => p.player_id), seasonYear)
     return (
         <div className="space-y-3" data-testid="twin-roster">
             <div className="bg-surface-2 border border-border-hairline rounded-lg p-3 text-sm text-text-secondary space-y-1">
@@ -26,23 +31,10 @@ export function TwinRoster({ twin }: { twin: RosterTwin }) {
                 </p>
                 <p className="text-xs text-text-muted pl-6">Pelaajien otteluita tai maaleja ei lasketa tämän joukkueen tilastoihin.</p>
             </div>
-            <ul className="grid grid-cols-1 gap-1">
-                {players.map(p => (
-                    <li key={p.player_id}>
-                        <Link to={`/player/${p.player_id}`}
-                            className="flex items-center justify-between gap-3 min-h-[44px] px-3 rounded-lg bg-surface-1 border border-border-hairline hover:bg-surface-2">
-                            <span className="flex items-center gap-3 min-w-0">
-                                {p.shirt_number && <span className="text-xs font-mono font-bold text-accent w-7 shrink-0">#{p.shirt_number}</span>}
-                                <span className="text-sm text-text-primary font-medium truncate">{[p.first_name, p.last_name].filter(Boolean).join(' ')}</span>
-                            </span>
-                            <span className="flex items-center gap-2 shrink-0">
-                                {p.birthyear && /^\d{4}$/.test(p.birthyear) && <span className="text-xs text-text-muted">{p.birthyear}</span>}
-                                <ChevronRight className="w-4 h-4 text-text-muted" />
-                            </span>
-                        </Link>
-                    </li>
-                ))}
-            </ul>
+            <p className="text-[11px] text-text-muted">Korteissa pelaajan omat Palloliiton ottelut kaudella (kaikki hänen joukkueensa), ei tämän joukkueen otteluita.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2">
+                {players.map(p => <RosterCard key={p.player_id} player={p} split={splits[p.player_id]} />)}
+            </div>
         </div>
     )
 }
